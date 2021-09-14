@@ -30,8 +30,8 @@ rlJournalStart
         rlRun "rm $COOKIE"
 
         if [ "$IMA_STATE" == "on" -o "$IMA_STATE" == "1" ]; then
-          rlRun "touch $TESTFILE && cat $TESTFILE && rm $TESTFILE"
-	  rlRun "grep $TESTFILE /sys/kernel/security/ima/ascii_runtime_measurements"
+            rlRun "touch $TESTFILE && cat $TESTFILE && rm $TESTFILE"
+            rlRun "grep $TESTFILE /sys/kernel/security/ima/ascii_runtime_measurements"
         fi
     rlPhaseEnd
   fi
