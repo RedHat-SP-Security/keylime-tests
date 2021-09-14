@@ -1,0 +1,12 @@
+summary: Configures IBM TPM emulator on a running system
+contact: Karel Srot <ksrot@redhat.com>
+component:
+- keylime
+test: ./test.sh
+framework: beakerlib
+require:
+- yum
+- tpm2-abrmd
+duration: 5m
+enabled: true
+extra-nitrate: TC#0611726

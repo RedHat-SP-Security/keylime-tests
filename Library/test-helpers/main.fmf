@@ -1,0 +1,13 @@
+summary: test-helpers
+description: 'provides helper shell functions for keylime testing'
+contact: Karel Srot <ksrot@redhat.com>
+component: []
+test: ./runtest.sh
+framework: beakerlib
+recommend:
+duration: 5m
+enabled: true
+adjust:
+-   enabled: false
+    when: distro == rhel-4, rhel-5, rhel-6, rhel-7
+    continue: false
