@@ -6,8 +6,21 @@ rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
         # configure Sergio's copr repo providing necessary dependencies
-        rlIsRHEL 9 && rlRun "dnf -y copr enable copr.devel.redhat.com/scorreia/keylime rhel-9.dev-$(arch)"
+        rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
+[copr:copr.devel.redhat.com:scorreia:keylime]
+name=Copr repo for keylime owned by scorreia
+baseurl=http://coprbe.devel.redhat.com/results/scorreia/keylime/rhel-9.dev-\$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=0
+gpgkey=http://coprbe.devel.redhat.com/results/scorreia/keylime/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+_EOF'
         rlRun "yum -y install ibmswtpm2 cfssl"
+        # update to fixed tpm2-tss
+        rlRun "rpm -Fvh http://download.eng.bos.redhat.com/brewroot/vol/rhel-9/packages/tpm2-tss/3.0.3/6.el9/x86_64/tpm2-tss-3.0.3-6.el9.x86_64.rpm"
     rlPhaseEnd
 
     rlPhaseStartSetup "Start TPM emulator"
