@@ -8,3 +8,4 @@ require:
 - yum
 duration: 15m
 enabled: true
+extra-nitrate: TC#0611725
