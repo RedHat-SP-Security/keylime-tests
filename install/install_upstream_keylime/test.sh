@@ -21,6 +21,8 @@ enabled_metadata=1
 _EOF'
         fi
         rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-simplejson python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq cfssl patch"
+        # update to fixed tpm2-tss
+        rlRun "rpm -Fvh http://download.eng.bos.redhat.com/brewroot/vol/rhel-9/packages/tpm2-tss/3.0.3/6.el9/x86_64/tpm2-tss-3.0.3-6.el9.x86_64.rpm"
         rlRun "rm -rf keylime && git clone https://github.com/keylime/keylime.git"
         pushd keylime
         # apply fix for the timezone bug https://github.com/keylime/keylime/issues/759
