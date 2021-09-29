@@ -37,6 +37,7 @@ rlJournalStart
         rlRun "bash create_allowlist.sh allowlist.txt sha256sum"
         # create rejectlist excluding all current content
         rlRun 'for DIR in /*; do echo "$DIR/.*" >> excludes.txt; done'
+        rlRun 'echo -e "/sysroot/etc/fstab\n/dracut-state.sh" >> excludes.txt'  # may not be present on FS
         cat excludes.txt
     rlPhaseEnd
 
