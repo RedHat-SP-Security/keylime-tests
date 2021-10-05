@@ -463,8 +463,7 @@ limeInstallIMAConfig() {
     if [ -f "$1" ]; then
         FILE="$1"
     else
-        FILE=`mktemp`
-        rlRun "curl 'https://raw.githubusercontent.com/keylime/keylime/master/demo/ima-policy' | grep -v '^#' > $FILE"
+        FILE=$limeLibraryDir/ima-policy
     fi
 
     rlRun "mkdir -p /etc/ima/ && cat $FILE > /etc/ima/ima-policy"
@@ -478,6 +477,36 @@ limeInstallIMAConfig() {
         cat /sys/kernel/security/ima/policy
         echo -e "~~~~~~~~~~~~~~~~~~~~"
     fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeCreateTestLists
+
+Creates allowlist.txt and excludelist.txt to be used for testing purposes.
+Allowlist would contain only initramdisk related content, all root dir / content
+will be added to excludelist. This is based on an assumption that content
+used for testing purposes will be created in / with an unique name later.
+from a given file.
+
+    limeCreateTestLists
+
+=over
+
+=back
+
+Returns 0 when the initialization was successfull, non-zero otherwise.
+
+=cut
+
+limeCreateTestLists() {
+
+    # generate allowlist
+    rlRun "bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum" && \
+    # generate excludelist
+    rlRun "bash $limeLibraryDir/create_excludelist.sh excludelist.txt"
+
 }
 
 # ~~~~~~~~~~~~~~~~~~~~
