@@ -33,7 +33,7 @@ PHASE=${PHASE:-Test}
 
 rlJournalStart
     rlPhaseStartSetup
-        rlRun "rlImport ./test-helpers"
+        rlRun "rlImport test-helpers"
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         rlRun "pushd $TmpDir"
     rlPhaseEnd
