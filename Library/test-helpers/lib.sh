@@ -35,7 +35,7 @@ true <<'=cut'
 
 =head1 NAME
 
-opencryptoki/test-helpers - provides shell function for keylime testing
+keylime-tests/test-helpers - provides shell function for keylime testing
 
 =head1 DESCRIPTION
 
@@ -47,67 +47,24 @@ The library provides shell function to ease keylime test implementation.
 #   Variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-true <<'=cut'
-=pod
-
-=head1 VARIABLES
-
-Below is the list of global variables. 
-
-=over
-
-=item limeTmpDir
-
-For internal purposes only.
-Directory used to store various library related files.
-
-=item limeLogVerifier
-
-For internal purposes only.
-Logfile path for the keylime verifier. Won't be used for systemd service.
-
-=item limeLogRegistrar
-
-For internal purposes only.
-Logfile path for the keylime registrar. Won't be used for systemd service.
-
-=item limeLogAgent
-
-For internal purposes only.
-Logfile path for the keylime agent. Won't be used for systemd service.
-
-=item limeLogIMAEmulator
-
-For internal purposes only.
-Logfile path for the IMA Emulator.
-
-=item limeLogCurrentTest
-
-For internal purposes only.
-Current working directory of the executed test.
-We purge log files for a new test. It is therefore important to rlImport
-the library before changing CWD to a different location.
-
-=cut
-
 # we are using hardcoded paths so they are preserved due to reboots
-export limeTmpDir
-[ -n "$limeTmpDir" ] || limeTmpDir="/var/tmp/limeLib"
+export __INTERNAL_limeTmpDir
+[ -n "$__INTERNAL_limeTmpDir" ] || __INTERNAL_limeTmpDir="/var/tmp/limeLib"
 
-export limeLogVerifier
-[ -n "$limeLogVerifier" ] || limeLogVerifier="$limeTmpDir/limeLib-keylime-verifier.log"
+export __INTERNAL_limeLogVerifier
+[ -n "$__INTERNAL_limeLogVerifier" ] || __INTERNAL_limeLogVerifier="$__INTERNAL_limeTmpDir/limeLib-keylime-verifier.log"
 
-export limeLogRegistrar
-[ -n "$limeLogRegistrar" ] || limeLogRegistrar="$limeTmpDir/limeLib-keylime-registrar.log"
+export __INTERNAL_limeLogRegistrar
+[ -n "$__INTERNAL_limeLogRegistrar" ] || __INTERNAL_limeLogRegistrar="$__INTERNAL_limeTmpDir/limeLib-keylime-registrar.log"
 
-export limeLogAgent
-[ -n "$limeLogAgent" ] || limeLogAgent="$limeTmpDir/limeLib-keylime-agent.log"
+export __INTERNAL_limeLogAgent
+[ -n "$__INTERNAL_limeLogAgent" ] || __INTERNAL_limeLogAgent="$__INTERNAL_limeTmpDir/limeLib-keylime-agent.log"
 
-export limeLogIMAEmulator
-[ -n "$limeLogIMAEmulator" ] || limeLogIMAEmulator="$limeTmpDir/limeLib-keylime-ima-emulator.log"
+export __INTERNAL_limeLogIMAEmulator
+[ -n "$__INTERNAL_limeLogIMAEmulator" ] || __INTERNAL_limeLogIMAEmulator="$__INTERNAL_limeTmpDir/limeLib-keylime-ima-emulator.log"
 
-export limeLogCurrentTest
-[ -n "$limeLogCurrentTest" ] || limeLogCurrentTest="$limeTmpDir/limeLib-current-test"
+export __INTERNAL_limeLogCurrentTest
+[ -n "$__INTERNAL_limeLogCurrentTest" ] || __INTERNAL_limeLogCurrentTest="$__INTERNAL_limeTmpDir/limeLib-current-test"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
@@ -134,7 +91,7 @@ Return success or failure depending on whether IBM TPM emulator is used.
 
 
 limeTPMEmulated() {
-    # naive approach, can be improved in the future
+    # naive approach, can be improved in future
     rpm -q ibmswtpm2 &> /dev/null
 }
 
@@ -198,7 +155,7 @@ Returns 0 if the backup restore passed.
 
 
 limeBackupData() {
-    rlFileBackup --clean --namespace limeData
+    rlFileBackup --clean --namespace limeData /var/lib/keylime/
 }
 
 true <<'=cut'
@@ -258,7 +215,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartVerifier() {
 
     limeStopVerifier
-    rlRun "keylime_verifier 2>&1 >> $limeLogVerifier &"
+    rlRun "keylime_verifier 2>&1 >> $__INTERNAL_limeLogVerifier &"
 
 }
 
@@ -306,7 +263,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartRegistrar() {
 
     limeStopRegistrar
-    rlRun "keylime_registrar 2>&1 >> $limeLogRegistrar &"
+    rlRun "keylime_registrar 2>&1 >> $__INTERNAL_limeLogRegistrar &"
 
 }
 
@@ -354,7 +311,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartAgent() {
 
     limeStopAgent
-    rlRun "keylime_agent 2>&1 >> $limeLogAgent &"
+    rlRun "keylime_agent 2>&1 >> $__INTERNAL_limeLogAgent &"
 
 }
 
@@ -402,7 +359,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartIMAEmulator() {
 
     limeStopIMAEmulator
-    rlRun "keylime_ima_emulator 2>&1 >> $limeLogIMAEmulator &"
+    rlRun "keylime_ima_emulator 2>&1 >> $__INTERNAL_limeLogIMAEmulator &"
 
 }
 
@@ -532,7 +489,7 @@ Returns 0.
 limeVerifierLogfile() {
 
     # currently return the variable
-    echo $limeLogVerifier
+    echo $__INTERNAL_limeLogVerifier
 
 }
 
@@ -558,7 +515,7 @@ limeRegistrarLogfile() {
     # currently return the variable
     # in the future for systemd services we may extract relevant parts 
     # using journactl and store them in a file
-    echo $limeLogRegistrar
+    echo $__INTERNAL_limeLogRegistrar
 
 }
 
@@ -582,7 +539,7 @@ Returns 0.
 limeAgentLogfile() {
 
     # currently return the variable
-    echo $limeLogAgent
+    echo $__INTERNAL_limeLogAgent
 
 }
 
@@ -606,7 +563,7 @@ Returns 0.
 limeIMAEmulatorLogfile() {
 
     # currently return the variable
-    echo $limeLogIMAEmulator
+    echo $__INTERNAL_limeLogIMAEmulator
 
 }
 
@@ -614,20 +571,20 @@ limeIMAEmulatorLogfile() {
 #   Inicialization
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#   Create $limeTmpDir directory
+#   Create $__INTERNAL_limeTmpDir directory
 
-mkdir -p $limeTmpDir
+mkdir -p $__INTERNAL_limeTmpDir
 
 #   Purge log files for a new test. It is therefore important to rlImport
 #   the library before changing CWD to a different location.
 
-touch $limeLogCurrentTest
-if ! grep -q "^$PWD\$" $limeLogCurrentTest; then
-    echo "$PWD" > $limeLogCurrentTest
-    [ -f $limeLogVerifier ]> $limeLogVerifier 
-    [ -f $limeLogRegistrar ] > $limeLogRegistrar
-    [ -f $limeLogAgent ] > $limeLogAgent
-    [ -f $limeLogIMAEmulator ] && > $limeLogIMAEmulator
+touch $__INTERNAL_limeLogCurrentTest
+if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
+    echo "$PWD" > $__INTERNAL_limeLogCurrentTest
+    [ -f $__INTERNAL_limeLogVerifier ] && > $__INTERNAL_limeLogVerifier
+    [ -f $l__INTERNAL_imeLogRegistrar ] && > $__INTERNAL_limeLogRegistrar
+    [ -f $__INTERNAL_limeLogAgent ] && > $__INTERNAL_limeLogAgent
+    [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator
 fi
 
 
@@ -642,7 +599,7 @@ fi
 #   should return 0 only when the library is ready to serve.
 
 limeLibraryLoaded() {
-    if true; then
+    if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
         return 0
     else
