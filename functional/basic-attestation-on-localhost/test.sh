@@ -31,18 +31,13 @@ rlJournalStart
         sleep 5
         limeStartAgent
         sleep 5
-        # create allowlist
-        rlRun "curl -s 'https://raw.githubusercontent.com/keylime/keylime/master/scripts/create_allowlist.sh' -o create_allowlist.sh"
-        rlRun "bash create_allowlist.sh allowlist.txt sha256sum"
-        # create rejectlist excluding all current content
-        rlRun 'for DIR in /*; do echo "$DIR/.*" >> excludes.txt; done'
-        rlRun 'echo -e "/sysroot/etc/fstab\n/dracut-state.sh" >> excludes.txt'  # may not be present on FS
-        cat excludes.txt
+        # create allowlist and excludelist
+        limeCreateTestLists
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime tenant"
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -f excludes.txt --allowlist allowlist.txt --exclude excludes.txt -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
         sleep 5
         rlRun -s "keylime_tenant -c list"
         rlAssertGrep "{'agent_id': '$AGENT_ID'}" $rlRun_LOG

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ -n "$1" ]; then
+  OUT="$1"
+else
+  OUT="excludelist.txt"
+fi
+rm -f $OUT
+for DIR in /*; do 
+    echo "$DIR/.*" >> $OUT
+done
+# explicitly add items that may not be present on FS
+echo -e "/sysroot/etc/fstab\n/dracut-state.sh" >> $OUT
