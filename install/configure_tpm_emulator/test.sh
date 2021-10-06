@@ -21,6 +21,26 @@ _EOF'
         rlRun "yum -y install ibmswtpm2 cfssl"
         # update to fixed tpm2-tss
         rlRun "rpm -Fvh http://download.eng.bos.redhat.com/brewroot/vol/rhel-9/packages/tpm2-tss/3.0.3/6.el9/x86_64/tpm2-tss-3.0.3-6.el9.x86_64.rpm"
+        # update tpm2-abrmd unit file
+        rlRun "cat > /etc/systemd/system/tpm2-abrmd.service <<_EOF
+[Unit]
+Description=TPM2 Access Broker and Resource Management Daemon
+# These settings are needed when using the device TCTI. If the
+# TCP mssim is used then the settings should be commented out.
+#After=dev-tpm0.device
+#Requires=dev-tpm0.device
+ConditionPathExistsGlob=
+
+[Service]
+Type=dbus
+BusName=com.intel.tss2.Tabrmd
+ExecStart=/usr/sbin/tpm2-abrmd --tcti=mssim
+User=tss
+
+[Install]
+WantedBy=multi-user.target
+_EOF"
+        rlRun "systemctl daemon-reload"
     rlPhaseEnd
 
     rlPhaseStartSetup "Start TPM emulator"
