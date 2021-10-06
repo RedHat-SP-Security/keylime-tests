@@ -6,7 +6,7 @@ rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
 	# update /etc/keylime.conf
-	rlRun 'rlImport "keylime-tests/test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+	rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         limeBackupConfig
         rlRun "sed -i 's/^require_ek_cert.*/require_ek_cert = False/' /etc/keylime.conf"
         rlRun "sed -i 's/^ca_implementation.*/ca_implementation = openssl/' /etc/keylime.conf"
