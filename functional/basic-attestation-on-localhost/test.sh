@@ -14,8 +14,10 @@ rlJournalStart
         if limeTPMEmulated; then
             # start tpm emulator
             rlServiceStart ibm-tpm-emulator
+            sleep 5
             # make sure tpm2-abrmd is running
-            pidof tpm2-abrmd || rlServiceStart tpm2-abrmd
+            rlServiceStart tpm2-abrmd
+            sleep 5
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             limeInstallIMAConfig
@@ -65,7 +67,9 @@ rlJournalStart
         if limeTPMEmulated; then
             limeStopIMAEmulator
             rlFileSubmit $(limeIMAEmulatorLogfile)
+            rlServiceRestore ibm-tpm-emulator
         fi
+        rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
         rlRun "rm -f /keylime-bad-script.sh"
