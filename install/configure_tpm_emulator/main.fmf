@@ -6,6 +6,7 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
+- tpm2-abrmd
 duration: 5m
 enabled: true
 extra-nitrate: TC#0611726
