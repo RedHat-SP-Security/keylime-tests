@@ -8,7 +8,7 @@ fi
 rm -f $OUT
 for DIR in /*; do 
     if [ "$DIR" != "/keylime-tests" ]; then
-      echo "$DIR/.*" >> $OUT
+      echo "$DIR(/.*)?" >> $OUT
     fi
 done
 # explicitly add items that may not be present on FS

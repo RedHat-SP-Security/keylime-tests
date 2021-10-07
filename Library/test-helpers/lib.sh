@@ -517,8 +517,7 @@ Returns 0 when the execution was successfull, non-zero otherwise.
 limeExtendNextExcludelist() {
 
     for F in $@; do
-        echo "$F" >> $__INTERNAL_limeBaseExcludeList
-        echo "$F/.*" >> $__INTERNAL_limeBaseExcludeList
+        echo "$F(/.*)?" >> $__INTERNAL_limeBaseExcludeList
     done
 
 }
