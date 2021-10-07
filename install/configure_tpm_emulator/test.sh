@@ -2,6 +2,15 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# required service state can be passed via RUNNING variable
+# 1 = services running
+# 0 = services stop
+# by default the status of tpm2-abrmd service is preserved
+
+if [ "$RUNNING" != "0" -a "$RUNNING" != "1" ]; then
+    systemctl is-active --quiet tpm2-abrmd && RUNNING=1 || RUNNING=0
+fi
+
 rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
@@ -56,8 +65,13 @@ _EOF"
     rlPhaseStartTest "Test TPM emulator"
         rlRun -s "tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-        #rlServiceStop ibm-tpm-emulator
-        #rlServiceStop tpm2-abrmd
+    rlPhaseEnd
+
+    rlPhaseStartCleanup
+        if [ "$RUNNING" == "0" ]; then
+            rlServiceStop ibm-tpm-emulator
+            rlServiceStop tpm2-abrmd
+        fi
     rlPhaseEnd
 
 rlJournalEnd
