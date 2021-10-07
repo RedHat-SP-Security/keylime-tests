@@ -5,6 +5,7 @@
 rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
+        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         # configure Sergio's copr repo providing necessary dependencies
         rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
 [copr:copr.devel.redhat.com:scorreia:keylime]
@@ -46,13 +47,17 @@ _EOF"
     rlPhaseStartSetup "Start TPM emulator"
         export TPM2TOOLS_TCTI="tabrmd:bus_name=com.intel.tss2.Tabrmd"
         rlLogInfo "exported TPM2TOOLS_TCTI=$TPM2TOOLS_TCTI"
+        rlServiceStop tpm2-abrmd
         rlServiceStart ibm-tpm-emulator
+        rlServiceStart tpm2-abrmd
+        rlRun "limeWaitForTPMEmulator"
     rlPhaseEnd
 
     rlPhaseStartTest "Test TPM emulator"
         rlRun -s "tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-        rlServiceStop ibm-tpm-emulator
+        #rlServiceStop ibm-tpm-emulator
+        #rlServiceStop tpm2-abrmd
     rlPhaseEnd
 
 rlJournalEnd

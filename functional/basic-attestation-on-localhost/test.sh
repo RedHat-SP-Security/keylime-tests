@@ -14,7 +14,7 @@ rlJournalStart
         if limeTPMEmulated; then
             # start tpm emulator
             rlServiceStart ibm-tpm-emulator
-            sleep 5
+            rlRun "limeWaitForTPMEmulator"
             # make sure tpm2-abrmd is running
             rlServiceStart tpm2-abrmd
             sleep 5
@@ -28,9 +28,9 @@ rlJournalStart
         sleep 5
         # start keylime_verifier
         limeStartVerifier
-        sleep 5
+        rlRun "limeWaitForVerifier"
         limeStartRegistrar
-        sleep 5
+        rlRun "limeWaitForRegistrar"
         limeStartAgent
         sleep 5
         # create allowlist and excludelist

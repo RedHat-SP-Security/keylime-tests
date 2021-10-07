@@ -391,6 +391,92 @@ limeStopIMAEmulator() {
 
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeWaitForVerifier
+
+Use rlWaitForSocket to wait for the verifier to start.
+
+    limeWaitForVerifier [PORT_NUMBER]
+
+=over
+
+=item
+
+    PORT_NUMBER - Port number to wait for, 8881 by default.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeWaitForVerifier() {
+
+    local PORT
+    [ -n "$1" ] && PORT=$1 || PORT=8881
+    rlWaitForSocket $PORT -d 0.1
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeWaitForRegistrar
+
+Use rlWaitForSocket to wait for the registrar to start.
+
+    limeWaitForRegistrar [PORT_NUMBER]
+
+=over
+
+=item
+
+    PORT_NUMBER - Port number to wait for, 8890 by default.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeWaitForRegistrar() {
+
+    local PORT
+    [ -n "$1" ] && PORT=$1 || PORT=8891
+    rlWaitForSocket $PORT -d 0.1
+
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeWaitForTPMEmulator
+
+Use rlWaitForSocket to wait for the registrar to start.
+
+    limeWaitForTPMEmulator [PORT_NUMBER]
+
+=over
+
+=item
+
+    PORT_NUMBER - Port number to wait for, 2322 by default.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeWaitForTPMEmulator() {
+
+    local PORT
+    [ -n "$1" ] && PORT=$1 || PORT=2322
+    rlWaitForSocket $PORT -d 0.1
+
+}
+
 # ~~~~~~~~~~~~~~~~~~~~
 #   Install
 # ~~~~~~~~~~~~~~~~~~~~
