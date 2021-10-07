@@ -48,10 +48,11 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime tenant"
-        rlRun "echo -e '#!/bin/bash\necho boom' > /keylime-bad-script.sh && chmod a+x /keylime-bad-script.sh"
-        rlRun "/keylime-bad-script.sh"
+        TESTDIR=`limeCreateTestDir`
+        rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
+        rlRun "$TESTDIR/keylime-bad-script.sh"
         sleep 5
-        rlAssertGrep "WARNING - File not found in allowlist: /keylime-bad-script.sh" $(limeVerifierLogfile)
+        rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
         rlRun -s "keylime_tenant -c status -u $AGENT_ID"
         rlAssertGrep 'Agent Status: "(Failed|Invalid Quote)"' $rlRun_LOG -E
@@ -72,7 +73,8 @@ rlJournalStart
         rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
-        rlRun "rm -f /keylime-bad-script.sh"
+        limeExtendNextExcludelist $TESTDIR
+        #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
     rlPhaseEnd
 
 rlJournalEnd

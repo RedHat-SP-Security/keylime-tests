@@ -66,6 +66,10 @@ export __INTERNAL_limeLogIMAEmulator
 export __INTERNAL_limeLogCurrentTest
 [ -n "$__INTERNAL_limeLogCurrentTest" ] || __INTERNAL_limeLogCurrentTest="$__INTERNAL_limeTmpDir/limeLib-current-test"
 
+export __INTERNAL_limeBaseExcludeList
+[ -n "$__INTERNAL_limeBaseExcludeList" ] || __INTERNAL_limeBaseExcludeList="$__INTERNAL_limeTmpDir/limeLib-base-exludelist"
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -460,11 +464,91 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 limeCreateTestLists() {
 
     # generate allowlist
-    rlRun "bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum" && \
+    bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum && \
     # generate excludelist
-    rlRun "bash $limeLibraryDir/create_excludelist.sh excludelist.txt"
+    bash $limeLibraryDir/create_excludelist.sh excludelist.txt && \
+    # make sure the file exists
+    touch $__INTERNAL_limeBaseExcludeList && \
+    cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt
 
 }
+
+true <<'=cut'
+=pod
+
+=head2 limeExtendNextExcludelist
+
+
+Stores provided paths to a list which gets added to the excludelist generated using limeCreateTestLists.
+Once a file not an a whitelist is measured by IMA it gets accounted until the next reboot.
+From this reason any file created by the test (even if they are deleted later) must be added to the
+exclude list to make sure that subsequent tests won't eventually fail attestation due to this file.
+
+    limeExtendNextExcludelist PATH1 [PATH2...]
+
+For test purposes it seems reasonable to store test files used for the attestation in a dedicated
+directory undre the /keylime-tests directory.
+You can generate unique directory e.g. using:
+
+    mkdir -p /keylime-tests
+    mktemp -d "/keylime-tests/test-name-XXXXX"
+
+or simply use the function
+
+    limeCreateTestDir
+
+Due to reasons above it seems unnecessary to removing such test files in test clean up phase.
+Keeping them in place would at least ensure unique directory name in subsequent test runs of
+the same test (e.g. when the test is parametrized).
+
+=over
+
+=item
+
+    PATH - path to be added to the future allowlist.
+
+=back
+
+Returns 0 when the execution was successfull, non-zero otherwise.
+
+=cut
+
+limeExtendNextExcludelist() {
+
+    for F in $@; do
+        echo "$F" >> $__INTERNAL_limeBaseExcludeList
+        echo "$F/.*" >> $__INTERNAL_limeBaseExcludeList
+    done
+
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeCreateTestDir
+
+Creates a directory under /keylime-tests directory with a unique name
+prefixed by the test name. Path of the created directory is printed to STDOUT.
+
+    limeCreateTestDir
+
+=over
+
+=back
+
+Returns 0 when the initialization was successfull, non-zero otherwise.
+
+=cut
+
+limeCreateTestDir() {
+
+    local TESTNAME && \
+    TESTNAME=$( basename $( cat $__INTERNAL_limeLogCurrentTest ) ) && \
+    mkdir -p /keylime-tests && \
+    mktemp -d "/keylime-tests/${TESTNAME}-XXXXX"
+
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~
 #   Logging
