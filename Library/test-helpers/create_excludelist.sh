@@ -7,7 +7,9 @@ else
 fi
 rm -f $OUT
 for DIR in /*; do 
-    echo "$DIR/.*" >> $OUT
+    if [ "$DIR" != "/keylime-tests" ]; then
+      echo "$DIR/.*" >> $OUT
+    fi
 done
 # explicitly add items that may not be present on FS
 echo -e "/sysroot/etc/fstab\n/dracut-state.sh" >> $OUT

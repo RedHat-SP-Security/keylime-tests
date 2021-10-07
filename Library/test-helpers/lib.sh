@@ -446,10 +446,11 @@ true <<'=cut'
 =head2 limeCreateTestLists
 
 Creates allowlist.txt and excludelist.txt to be used for testing purposes.
-Allowlist would contain only initramdisk related content, all root dir / content
-will be added to excludelist. This is based on an assumption that content
-used for testing purposes will be created in / with an unique name later.
-from a given file.
+Allowlist will contain only initramdisk related content.
+Exclude list will contain all root dir / content except /keylime-tests.
+This is based on an assumption that content used for testing purposes will 
+be created under /keylime-tests in a directory with an unique name.
+See limeExtendNextExcludelist and limeCreateTestDir for more details.
 
     limeCreateTestLists
 
