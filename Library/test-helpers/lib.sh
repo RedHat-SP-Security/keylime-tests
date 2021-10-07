@@ -432,7 +432,7 @@ Use rlWaitForSocket to wait for the registrar to start.
 
 =item
 
-    PORT_NUMBER - Port number to wait for, 8890 by default.
+    PORT_NUMBER - Port number to wait for, 8891 by default.
 
 =back
 
