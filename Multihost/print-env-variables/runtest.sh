@@ -32,21 +32,8 @@
 PACKAGE="keylime"
 
 rlJournalStart
-    rlPhaseStartSetup
-        rlAssertRpm $PACKAGE
-        rlLog "Server: $SERVERS"
-        rlLog "Client: $CLIENTS"
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        rlRun "pushd $TmpDir"
-    rlPhaseEnd
-
     rlPhaseStartTest
         rlRun "env"
-    rlPhaseEnd
-
-    rlPhaseStartCleanup
-        rlRun "popd"
-        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
     rlPhaseEnd
 rlJournalPrintText
 rlJournalEnd
