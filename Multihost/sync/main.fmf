@@ -1,0 +1,11 @@
+summary: runs env command - used to enforce multihost sync in restraint
+contact: Karel Srot <ksrot@redhat.com>
+component:
+- keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+- multihost
+duration: 5m
+enabled: true
+extra-nitrate: TC#0611992
