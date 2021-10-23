@@ -99,6 +99,31 @@ limeTPMEmulated() {
     rpm -q ibmswtpm2 &> /dev/null
 }
 
+
+true <<'=cut'
+=pod
+
+=head2 limeUpdateConf
+
+Updates respective [SECTION] in /etc/keylime.conf file, 
+replacing OPTION = .* with OPTION = VALUE.
+
+    limeUpdateConf SECTION OPTION VALUE
+
+=over
+
+=back
+
+Return success.
+
+=cut
+
+
+function limeUpdateConf() {
+  sed -i "/^\[$1\]/,/^\[/ s@^$2 *=.*@$2 = $3@$4" /etc/keylime.conf
+}
+
+
 # ~~~~~~~~~~~~~~~~~~~~
 #   Backup/Restore
 # ~~~~~~~~~~~~~~~~~~~~
