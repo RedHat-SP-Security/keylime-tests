@@ -1,0 +1,3 @@
+PURPOSE of /CoreOS/keylime/Multihost/basic-attestation
+Description: tests basic keylime attestation scenario using multiple hosts
+Author: Karel Srot <ksrot@redhat.com>
