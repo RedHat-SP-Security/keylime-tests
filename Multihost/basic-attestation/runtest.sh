@@ -159,6 +159,10 @@ Agent() {
     rlPhaseEnd
 }
 
+# assigne custom roles using SERVERS and CLIENTS variables
+export VERIFIER=$( echo "$SERVERS $CLIENTS" | cut -d ' ' -f 1)
+export REGISTRAR=$( echo "$SERVERS $CLIENTS" | cut -d ' ' -f 2)
+export AGENT=$( echo "$SERVERS $CLIENTS" | cut -d ' ' -f 3)
 
 rlJournalStart
     rlPhaseStartSetup
@@ -182,10 +186,6 @@ rlJournalStart
         # update /etc/keylime.conf
         rlRun "sed -i 's/^ca_implementation.*/ca_implementation = openssl/' /etc/keylime.conf"
         rlRun "sed -i 's/^enable_tls.*/enable_tls = False/' /etc/keylime.conf"
-
-
-        # disable TLS
-        rlRun 
     rlPhaseEnd
 
     if echo $VERIFIER | grep -q $HOSTNAME ; then
