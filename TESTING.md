@@ -45,5 +45,3 @@ $ bkr workflow-tomorrow --reserve --distro RHEL-9.0.0-20210914.0 --hostrequire '
 ```
 
 Test scenario can be executed in a similar fashion with one change. Instead of /keylime/install/configure_tpm_emulator/ you should run /keylime/install/configure_kernel_ima_module/ test. This test reboots the system so once it comes up again you should run the test once more to complete the setup.
-
-Also, be aware that there is a bug in keylime when generating TLS certificates. NBDE test systems are configured to CET/CEST timezone which manifests the issue. A fix (?) is being applied in install_upstream_keylime/test.sh but even with this change test scenario doesn't work. This problem is currently being investigated.
