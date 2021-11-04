@@ -23,8 +23,6 @@ _EOF'
         rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-simplejson python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq cfssl patch"
         rlRun "rm -rf keylime && git clone https://github.com/keylime/keylime.git"
         pushd keylime
-        # apply fix for the timezone bug https://github.com/keylime/keylime/issues/759
-        rlRun "sed -i 's/today = datetime.datetime.today()/today = datetime.datetime.now(datetime.timezone.utc)/' keylime/ca_impl_openssl.py"
         rlRun "python3 setup.py install"
         popd
     rlPhaseEnd
