@@ -150,13 +150,13 @@ Registrar() {
         rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
         rlRun "limeUpdateConf registrar private_key registrar-key.pem"
         rlRun "limeUpdateConf registrar private_key_pw ''"
-        # registrar_* TLS options below seems not necessary, we cannot preserve
-        # default values though. Let's use wrong values to illustrate that.
-        rlRun "limeUpdateConf registrar registrar_tls_dir /no-such-dir"
-        rlRun "limeUpdateConf registrar registrar_ca_cert no-such-cert.pem"
-        rlRun "limeUpdateConf registrar registrar_my_cert no-such-cert.pem"
-        rlRun "limeUpdateConf registrar registrar_private_key no-such-key.pem"
-        rlRun "limeUpdateConf registrar registrar_private_key_pw 'no-such-password'"
+        # registrar_* TLS options below seems not necessary
+        # we can preserve default values
+        #rlRun "limeUpdateConf registrar registrar_tls_dir /no-such-dir"
+        #rlRun "limeUpdateConf registrar registrar_ca_cert no-such-cert.pem"
+        #rlRun "limeUpdateConf registrar registrar_my_cert no-such-cert.pem"
+        #rlRun "limeUpdateConf registrar registrar_private_key no-such-key.pem"
+        #rlRun "limeUpdateConf registrar registrar_private_key_pw 'no-such-password'"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
