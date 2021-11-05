@@ -47,6 +47,11 @@ function get_IP() {
 Verifier() {
     rlPhaseStartSetup "Verifier setup"
         # generate TLS certificates for all
+        # we are going to use 4 certificates
+        # verifier = webserver cert used for the verifier server
+        # verifier-client = webclient cert used for the verifier's connection to registrar server
+        # registrar = webserver cert used for the registrar server
+        # tenant = webclient cert used (twice) by the tenant, running on AGENT server
         rlRun "x509KeyGen ca" 0 "Preparing RSA CA certificate"
         rlRun "x509KeyGen verifier" 0 "Preparing RSA verifier certificate"
         rlRun "x509KeyGen verifier-client" 0 "Preparing RSA verifier-client certificate"
@@ -56,15 +61,21 @@ Verifier() {
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webserver --subjectAltName 'IP = ${VERIFIER_IP}' verifier" 0 "Signing verifier certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webclient --subjectAltName 'IP = ${VERIFIER_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $REGISTRAR' -t webserver --subjectAltName 'IP = ${REGISTRAR_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
-        # we are running tenant on agent server
+        # remember, we are running tenant on agent server
         rlRun "x509CertSign --CA ca --DN 'CN = $AGENT' -t webclient --subjectAltName 'IP = ${AGENT_IP}' tenant" 0 "Signing tenant certificate with our CA certificate"
-        # expose certificates for clients
+
+        # copy verifier certificates to proper location
+        CERTDIR=/var/lib/keylime/certs
+        rlRun "mkdir -p $CERTDIR"
+        rlRun "cp $(x509Cert ca) $CERTDIR/cacert.pem"
+        rlRun "cp $(x509Cert verifier) $CERTDIR/verifier-cert.pem"
+        rlRun "cp $(x509Key verifier) $CERTDIR/verifier-key.pem"
+        rlRun "cp $(x509Cert verifier-client) $CERTDIR/verifier-client-cert.pem"
+        rlRun "cp $(x509Key verifier-client) $CERTDIR/verifier-client-key.pem"
+
+        # expose necessary certificates to clients
         rlRun "mkdir http"
         rlRun "cp $(x509Cert ca) http/cacert.pem"
-        rlRun "cp $(x509Cert verifier) http/verifier-cert.pem"
-        rlRun "cp $(x509Key verifier) http/verifier-key.pem"
-        rlRun "cp $(x509Cert verifier-client) http/verifier-client-cert.pem"
-        rlRun "cp $(x509Key verifier-client) http/verifier-client-key.pem"
         rlRun "cp $(x509Cert registrar) http/registrar-cert.pem"
         rlRun "cp $(x509Key registrar) http/registrar-key.pem"
         rlRun "cp $(x509Cert tenant) http/tenant-cert.pem"
@@ -74,16 +85,12 @@ Verifier() {
         HTTP_PID=$!
         rlRun "popd"
 
-        # common configuration goes here
+        # common configuration
         rlRun "limeUpdateConf cloud_verifier tls_check_hostnames True"
-
-        # Verifier setup goes here
+        # Verifier configuration
         rlRun "limeUpdateConf cloud_verifier cloudverifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier registrar_ip ${REGISTRAR_IP}"
         #rlRun "limeUpdateConf cloud_verifier check_client_cert False"
-        # configure certificates
-        CERTDIR=/var/lib/keylime/certs
-        rlRun "mkdir -p $CERTDIR && cp http/cacert.pem http/verifier*.pem $CERTDIR"
         rlRun "limeUpdateConf cloud_verifier tls_dir $CERTDIR"
         rlRun "limeUpdateConf cloud_verifier ca_cert cacert.pem"
         rlRun "limeUpdateConf cloud_verifier my_cert verifier-cert.pem"
@@ -94,44 +101,6 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier registrar_my_cert verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
-
-        # configure registrar
-        #rlRun "limeUpdateConf registrar check_client_cert False"
-        rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
-        rlRun "limeUpdateConf registrar ca_cert cacert.pem"
-        rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
-        rlRun "limeUpdateConf registrar private_key registrar-key.pem"
-        rlRun "limeUpdateConf registrar private_key_pw ''"
-        rlRun "limeUpdateConf registrar registrar_tls_dir $CERTDIR"
-        rlRun "limeUpdateConf registrar registrar_ca_cert cacert.pem"
-        # this cert does not exist, we illustrate it doesn't seem to be used anyway
-        rlRun "limeUpdateConf registrar registrar_my_cert registrar2-cert.pem"
-        rlRun "limeUpdateConf registrar registrar_private_key registrar2-key.pem"
-        rlRun "limeUpdateConf registrar registrar_private_key_pw ''"
-        rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
-
-        # configure tenant
-        rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
-        rlRun "limeUpdateConf tenant ca_cert cacert.pem"
-        rlRun "limeUpdateConf tenant my_cert tenant-cert.pem"
-        rlRun "limeUpdateConf tenant private_key tenant-key.pem"
-        rlRun "limeUpdateConf tenant private_key_pw ''"
-        rlRun "limeUpdateConf tenant registrar_tls_dir $CERTDIR"
-        rlRun "limeUpdateConf tenant registrar_ca_cert cacert.pem"
-        rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
-        rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
-        rlRun "limeUpdateConf tenant registrar_private_key_pw ''"
-        rlRun "limeUpdateConf tenant cloudverifier_ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf tenant require_ek_cert False"
-
-        # agent setup
-        rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT_IP}"
-        rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT_IP}"
-        rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
-
-        # share /etc/keylime.conf with other servers
-	rlRun "cp /etc/keylime.conf http/keylime.conf"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
@@ -144,6 +113,7 @@ Verifier() {
     rlPhaseEnd
 
     rlPhaseStartTest "Verifier test"
+        # check that the AGENT failed verification
         rlAssertGrep "WARNING - File not found in allowlist: .*/keylime-bad-script.sh" $(limeVerifierLogfile) -E
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
@@ -168,9 +138,25 @@ Registrar() {
         for F in cacert.pem registrar-cert.pem registrar-key.pem; do
             rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
         done
-       
-        # download keylime.conf prepared by verifier	
-        rlRun "wget -O /etc/keylime.conf 'http://$VERIFIER:8000/keylime.conf'"
+
+        # common configuration goes here
+        rlRun "limeUpdateConf cloud_verifier tls_check_hostnames True"
+
+        # configure registrar
+        rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
+        #rlRun "limeUpdateConf registrar check_client_cert False"
+        rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
+        rlRun "limeUpdateConf registrar ca_cert cacert.pem"
+        rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
+        rlRun "limeUpdateConf registrar private_key registrar-key.pem"
+        rlRun "limeUpdateConf registrar private_key_pw ''"
+        # registrar_* TLS options below seems not necessary, we cannot preserve
+        # default values though. Let's use wrong values to illustrate that.
+        rlRun "limeUpdateConf registrar registrar_tls_dir /no-such-dir"
+        rlRun "limeUpdateConf registrar registrar_ca_cert no-such-cert.pem"
+        rlRun "limeUpdateConf registrar registrar_my_cert no-such-cert.pem"
+        rlRun "limeUpdateConf registrar registrar_private_key no-such-key.pem"
+        rlRun "limeUpdateConf registrar registrar_private_key_pw 'no-such-password'"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
@@ -194,7 +180,6 @@ Agent() {
         # Agent and tenant setup goes here
         rlRun "rhts-sync-block -s REGISTRAR_SETUP_DONE_${DEBUG_RUN_COUNTER} $REGISTRAR" 0 "Waiting for the Registrar finish to start"
 
-        # tenant setup
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
         rlRun "mkdir -p $CERTDIR"
@@ -202,8 +187,29 @@ Agent() {
             rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
         done
 
-        # download keylime.conf prepared by verifier    
-        rlRun "wget -O /etc/keylime.conf 'http://$VERIFIER:8000/keylime.conf'"
+        # common configuration goes here
+        rlRun "limeUpdateConf cloud_verifier tls_check_hostnames True"
+
+        # configure tenant
+        rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf tenant cloudverifier_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
+        rlRun "limeUpdateConf tenant ca_cert cacert.pem"
+        rlRun "limeUpdateConf tenant my_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant private_key tenant-key.pem"
+        rlRun "limeUpdateConf tenant private_key_pw ''"
+        # for registrar_* TLS options we can use save values as above
+        rlRun "limeUpdateConf tenant registrar_tls_dir $CERTDIR"
+        rlRun "limeUpdateConf tenant registrar_ca_cert cacert.pem"
+        rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
+        rlRun "limeUpdateConf tenant registrar_private_key_pw ''"
+
+        # configure agent
+        rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT_IP}"
+        rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT_IP}"
+        rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
 
         # if IBM TPM emulator is present
         if limeTPMEmulated; then
@@ -229,6 +235,7 @@ Agent() {
     rlPhaseEnd
 
     rlPhaseStartTest "Agent test: Add keylime tenant"
+        # first register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
         sleep 30
@@ -239,6 +246,7 @@ Agent() {
     rlPhaseEnd
 
     rlPhaseStartTest "Agent test: Fail keylime tenant"
+        # fail AGENT and confirm it has failed validation
         TESTDIR=`limeCreateTestDir`
         limeExtendNextExcludelist $TESTDIR
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
