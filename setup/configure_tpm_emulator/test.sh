@@ -18,8 +18,8 @@ rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        # for RHEL we use Sergio's build of IBM TPM emulator
-        if rlIsRHEL; then
+        # for RHEL or CentOS Stream we use Sergio's build of IBM TPM emulator
+        if ! rlIsFedora; then
             # configure Sergio's copr repo providing necessary dependencies
             rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
 [copr:copr.fedorainfracloud.org:scorreia:keylime-c9s]

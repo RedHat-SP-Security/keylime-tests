@@ -42,7 +42,7 @@ rlJournalStart
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
         sleep 5
         rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'d432fbb3-d2f1-4a97-9ef7-75bd81c00000'" $rlRun_LOG -E
+        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlRun -s "keylime_tenant -c status -u $AGENT_ID"
         rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
     rlPhaseEnd

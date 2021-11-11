@@ -5,8 +5,8 @@
 rlJournalStart
 
     rlPhaseStartSetup "Install keylime and its dependencies"
-        # configure Sergio's copr repo providing necessary dependencies
-        if rlIsRHEL 9; then
+        # for RHEL and CentOS Stream configure Sergio's copr repo providing necessary dependencies
+        if ! rlIsFedora; then
             rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
 [copr:copr.fedorainfracloud.org:scorreia:keylime-c9s]
 name=Copr repo for keylime-c9s owned by scorreia
