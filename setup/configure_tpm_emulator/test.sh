@@ -57,7 +57,7 @@ _EOF"
 
         # for Fedora we use swtpm TPM emulator
         if rlIsFedora; then
-            rlRun "yum -y install swtpm tpm2-tss selinux-policy-devel tpm2-abrmd"
+            rlRun "yum -y install swtpm swtpm-tools tpm2-tss selinux-policy-devel tpm2-abrmd tpm2-tools"
             # create swtpm unit file as it doesn't exist
             rlRun "cat > /etc/systemd/system/swtpm.service <<_EOF
 [Unit]
@@ -65,6 +65,7 @@ Description=swtpm TPM Software emulator
 
 [Service]
 Type=fork
+ExecStartPre=/usr/bin/mkdir -p /var/lib/tpm/swtpm
 ExecStartPre=/usr/bin/swtpm_setup --tpm-state /var/lib/tpm/swtpm --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2
 ExecStart=/usr/bin/swtpm socket --tpmstate dir=/var/lib/tpm/swtpm --log level=4 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
 
@@ -90,15 +91,17 @@ User=tss
 [Install]
 WantedBy=multi-user.target
 _EOF"
+            # now we need to build custom selinux module making swtpm_t a permissive domain
+            # since the policy module shipped with swtpm package doesn't seem to work
+            if ! semodule -l | grep -q swtpm_permissive; then
+                rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
+                rlAssertExists swtpm_permissive.pp
+                rlRun "semodule -i swtpm_permissive.pp"
+            fi
+            rlRun "setsebool -P tabrmd_connect_all_unreserved on"
         fi
+        # allow tpm2-abrmd to connect to swtpm port
         rlRun "systemctl daemon-reload"
-        # now we need to build custom selinux module making swtpm_t a permissive domain
-        # since the policy module shipped with swtpm package doesn't seem to work
-        if ! semodule -l | grep -q swtpm_permissive; then
-            rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
-            rlAssertExists swtpm_permissive.pp
-            rlRun "semodule -i swtpm_permissive.pp"
-        fi
     rlPhaseEnd
 
     rlPhaseStartSetup "Start TPM emulator"
