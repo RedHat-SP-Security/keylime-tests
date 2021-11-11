@@ -211,10 +211,10 @@ Agent() {
         rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT_IP}"
         rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
 
-        # if IBM TPM emulator is present
+        # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
-            rlServiceStart ibm-tpm-emulator
+            limeStartTPMEmulator
             rlRun "limeWaitForTPMEmulator"
             # make sure tpm2-abrmd is running
             rlServiceStart tpm2-abrmd
@@ -263,7 +263,7 @@ Agent() {
         if limeTPMEmulated; then
             limeStopIMAEmulator
             rlFileSubmit $(limeIMAEmulatorLogfile)
-            rlServiceRestore ibm-tpm-emulator
+            limeStopTPMEmulator
         fi
         rlServiceRestore tpm2-abrmd
     rlPhaseEnd
