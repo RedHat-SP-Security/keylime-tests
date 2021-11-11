@@ -81,7 +81,7 @@ true <<'=cut'
 
 =head2 limeTPMEmulated
 
-Test if IBM TPM emulator is present
+Test if TPM emulator is present
 
     limeTPMEmulated
 
@@ -89,14 +89,14 @@ Test if IBM TPM emulator is present
 
 =back
 
-Return success or failure depending on whether IBM TPM emulator is used.
+Return success or failure depending on whether TPM emulator is used.
 
 =cut
 
 
 limeTPMEmulated() {
     # naive approach, can be improved in future
-    rpm -q ibmswtpm2 &> /dev/null
+    rpm -q ibmswtpm2 &> /dev/null || rpm -q swtpm &> /dev/null
 }
 
 
@@ -415,6 +415,60 @@ limeStopIMAEmulator() {
     ! pgrep -f keylime_ima_emulator
 
 }
+
+true <<'=cut'
+=pod
+
+=head2 limeStartTPMEmulator
+
+Start the availabe TPM emulator
+
+    limeStartTPMEmulator
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeStartTPMEmulator() {
+
+    limeStopTPMEmulator
+    if rpm -q swtpm &> /dev/null; then
+        #rm -rf /var/lib/tpm/swtpm
+        mkdir -p /var/lib/tpm/swtpm
+        rlServiceStart swtpm
+    fi
+    rpm -q ibmswtpm2 &> /dev/null && rlServiceStart ibm-tpm-emulator
+
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeStopTPMEmulator
+
+Stop the available TPM Emulator.
+
+    limeStopTPMEmulator
+
+=over
+
+=back
+
+Returns 0 when the stop was successful, non-zero otherwise.
+
+=cut
+
+limeStopTPMEmulator() {
+
+    rpm -q swtpm &> /dev/null && rlServiceStop swtpm
+    rpm -q ibmswtpm2 &> /dev/null && rlServiceStop ibm-tpm-emulator
+
+}
+
 
 true <<'=cut'
 =pod

@@ -19,8 +19,9 @@ repo_gpgcheck=0
 enabled=1
 enabled_metadata=1
 _EOF'
+            RHEL_EXTRA_PKGS="cfssl"
         fi
-        rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-simplejson python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq cfssl patch"
+        rlRun "yum -y install $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-simplejson python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq patch"
         rlRun "rm -rf keylime && git clone https://github.com/keylime/keylime.git"
         pushd keylime
         rlRun "python3 setup.py install"
