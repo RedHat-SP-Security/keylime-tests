@@ -11,5 +11,4 @@ jobs:
   trigger: pull_request
   metadata:
     targets:
-    - fedora-rawhide
-    - epel-all
+    - fedora-all
