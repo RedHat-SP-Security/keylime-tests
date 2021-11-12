@@ -1,0 +1,15 @@
+specfile_path: tests.spec
+
+upstream_package_name: tests
+downstream_package_name: tests
+
+actions:
+  fix-spec-file: "true"
+
+jobs:
+- job: tests
+  trigger: pull_request
+  metadata:
+    targets:
+    - fedora-rawhide
+    - epel-all
