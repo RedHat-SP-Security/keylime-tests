@@ -240,7 +240,7 @@ Agent() {
         rlRun "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
         sleep 30
         rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'agent_id': '${AGENT_ID}'}" $rlRun_LOG
+        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlRun -s "keylime_tenant -c status -u ${AGENT_ID}"
         rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
     rlPhaseEnd
