@@ -39,23 +39,34 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime tenant"
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
+        rlRun "cat > script.expect <<_EOF
+set timeout 20
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
+expect \"Please enter the password to decrypt your keystore:\"
+send \"keylime\n\"
+expect eof
+_EOF"
+        rlRun "expect script.expect"
         sleep 5
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlRun -s "keylime_tenant -c status -u $AGENT_ID"
         rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
+        rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime tenant"
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        sleep 5
+        sleep 15
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
         rlRun -s "keylime_tenant -c status -u $AGENT_ID"
         rlAssertGrep '"operational_state": "(Failed|Invalid Quote)"' $rlRun_LOG -E
+        rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
+        rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
+        rlAssertNotExists /var/tmp/test_payload_file
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
