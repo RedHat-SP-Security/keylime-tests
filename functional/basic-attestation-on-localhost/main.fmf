@@ -6,6 +6,7 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
+- expect
 duration: 15m
 enabled: true
 extra-nitrate: TC#0611725
