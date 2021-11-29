@@ -30,10 +30,9 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 # when manually troubleshooting multihost test in Restraint environment
-# you may want to export DEBUG_RUN_COUNTER to a unique number each team
+# you may want to export XTRA variable to a unique number each team
 # to make user that sync events have unique names and there are not
 # collisions with former test runs
-
 
 function get_IP() {
     if echo $1 | egrep -q '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
@@ -62,7 +61,7 @@ Verifier() {
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webclient --subjectAltName 'IP = ${VERIFIER_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $REGISTRAR' -t webserver --subjectAltName 'IP = ${REGISTRAR_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
         # remember, we are running tenant on agent server
-        rlRun "x509CertSign --CA ca --DN 'CN = $AGENT' -t webclient --subjectAltName 'IP = ${AGENT_IP}' tenant" 0 "Signing tenant certificate with our CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${AGENT}' -t webclient --subjectAltName 'IP = ${AGENT_IP}' tenant" 0 "Signing tenant certificate with our CA certificate"
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
@@ -101,6 +100,7 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier registrar_my_cert verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
+        rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
@@ -141,6 +141,7 @@ Registrar() {
 
         # common configuration goes here
         rlRun "limeUpdateConf general tls_check_hostnames True"
+        rlRun "limeUpdateConf general receive_revocation_ip ${REGISTRAR_IP}"
 
         # configure registrar
         rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
@@ -188,6 +189,7 @@ Agent() {
         done
 
         # common configuration goes here
+        rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf general tls_check_hostnames True"
 
         # configure tenant
@@ -234,13 +236,48 @@ Agent() {
         limeCreateTestLists
     rlPhaseEnd
 
-    rlPhaseStartTest "Agent test: Add keylime tenant"
-        # first register AGENT and confirm it has passed validation
+if [ -n "${AGENT2}" ]; then
+    rlPhaseStartTest "keylime tenant test: Add Agent2"
+        # wait for Agent2 setup is done
+        rlRun "sync-block AGENT2_SETUP_DONE ${AGENT2}" 0 "Waiting for the Agent2 setup to finish"
+
+        # first register AGENT2 and confirm it has passed validation
+        AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
+        # download Agent2 lists
+        rlRun "wget -O allowlist2.txt 'http://${AGENT2_IP}:8000/allowlist.txt'"
+        rlRun "wget -O excludelist2.txt 'http://${AGENT2_IP}:8000/excludelist.txt'"
+        # register
+        rlRun "cat > script.expect <<_EOF
+set timeout 20
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --allowlist allowlist2.txt --exclude excludelist2.txt --include payload --cert default -c add
+expect \"Please enter the password to decrypt your keystore:\"
+send \"keylime\n\"
+expect eof
+_EOF"
+        rlRun "expect script.expect"
+        rlRun "limeWaitForTenantStatus ${AGENT2_ID} 'Get Quote'"
+        rlRun -s "keylime_tenant -c cvlist"
+        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
+        rlRun -s "keylime_tenant -c status -u ${AGENT2_ID}"
+        rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
+    rlPhaseEnd
+fi
+
+    rlPhaseStartTest "keylime tenant test: Add Agent"
+        # register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
-        rlRun "lime_keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
+        rlRun "cat > script.expect <<_EOF
+set timeout 20
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
+expect \"Please enter the password to decrypt your keystore:\"
+send \"keylime\n\"
+expect eof
+_EOF"
+        rlRun "expect script.expect"
         rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
     rlPhaseStartTest "Agent test: Fail keylime tenant"
@@ -250,6 +287,11 @@ Agent() {
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        # give the revocation notifier a bit more time to contact the agent
+        sleep 5
+        rlAssertNotExists /var/tmp/test_payload_file
+        rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
+        rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent cleanup"
@@ -262,8 +304,93 @@ Agent() {
             rlRun "limeStopTPMEmulator"
         fi
         rlServiceRestore tpm2-abrmd
+        rlRun "rm -f /var/tmp/test_payload_file"
     rlPhaseEnd
 }
+
+Agent2() {
+    rlPhaseStartSetup "Agent2 setup"
+        # Agent setup goes here
+        rlRun "sync-block REGISTRAR_SETUP_DONE ${REGISTRAR_IP}" 0 "Waiting for the Registrar finish to start"
+
+        # download certificates from the verifier
+        CERTDIR=/var/lib/keylime/certs
+        rlRun "mkdir -p $CERTDIR"
+        for F in cacert.pem; do
+            rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
+        done
+
+        # common configuration goes here
+        rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf general tls_check_hostnames True"
+
+        # configure agent
+        rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT2_IP}"
+        rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT2_IP}"
+        rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
+
+        # change UUID just for sure so it is different from Agent
+        rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
+ 
+        # if TPM emulator is present
+        if limeTPMEmulated; then
+            # start tpm emulator
+            limeStartTPMEmulator
+            rlRun "limeWaitForTPMEmulator"
+            # make sure tpm2-abrmd is running
+            rlServiceStart tpm2-abrmd
+            sleep 5
+            # start ima emulator
+            export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
+            limeInstallIMAConfig
+            limeStartIMAEmulator
+        else
+            rlServiceStart tpm2-abrmd
+        fi
+        sleep 5
+
+        limeStartAgent
+        sleep 5
+        # create allowlist and excludelist
+        limeCreateTestLists
+
+        # expose lists to Agent
+        rlRun "mkdir http"
+        rlRun "cp excludelist.txt allowlist.txt http"
+        rlRun "pushd http"
+        rlRun "python3 -m http.server 8000 &"
+        HTTP_PID=$!
+        rlRun "popd"
+
+        # find the end of my log
+        LOG_END=$( cat $(limeAgentLogfile) | wc -l )
+        rlRun "sync-set AGENT2_SETUP_DONE"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Agent2 test: Verify Agent failed validation + revocation"
+        # waif for Agent to finish his tests (including failed validation)
+        rlRun "sync-block AGENT_ALL_TESTS_DONE ${AGENT_IP}"
+
+        # installed payload should not have been deleted for Agent2
+        rlAssertExists /var/tmp/test_payload_file
+        rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
+        rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
+    rlPhaseEnd
+
+    rlPhaseStartCleanup "Agent2 cleanup"
+        rlRun "kill $HTTP_PID"
+        rlRun "rm -f /var/tmp/test_payload_file"
+        limeStopAgent
+        rlFileSubmit $(limeAgentLogfile)
+        if limeTPMEmulated; then
+            limeStopIMAEmulator
+            rlFileSubmit $(limeIMAEmulatorLogfile)
+            limeStopTPMEmulator
+        fi
+        rlServiceRestore tpm2-abrmd
+    rlPhaseEnd
+}
+
 
 
 ####################
@@ -274,15 +401,22 @@ Agent() {
 export VERIFIER=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
 export REGISTRAR=$( echo "$SERVERS $CLIENTS" | awk '{ print $2 }')
 export AGENT=$( echo "$SERVERS $CLIENTS" | awk '{ print $3 }')
+export AGENT2=$( echo "$SERVERS $CLIENTS" | awk '{ print $4 }')
+
+export TESTSOURCEDIR=`pwd`
 
 rlJournalStart
     rlPhaseStartSetup
         [ -n "$VERIFIER" ] && export VERIFIER_IP=$( get_IP $VERIFIER )
         [ -n "$REGISTRAR" ] && export REGISTRAR_IP=$( get_IP $REGISTRAR )
-        [ -n "$AGENT" ] && export AGENT_IP=$( get_IP $AGENT )
+        [ -n "${AGENT}" ] && export AGENT_IP=$( get_IP ${AGENT} )
+        [ -n "${AGENT2}" ] && export AGENT2_IP=$( get_IP ${AGENT2} )
         rlLog "VERIFIER: $VERIFIER ${VERIFIER_IP}"
         rlLog "REGISTRAR: $REGISTRAR ${REGISTRAR_IP}"
-        rlLog "AGENT: $AGENT ${AGENT_IP}"
+        rlLog "AGENT: ${AGENT} ${AGENT_IP}"
+        rlLog "AGENT2: ${AGENT2} ${AGENT2_IP}"
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
+        rlRun "cp -rf payload $TmpDir"
 
         ###############
         # common setup
@@ -295,7 +429,6 @@ rlJournalStart
         # backup files
         limeBackupConfig
 
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
