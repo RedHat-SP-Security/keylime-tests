@@ -19,8 +19,9 @@ async def execute(event):
         logger.error("Unsupported revocation message: %s", event)
 
     # load up my own cert
+    uuid = event.get("agent_id", "my")
     secdir = secure_mount.mount()
-    cert = ca_util.load_cert_by_path(f"{secdir}/unzipped/d432fbb3-d2f1-4a97-9ef7-75bd81c00000-cert.crt")
+    cert = ca_util.load_cert_by_path(f"{secdir}/unzipped/{uuid}-cert.crt")
     logger.info("A node in the network has been compromised: %s", event["ip"])
     logger.info("my serial: %s, cert serial: %s" % (serial, cert.serial_number))
     # is this revocation meant for me?
