@@ -275,9 +275,9 @@ Agent() {
 ####################
 
 # assigne custom roles using SERVERS and CLIENTS variables
-export VERIFIER=$( echo "$SERVERS $CLIENTS" | cut -d ' ' -f 1)
-export REGISTRAR=$( echo "$SERVERS $CLIENTS" | cut -d ' ' -f 2)
-export AGENT=$( echo "$SERVERS $CLIENTS" | cut -d ' ' -f 3)
+export VERIFIER=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
+export REGISTRAR=$( echo "$SERVERS $CLIENTS" | awk '{ print $2 }')
+export AGENT=$( echo "$SERVERS $CLIENTS" | awk '{ print $3 }')
 
 rlJournalStart
     rlPhaseStartSetup
