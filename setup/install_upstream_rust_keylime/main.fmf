@@ -1,0 +1,18 @@
+summary: Install rust-keylime upstream bits
+contact: Karel Srot <ksrot@redhat.com>
+component:
+- keylime
+test: ./test.sh
+framework: beakerlib
+require:
+ - git
+ - yum
+ - rust
+ - cargo
+ - openssl-devel
+ - gcc
+ - tpm2-tss-devel
+ - zeromq-devel
+ - libarchive-devel
+duration: 20m
+enabled: true

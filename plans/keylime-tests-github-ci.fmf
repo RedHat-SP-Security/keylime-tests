@@ -7,6 +7,8 @@ discover:
    - /setup/install_upstream_keylime
    - /setup/enable_keylime_coverage
    - "/functional/.*"
+#   - /setup/install_upstream_rust_keylime
+#   - "/functional/.*"
    - /setup/generate_coverage_report
 
 execute:
