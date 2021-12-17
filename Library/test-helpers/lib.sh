@@ -251,7 +251,8 @@ __limeStartKeylimeService() {
     if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
         coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
     else
-        keylime_${NAME} >> ${LOGFILE} 2>&1 &
+        # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
+        RUST_LOG=keylime_agent=trace keylime_${NAME} >> ${LOGFILE} 2>&1 &
     fi
 
 }
