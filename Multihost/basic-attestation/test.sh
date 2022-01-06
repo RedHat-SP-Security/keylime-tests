@@ -86,7 +86,7 @@ Verifier() {
         rlRun "popd"
 
         # common configuration
-        rlRun "limeUpdateConf cloud_verifier tls_check_hostnames True"
+        rlRun "limeUpdateConf general tls_check_hostnames True"
         # Verifier configuration
         rlRun "limeUpdateConf cloud_verifier cloudverifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier registrar_ip ${REGISTRAR_IP}"
@@ -140,7 +140,7 @@ Registrar() {
         done
 
         # common configuration goes here
-        rlRun "limeUpdateConf cloud_verifier tls_check_hostnames True"
+        rlRun "limeUpdateConf general tls_check_hostnames True"
 
         # configure registrar
         rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
@@ -188,7 +188,7 @@ Agent() {
         done
 
         # common configuration goes here
-        rlRun "limeUpdateConf cloud_verifier tls_check_hostnames True"
+        rlRun "limeUpdateConf general tls_check_hostnames True"
 
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
