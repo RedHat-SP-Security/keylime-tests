@@ -19,6 +19,8 @@ rlJournalStart
         rlAssertGrep "ima_policy=$IMA_POLICY" $rlRun_LOG
         rlRun "touch $COOKIE"
 
+        # clear TPM
+        rlRun "tpm2_clear"
         rhts-reboot
     rlPhaseEnd
 

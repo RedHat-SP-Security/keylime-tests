@@ -6,6 +6,7 @@ test: ./test.sh
 framework: beakerlib
 require:
 - grubby
+- tpm2-tools
 duration: 10m
 enabled: true
 extra-nitrate: TC#0611629
