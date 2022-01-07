@@ -30,6 +30,10 @@
 # Include Beaker environment
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# set monitor mode so we can kill the background process
+# https://unix.stackexchange.com/questions/372541/why-doesnt-sigint-work-on-a-background-process-in-a-script
+[ -n "$COVERAGE" ] && set -m
+
 true <<'=cut'
 =pod
 
@@ -69,6 +73,8 @@ export __INTERNAL_limeLogCurrentTest
 export __INTERNAL_limeBaseExcludeList
 [ -n "$__INTERNAL_limeBaseExcludeList" ] || __INTERNAL_limeBaseExcludeList="$__INTERNAL_limeTmpDir/limeLib-base-exludelist"
 
+export __INTERNAL_limeCoverageDir
+[ -n "$__INTERNAL_limeCoverageDir" ] || __INTERNAL_limeCoverageDir="$__INTERNAL_limeTmpDir/coverage"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
@@ -224,6 +230,36 @@ limeClearData() {
 # ~~~~~~~~~~~~~~~~~~~~
 #   Start/Stop
 # ~~~~~~~~~~~~~~~~~~~~
+
+__limeStartKeylimeService() {
+
+    local NAME=$1
+    local LOGSUFFIX
+    [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
+    local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
+
+    if [ -n "$COVERAGE" ] && file $(which keylime_${NAME}) | grep -qi python; then
+        rlRun "coverage run -p $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &"
+    else
+        rlRun "keylime_${NAME} 2>&1 >> ${!LOGNAME} &"
+    fi
+}
+
+
+__limeStopKeylimeService() {
+
+    local NAME=$1
+
+    pgrep -f keylime_${NAME} &> /dev/null && rlRun "pkill -INT -f keylime_${NAME}"
+    sleep 2
+    pgrep -f keylime_${NAME} &> /dev/null && rlRun "pkill -f keylime_${NAME}"
+    [ -n $COVERAGE ] && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
+    ! pgrep -f keylime_${NAME}
+
+}
+
+
+
 true <<'=cut'
 =pod
 
@@ -244,8 +280,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartVerifier() {
 
     limeStopVerifier
-    rlRun "keylime_verifier 2>&1 >> $__INTERNAL_limeLogVerifier &"
-
+    __limeStartKeylimeService verifier
 }
 
 true <<'=cut'
@@ -267,8 +302,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeStopVerifier() {
 
-    pgrep -f keylime_verifier &> /dev/null && rlRun "pkill -f keylime_verifier"
-    ! pgrep -f keylime_verifier
+    __limeStopKeylimeService verifier
 
 }
 
@@ -292,7 +326,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartRegistrar() {
 
     limeStopRegistrar
-    rlRun "keylime_registrar 2>&1 >> $__INTERNAL_limeLogRegistrar &"
+    __limeStartKeylimeService registrar
 
 }
 
@@ -315,8 +349,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeStopRegistrar() {
 
-    pgrep -f keylime_registrar &> /dev/null && rlRun "pkill -f keylime_registrar"
-    ! pgrep -f keylime_registrar
+    __limeStopKeylimeService registrar
 
 }
 
@@ -340,7 +373,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartAgent() {
 
     limeStopAgent
-    rlRun "keylime_agent 2>&1 >> $__INTERNAL_limeLogAgent &"
+    __limeStartKeylimeService agent
 
 }
 
@@ -363,8 +396,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeStopAgent() {
 
-    pgrep -f keylime_agent &> /dev/null && rlRun "pkill -f keylime_agent"
-    ! pgrep -f keylime_agent
+    __limeStopKeylimeService agent
 
 }
 
@@ -388,7 +420,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartIMAEmulator() {
 
     limeStopIMAEmulator
-    rlRun "keylime_ima_emulator 2>&1 >> $__INTERNAL_limeLogIMAEmulator &"
+    __limeStartKeylimeService ima_emulator IMAEmulator
 
 }
 
@@ -411,8 +443,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeStopIMAEmulator() {
 
-    pgrep -f keylime_ima_emulator &> /dev/null && rlRun "pkill -f keylime_ima_emulator"
-    ! pgrep -f keylime_ima_emulator
+    __limeStopKeylimeService ima_emulator
 
 }
 
@@ -870,12 +901,13 @@ limeIMAEmulatorLogfile() {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#   Inicialization
+#   Initialization
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #   Create $__INTERNAL_limeTmpDir directory
 
 mkdir -p $__INTERNAL_limeTmpDir
+[ -n "$COVERAGE" ] && mkdir -p $__INTERNAL_limeCoverageDir
 
 #   Purge log files for a new test. It is therefore important to rlImport
 #   the library before changing CWD to a different location.
