@@ -237,9 +237,9 @@ Agent() {
     rlPhaseStartTest "Agent test: Add keylime tenant"
         # first register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
-        rlRun "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
+        rlRun "lime_keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
         rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
+        rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 

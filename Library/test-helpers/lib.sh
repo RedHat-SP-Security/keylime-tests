@@ -593,7 +593,7 @@ true <<'=cut'
 
 =head2 limeWaitForTenantStatus
 
-Run 'keylime_tenant -c status' command repeatedly up to TIMEOUT seconds
+Run 'lime_keylime_tenant -c status' wrapper repeatedly up to TIMEOUT seconds
 until the expected agent status is returned.
 
     limeWaitForTenantStatus UUID STATUS [TIMEOUT]
@@ -626,9 +626,9 @@ limeWaitForTenantStatus() {
     [ -n "$3" ] && TIMEOUT=$3
 
     for I in `seq $TIMEOUT`; do
-        keylime_tenant -c status -u $UUID &> $TEMPFILE
+        lime_keylime_tenant -c status -u $UUID &> $TEMPFILE
 	if egrep -q "\"operational_state\": \"$STATUS\"" $TEMPFILE; then
-            cat $TEMPFILE
+        cat $TEMPFILE
 	    rm $TEMPFILE
 	    return 0
 	fi
@@ -920,6 +920,39 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
     [ -f $__INTERNAL_limeLogAgent ] && > $__INTERNAL_limeLogAgent
     [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator
 fi
+
+
+true <<'=cut'
+=pod
+
+=head2 lime_keylime_tenant
+
+Wrapper around keylime_tenant command supporting execution via the coverage
+script to messasure code coverage.
+
+    lime_keylime_tenant ARGS
+
+=over
+
+=back
+
+Returns 0.
+
+=cut
+
+
+# create like_keylime_tenant wrapper
+cat > /usr/local/bin/lime_keylime_tenant <<'EOF'
+#!/bin/bash
+
+if [ -n "$COVERAGE" ]; then
+  coverage run -p $( which keylime_tenant ) "$@"
+else
+  keylime_tenant "$@"
+fi
+EOF
+# make it executable
+chmod a+x /usr/local/bin/lime_keylime_tenant
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
