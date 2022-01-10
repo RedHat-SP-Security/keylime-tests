@@ -30,9 +30,6 @@
 # Include Beaker environment
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-# set monitor mode so we can kill the background process
-# https://unix.stackexchange.com/questions/372541/why-doesnt-sigint-work-on-a-background-process-in-a-script
-[ -n "$COVERAGE" ] && set -m
 
 true <<'=cut'
 =pod
@@ -75,6 +72,11 @@ export __INTERNAL_limeBaseExcludeList
 
 export __INTERNAL_limeCoverageDir
 [ -n "$__INTERNAL_limeCoverageDir" ] || __INTERNAL_limeCoverageDir="$__INTERNAL_limeTmpDir/coverage"
+
+export __INTERNAL_limeCoverageEnabled=false
+[ -n "$COVERAGE" ] && __INTERNAL_limeCoverageEnabled=true
+[ -f "$__INTERNAL_limeCoverageDir/enabled" ] && __INTERNAL_limeCoverageEnabled=true
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
@@ -238,7 +240,7 @@ __limeStartKeylimeService() {
     [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
 
-    if [ -n "$COVERAGE" ] && file $(which keylime_${NAME}) | grep -qi python; then
+    if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
         rlRun "coverage run -p $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &"
     else
         rlRun "keylime_${NAME} 2>&1 >> ${!LOGNAME} &"
@@ -253,7 +255,7 @@ __limeStopKeylimeService() {
     pgrep -f keylime_${NAME} &> /dev/null && rlRun "pkill -INT -f keylime_${NAME}"
     sleep 2
     pgrep -f keylime_${NAME} &> /dev/null && rlRun "pkill -f keylime_${NAME}"
-    [ -n $COVERAGE ] && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
+    $__INTERNAL_limeCoverageEnabled && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
     ! pgrep -f keylime_${NAME}
 
 }
@@ -622,20 +624,20 @@ limeWaitForTenantStatus() {
     local TIMEOUT=30
     local UUID="$1"
     local STATUS="$2"
-    local TEMPFILE=`mktemp`
+    local OUTPUT=`mktemp`
     [ -n "$3" ] && TIMEOUT=$3
 
     for I in `seq $TIMEOUT`; do
-        lime_keylime_tenant -c status -u $UUID &> $TEMPFILE
-	if egrep -q "\"operational_state\": \"$STATUS\"" $TEMPFILE; then
-        cat $TEMPFILE
-	    rm $TEMPFILE
+        lime_keylime_tenant -c status -u $UUID &> $OUTPUT
+	if egrep -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
+            cat $OUTPUT
+	    rm $OUTPUT
 	    return 0
 	fi
         sleep 1
     done
-    cat $TEMPFILE
-    rm $TEMPFILE
+    cat $OUTPUT
+    rm $OUTPUT
     return 1
 }
 
@@ -907,7 +909,12 @@ limeIMAEmulatorLogfile() {
 #   Create $__INTERNAL_limeTmpDir directory
 
 mkdir -p $__INTERNAL_limeTmpDir
-[ -n "$COVERAGE" ] && mkdir -p $__INTERNAL_limeCoverageDir
+mkdir -p $__INTERNAL_limeCoverageDir
+
+# set monitor mode so we can kill the background process
+# https://unix.stackexchange.com/questions/372541/why-doesnt-sigint-work-on-a-background-process-in-a-script
+$__INTERNAL_limeCoverageEnabled && set -m
+
 
 #   Purge log files for a new test. It is therefore important to rlImport
 #   the library before changing CWD to a different location.
@@ -934,6 +941,10 @@ script to messasure code coverage.
 
 =over
 
+=item
+
+    ARGS - Regular keylime_tenant command line arguments.
+
 =back
 
 Returns 0.
@@ -945,10 +956,10 @@ Returns 0.
 cat > /usr/local/bin/lime_keylime_tenant <<'EOF'
 #!/bin/bash
 
-if [ -n "$COVERAGE" ]; then
-  coverage run -p $( which keylime_tenant ) "$@"
+if $__INTERNAL_limeCoverageEnabled; then
+    coverage run -p $( which keylime_tenant ) "$@"
 else
-  keylime_tenant "$@"
+    keylime_tenant "$@"
 fi
 EOF
 # make it executable
