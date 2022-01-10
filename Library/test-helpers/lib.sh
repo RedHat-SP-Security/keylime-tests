@@ -556,6 +556,59 @@ limeWaitForTPMEmulator() {
 
 }
 
+
+true <<'=cut'
+=pod
+
+=head2 limeWaitForTenantStatus
+
+Run 'keylime_tenant -c status' command repeatedly up to TIMEOUT seconds
+until the expected agent status is returned.
+
+    limeWaitForTenantStatus UUID STATUS [TIMEOUT]
+
+=over
+
+=item
+
+    UUID - Agent UUID to query the status for.
+
+=item
+
+    STATUS - Expected status.
+
+=item
+
+    TIMEOUT - Maximum time in seconds to wait (default 30).
+
+=back
+
+Returns 0 when the start was successful, 1 otherwise.
+
+=cut
+
+limeWaitForTenantStatus() {
+    local TIMEOUT=30
+    local UUID="$1"
+    local STATUS="$2"
+    local TEMPFILE=`mktemp`
+    [ -n "$3" ] && TIMEOUT=$3
+
+    for I in `seq $TIMEOUT`; do
+        keylime_tenant -c status -u $UUID &> $TEMPFILE
+	if egrep -q "\"operational_state\": \"$STATUS\"" $TEMPFILE; then
+            cat $TEMPFILE
+	    rm $TEMPFILE
+	    return 0
+	fi
+        sleep 1
+    done
+    cat $TEMPFILE
+    rm $TEMPFILE
+    return 1
+}
+
+
 # ~~~~~~~~~~~~~~~~~~~~
 #   Install
 # ~~~~~~~~~~~~~~~~~~~~

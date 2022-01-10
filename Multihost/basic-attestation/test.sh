@@ -238,11 +238,9 @@ Agent() {
         # first register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} -f excludelist.txt --allowlist allowlist.txt --exclude excludelist.txt -c add"
-        sleep 30
+        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
-        rlRun -s "keylime_tenant -c status -u ${AGENT_ID}"
-        rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Agent test: Fail keylime tenant"
@@ -251,9 +249,7 @@ Agent() {
         limeExtendNextExcludelist $TESTDIR
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        sleep 30
-        rlRun -s "keylime_tenant -c status -u $AGENT_ID"
-        rlAssertGrep '"operational_state": "(Failed|Invalid Quote)"' $rlRun_LOG -E
+        rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent cleanup"

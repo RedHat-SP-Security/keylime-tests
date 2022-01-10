@@ -2,11 +2,12 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
-	# update /etc/keylime.conf
-	rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        # update /etc/keylime.conf
+        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         limeBackupConfig
         rlRun "sed -i 's/^require_ek_cert.*/require_ek_cert = False/' /etc/keylime.conf"
         rlRun "sed -i 's/^ca_implementation.*/ca_implementation = openssl/' /etc/keylime.conf"
@@ -47,11 +48,9 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        sleep 5
+        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
-        rlRun -s "keylime_tenant -c status -u $AGENT_ID"
-        rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
@@ -59,11 +58,9 @@ _EOF"
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        sleep 15
+        rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
-        rlRun -s "keylime_tenant -c status -u $AGENT_ID"
-        rlAssertGrep '"operational_state": "(Failed|Invalid Quote)"' $rlRun_LOG -E
         rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
         rlAssertNotExists /var/tmp/test_payload_file
