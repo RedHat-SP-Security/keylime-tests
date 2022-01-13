@@ -283,8 +283,6 @@ rlJournalStart
         rlLog "VERIFIER: $VERIFIER ${VERIFIER_IP}"
         rlLog "REGISTRAR: $REGISTRAR ${REGISTRAR_IP}"
         rlLog "AGENT: $AGENT ${AGENT_IP}"
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        rlRun "pushd $TmpDir"
 
         ###############
         # common setup
@@ -295,6 +293,9 @@ rlJournalStart
         rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
         # backup files
         limeBackupConfig
+
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
+        rlRun "pushd $TmpDir"
     rlPhaseEnd
 
     if echo $VERIFIER | grep -q $HOSTNAME ; then
