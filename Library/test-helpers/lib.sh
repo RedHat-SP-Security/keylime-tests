@@ -77,6 +77,8 @@ export __INTERNAL_limeCoverageEnabled=false
 [ -n "$COVERAGE" ] && __INTERNAL_limeCoverageEnabled=true
 [ -f "$__INTERNAL_limeCoverageDir/enabled" ] && __INTERNAL_limeCoverageEnabled=true
 
+export __INTERNAL_limeCoverageContext
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
@@ -241,7 +243,7 @@ __limeStartKeylimeService() {
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
 
     if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-        rlRun "coverage run -p $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &"
+        rlRun "coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &"
     else
         rlRun "keylime_${NAME} 2>&1 >> ${!LOGNAME} &"
     fi
@@ -928,6 +930,10 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
     [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator
 fi
 
+# set code coverage context depending on a test
+# create context depending on the test directory by
+# cuting-off the *keylime-tests* (git repo dir) part
+__INTERNAL_limeCoverageContext=$( cat $__INTERNAL_limeLogCurrentTest | sed -e 's#.*keylime-tests[^/]*\(/.*\)#\1#' )
 
 true <<'=cut'
 =pod
@@ -953,13 +959,13 @@ Returns 0.
 
 
 # create like_keylime_tenant wrapper
-cat > /usr/local/bin/lime_keylime_tenant <<'EOF'
+cat > /usr/local/bin/lime_keylime_tenant <<EOF
 #!/bin/bash
 
 if $__INTERNAL_limeCoverageEnabled; then
-    coverage run -p $( which keylime_tenant ) "$@"
+    coverage run -p --context $__INTERNAL_limeCoverageContext \$( which keylime_tenant ) "\$@"
 else
-    keylime_tenant "$@"
+    keylime_tenant "\$@"
 fi
 EOF
 # make it executable
