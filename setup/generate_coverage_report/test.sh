@@ -13,7 +13,7 @@ rlJournalStart
     rlPhaseStartTest
         rlRun "coverage combine"
         rlAssertExists .coverage
-        rlRun "coverage html --include '*keylime*'"
+        rlRun "coverage html --include '*keylime*' --show-contexts"
         rlRun "coverage report --include '*keylime*'"
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
