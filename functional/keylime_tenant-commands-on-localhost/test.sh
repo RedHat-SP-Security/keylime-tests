@@ -52,7 +52,7 @@ rlJournalStart
 
     rlPhaseStartTest "-c cvstatus"
         rlRun -s "lime_keylime_tenant -c cvstatus"
-        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"Get Quote\"" $rlRun_LOG
+        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "-c reglist"
@@ -68,13 +68,13 @@ rlJournalStart
     rlPhaseStartTest "-c status"
         rlRun -s "lime_keylime_tenant -c status"
         rlAssertGrep "{\"code\": 200, \"status\": \"Agent $AGENT_ID exists on registrar 127.0.0.1 port 8891.\"" $rlRun_LOG
-        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"Get Quote\"" $rlRun_LOG
+        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
  
     rlPhaseStartTest "-c bulkinfo"
         rlRun -s "lime_keylime_tenant -c bulkinfo"
         rlAssertGrep "INFO - Bulk Agent Info:" $rlRun_LOG
-        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"Get Quote\"" $rlRun_LOG
+        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime tenant"
@@ -96,7 +96,7 @@ rlJournalStart
 
     rlPhaseStartTest "-c reactivate"
         rlRun -s "lime_keylime_tenant -c reactivate"
-        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"Get Quote\"" $rlRun_LOG
+        rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
         rlAssertGrep "INFO - Agent $AGENT_ID re-activated" $rlRun_LOG
     rlPhaseEnd
 
