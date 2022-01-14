@@ -106,7 +106,7 @@ Verifier() {
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
 
         # start keylime_verifier
-        limeStartVerifier
+        rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "rhts-sync-set -s VERIFIER_SETUP_DONE_${DEBUG_RUN_COUNTER}"
         rlRun "rhts-sync-block -s AGENT_ALL_TESTS_DONE_${DEBUG_RUN_COUNTER} $AGENT" 0 "Waiting for the Agent to finish the test"
@@ -121,7 +121,7 @@ Verifier() {
 
     rlPhaseStartCleanup "Verifier cleanup"
         rlRun "kill $HTTP_PID"
-        limeStopVerifier
+        rlRun "limeStopVerifier"
         rlFileSubmit $(limeVerifierLogfile)
     rlPhaseEnd
 }
@@ -161,7 +161,7 @@ Registrar() {
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
 
-        limeStartRegistrar
+        rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
 
         rlRun "rhts-sync-set -s REGISTRAR_SETUP_DONE_${DEBUG_RUN_COUNTER}"
@@ -169,7 +169,7 @@ Registrar() {
     rlPhaseEnd
 
     rlPhaseStartCleanup "Registrar cleanup"
-        limeStopRegistrar
+        rlRun "limeStopRegistrar"
         rlFileSubmit $(limeRegistrarLogfile)
     rlPhaseEnd
 }
@@ -214,7 +214,7 @@ Agent() {
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
-            limeStartTPMEmulator
+            rlRun "limeStartTPMEmulator"
             rlRun "limeWaitForTPMEmulator"
             # make sure tpm2-abrmd is running
             rlServiceStart tpm2-abrmd
@@ -222,13 +222,13 @@ Agent() {
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             limeInstallIMAConfig
-            limeStartIMAEmulator
+            rlRun "limeStartIMAEmulator"
         else
             rlServiceStart tpm2-abrmd
         fi
         sleep 5
 
-        limeStartAgent
+        rlRun "limeStartAgent"
         sleep 5
         # create allowlist and excludelist
         limeCreateTestLists
@@ -254,12 +254,12 @@ Agent() {
 
     rlPhaseStartCleanup "Agent cleanup"
         rlRun "rhts-sync-set -s AGENT_ALL_TESTS_DONE_${DEBUG_RUN_COUNTER}"
-        limeStopAgent
+        rlRun "limeStopAgent"
         rlFileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
-            limeStopIMAEmulator
+            rlRun "limeStopIMAEmulator"
             rlFileSubmit $(limeIMAEmulatorLogfile)
-            limeStopTPMEmulator
+            rlRun "limeStopTPMEmulator"
         fi
         rlServiceRestore tpm2-abrmd
     rlPhaseEnd
