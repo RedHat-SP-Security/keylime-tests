@@ -243,9 +243,9 @@ __limeStartKeylimeService() {
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
 
     if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-        rlRun "coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &"
+        coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &
     else
-        rlRun "keylime_${NAME} 2>&1 >> ${!LOGNAME} &"
+        keylime_${NAME} 2>&1 >> ${!LOGNAME} &
     fi
 }
 
@@ -253,12 +253,20 @@ __limeStartKeylimeService() {
 __limeStopKeylimeService() {
 
     local NAME=$1
+    local RET=0
 
-    pgrep -f keylime_${NAME} &> /dev/null && rlRun "pkill -INT -f keylime_${NAME}"
+    pgrep -f keylime_${NAME} &> /dev/null && pkill -INT -f keylime_${NAME}
     sleep 2
-    pgrep -f keylime_${NAME} &> /dev/null && rlRun "pkill -f keylime_${NAME}"
+    if pgrep -f keylime_${NAME} &> /dev/null; then
+        pkill -f keylime_${NAME}
+        sleep 2
+        if pgrep -f keylime_${NAME} &> /dev/null; then
+            RET=2
+            pkill -KILL -f keylime_${NAME}
+        fi
+    fi
     $__INTERNAL_limeCoverageEnabled && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
-    ! pgrep -f keylime_${NAME}
+    return $RET
 
 }
 
@@ -476,7 +484,9 @@ limeStartTPMEmulator() {
         mkdir -p /var/lib/tpm/swtpm
         rlServiceStart swtpm
     fi
-    rpm -q ibmswtpm2 &> /dev/null && rlServiceStart ibm-tpm-emulator
+    if rpm -q ibmswtpm2 &> /dev/null; then
+        rlServiceStart ibm-tpm-emulator
+    fi
 
 }
 
@@ -499,8 +509,12 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeStopTPMEmulator() {
 
-    rpm -q swtpm &> /dev/null && rlServiceStop swtpm
-    rpm -q ibmswtpm2 &> /dev/null && rlServiceStop ibm-tpm-emulator
+    if rpm -q swtpm &> /dev/null; then
+        rlServiceStop swtpm
+    fi
+    if rpm -q ibmswtpm2 &> /dev/null; then
+        rlServiceStop ibm-tpm-emulator
+    fi
 
 }
 
@@ -680,9 +694,9 @@ limeInstallIMAConfig() {
         FILE=$limeLibraryDir/ima-policy
     fi
 
-    rlRun "mkdir -p /etc/ima/ && cat $FILE > /etc/ima/ima-policy"
+    mkdir -p /etc/ima/ && cat $FILE > /etc/ima/ima-policy && \
     if [ $(cat /sys/kernel/security/ima/policy | wc -l) -eq 0 ]; then
-        rlRun "cat $FILE > /sys/kernel/security/ima/policy"
+        cat $FILE > /sys/kernel/security/ima/policy
     else
         rlLogWarning "IMA policy already configured in /sys/kernel/security/ima/policy"
         echo -e "Required policy\n~~~~~~~~~~~~~~~~~~~~"
@@ -915,7 +929,7 @@ mkdir -p $__INTERNAL_limeCoverageDir
 
 # set monitor mode so we can kill the background process
 # https://unix.stackexchange.com/questions/372541/why-doesnt-sigint-work-on-a-background-process-in-a-script
-$__INTERNAL_limeCoverageEnabled && set -m
+set -m
 
 
 #   Purge log files for a new test. It is therefore important to rlImport

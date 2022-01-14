@@ -14,25 +14,25 @@ rlJournalStart
         # if IBM TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
-            limeStartTPMEmulator
+            rlRun "limeStartTPMEmulator"
             rlRun "limeWaitForTPMEmulator"
             # make sure tpm2-abrmd is running
             rlServiceStart tpm2-abrmd
             sleep 5
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
-            limeInstallIMAConfig
-            limeStartIMAEmulator
+            rlRun "limeInstallIMAConfig"
+            rlRun "limeStartIMAEmulator"
         else
             rlServiceStart tpm2-abrmd
         fi
         sleep 5
         # start keylime_verifier
-        limeStartVerifier
+        rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
-        limeStartRegistrar
+        rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        limeStartAgent
+        rlRun "limeStartAgent"
         sleep 5
         # create allowlist and excludelist
         limeCreateTestLists
@@ -67,16 +67,16 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        limeStopAgent
-        limeStopRegistrar
-        limeStopVerifier
+        rlRun "limeStopAgent"
+        rlRun "limeStopRegistrar"
+        rlRun "limeStopVerifier"
         rlFileSubmit $(limeVerifierLogfile)
         rlFileSubmit $(limeRegistrarLogfile)
         rlFileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
-            limeStopIMAEmulator
+            rlRun "limeStopIMAEmulator"
             rlFileSubmit $(limeIMAEmulatorLogfile)
-            limeStopTPMEmulator
+            rlRun "limeStopTPMEmulator"
         fi
         rlServiceRestore tpm2-abrmd
         limeClearData
