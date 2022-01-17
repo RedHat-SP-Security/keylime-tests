@@ -1,47 +1,54 @@
-Currently, scenario can be successfully manually executed on 1minutetip system.
+## Running tests on a local test system
 
-## 1minutetip
+### Using tmt (Test Metadata Tool)
 
-On your workstation
-```
-$ cd /tmp
-$ git@github.com:RedHat-SP-Security/keylime-tests.git^C
-$ git clone -b ksrot_install_tpm git@github.com:RedHat-SP-Security/keylime-tests.git
-$ 1minutetip -n rhel9
-```
+Install [`tmt`](https://tmt.readthedocs.io/en/latest/overview.html) and clone tests repository
 
-On 1minutetip system
 ```
-# ## you may want to allow root login
-# sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
-# systemctl restart sshd
-# ip a l
-# ## note down 1minutetip system IP
+# yum -y install tmt
+# git clone https://github.com/RedHat-SP-Security/keylime-tests.git
+# cd keylime-tests
 ```
 
-On your workstation
+With `tmt` you can easily run whole test plan. Currently, there is one
+plan store in the `plans/keylime-tests-github-ci` file.
+You may want to update it to run only the required tasks.
+
 ```
-$ scp -r keylime-tests root@10.0.X.Y:~
+# tmt run -vvv prepare discover provision -h local execute
 ```
-On 1minutetip system
+
+### Manual test execution
+
+For troubleshooting purposes you may want to run particular test
+manually. Remember that some setup tasks needs to be run on
+a test system before tests.
+
+Prior running a test make sure that all package requires
+listed in `main.fmf` file are installed.
+
 ```
-# ## configure TPM emulator
-# cd keylime-tests/install/configure_tpm_emulator/
-# bash test.sh
-# ## install keylime from upstream
-# cd ../install_upstream_keylime/
-# bash test.sh
-# ## run the test scenario
 # cd ../../functional/basic-attestation-on-localhost/
+# ## make sure to install all requires from main.fmf
 # bash test.sh
 ```
-## Beaker system with TPM
 
-ATM we can use 3 systems used for NBDE testing that have TPM virtualized by QEMU.
-Such system can be reserved e.g. using:
+### Running CI tests from the upstream keylime project
+
+Clone the upstream keylime bits (and change the branch if needed).
+```
+# git clone https://github.com/keylime/keylime.git
+```
+
+Test plan for functional CI tests is stored in `packit.yaml`.
+You may want to edit the file e.g. to point to a different
+tests repository and branch by modifying the section listed below.
 
 ```
-$ bkr workflow-tomorrow --reserve --distro RHEL-9.0.0-20210914.0 --hostrequire 'TPM=2' --hostrequire 'system_type=Resource' --arch x86_64
+discover:
+    how: fmf
+    url: https://github.com/RedHat-SP-Security/keylime-tests
+    reference: main
 ```
 
-Test scenario can be executed in a similar fashion with one change. Instead of /keylime/install/configure_tpm_emulator/ you should run /keylime/install/configure_kernel_ima_module/ test. This test reboots the system so once it comes up again you should run the test once more to complete the setup.
+Then you can run tests using the `tmt` tool as described in the section above.
