@@ -1,5 +1,10 @@
 ## Running tests on a local test system
 
+The following distributions are supported and tested via Packit CI.
+ * Stable Fedora distributions (Fedora-34, Fedora-35)
+ * Fedora Rawhide
+ * CentOS Stream 9 / RHEL-9
+
 ### Using tmt (Test Metadata Tool)
 
 Install [`tmt`](https://tmt.readthedocs.io/en/latest/overview.html) and clone tests repository
