@@ -235,37 +235,70 @@ limeClearData() {
 #   Start/Stop
 # ~~~~~~~~~~~~~~~~~~~~
 
-__limeStartKeylimeService() {
-
+__limeGetLogName() {
     local NAME=$1
     local LOGSUFFIX
     [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
+    echo ${!LOGNAME}
+}
+
+__limeStartKeylimeService() {
+
+    local NAME=$1
+    local LOGFILE=$( __limeGetLogName $1 $2 )
 
     if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-        coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) 2>&1 >> ${!LOGNAME} &
+        coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
     else
-        keylime_${NAME} 2>&1 >> ${!LOGNAME} &
+        keylime_${NAME} >> ${LOGFILE} 2>&1 &
     fi
+
 }
 
 
 __limeStopKeylimeService() {
 
     local NAME=$1
+    local LOGFILE=$( __limeGetLogName $1 $2 )
     local RET=0
+    local TAIL=1
 
-    pgrep -f keylime_${NAME} &> /dev/null && pkill -INT -f keylime_${NAME}
-    sleep 2
-    if pgrep -f keylime_${NAME} &> /dev/null; then
-        pkill -f keylime_${NAME}
-        sleep 2
-        if pgrep -f keylime_${NAME} &> /dev/null; then
-            RET=2
-            pkill -KILL -f keylime_${NAME}
-        fi
+    # find the tail of the log file
+    [ -f ${LOGFILE} ] && TAIL=$( cat ${LOGFILE} | wc -l )
+    [ $TAIL -eq 0 ] && TAIL=1
+
+    # send SIGINT when measuring coverage to generate the report
+    if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
+        pkill -INT -f keylime_${NAME}
+        sleep 3
     fi
+    # send SIGTERM if not stopped yet
+    if pgrep -f keylime_${NAME} &> /dev/null; then
+        #if $__INTERNAL_limeCoverageEnabled; then
+        #    echo "Process wasn't termnated after SIGINT, coverage data may not be correct"
+        #    RET=1
+        #fi
+        pkill -f keylime_${NAME}
+        sleep 3
+    fi
+    # check the log file if there was a Traceback
+    # and set RET=1 eventually
+    if [ -f ${LOGFILE} ] && sed -n "$TAIL,\$ p" ${LOGFILE} | grep -q Traceback; then
+        RET=2
+        # print the Traceback to the test log
+        sed -n "$TAIL,\$ p" ${LOGFILE}
+    fi
+    # send SIGKILL if the process didn't stop yet
+    if pgrep -f keylime_${NAME} &> /dev/null; then
+        echo "Process wasn't terminate, sending SIGKILL signal..."
+        RET=9
+        pkill -KILL -f keylime_${NAME}
+    fi
+
+    # copy .coverage* files to a persistent location
     $__INTERNAL_limeCoverageEnabled && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
+
     return $RET
 
 }
