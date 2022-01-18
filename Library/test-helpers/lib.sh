@@ -291,7 +291,7 @@ __limeStopKeylimeService() {
     fi
     # send SIGKILL if the process didn't stop yet
     if pgrep -f keylime_${NAME} &> /dev/null; then
-        echo "Process wasn't terminate, sending SIGKILL signal..."
+        echo "Process wasn't terminated with SIGTERM, sending SIGKILL signal..."
         RET=9
         pkill -KILL -f keylime_${NAME}
     fi
