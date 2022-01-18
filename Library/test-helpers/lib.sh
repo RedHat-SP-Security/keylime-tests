@@ -282,10 +282,10 @@ __limeStopKeylimeService() {
         pkill -f keylime_${NAME}
         sleep 3
     fi
-    # check the log file if there was a Traceback
-    # and set RET=1 eventually
+    # check the log file if there was a Traceback and print it to the test log
+    # (and set RET=2 eventually)
     if [ -f ${LOGFILE} ] && sed -n "$TAIL,\$ p" ${LOGFILE} | grep -q Traceback; then
-        RET=2
+        #RET=2
         # print the Traceback to the test log
         sed -n "$TAIL,\$ p" ${LOGFILE}
     fi
