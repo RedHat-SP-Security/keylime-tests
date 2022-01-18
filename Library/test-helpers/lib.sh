@@ -256,6 +256,24 @@ __limeStartKeylimeService() {
 
 }
 
+__limeWaitForProcessEnd() {
+    local NAME=$1
+    local TIMEOUT=15
+    local RET=1
+
+    [ -n "$2" ] && TIMEOUT=$2
+    for I in $( seq $TIMEOUT ); do
+        echo -n "."
+        sleep 1
+        # if process has already stopped
+        if ! pgrep -f ${NAME} &> /dev/null; then
+            RET=0
+            break
+        fi
+    done
+    echo
+    return $RET
+}
 
 __limeStopKeylimeService() {
 
@@ -271,7 +289,7 @@ __limeStopKeylimeService() {
     # send SIGINT when measuring coverage to generate the report
     if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
         pkill -INT -f keylime_${NAME}
-        sleep 3
+        __limeWaitForProcessEnd keylime_${NAME}
     fi
     # send SIGTERM if not stopped yet
     if pgrep -f keylime_${NAME} &> /dev/null; then
@@ -280,7 +298,7 @@ __limeStopKeylimeService() {
         #    RET=1
         #fi
         pkill -f keylime_${NAME}
-        sleep 3
+        __limeWaitForProcessEnd keylime_${NAME}
     fi
     # check the log file if there was a Traceback and print it to the test log
     # (and set RET=2 eventually)
@@ -294,6 +312,7 @@ __limeStopKeylimeService() {
         echo "Process wasn't terminated with SIGTERM, sending SIGKILL signal..."
         RET=9
         pkill -KILL -f keylime_${NAME}
+        __limeWaitForProcessEnd keylime_${NAME}
     fi
 
     # copy .coverage* files to a persistent location
