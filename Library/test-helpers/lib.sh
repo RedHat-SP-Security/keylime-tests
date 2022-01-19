@@ -300,21 +300,20 @@ __limeStopKeylimeService() {
         pkill -f keylime_${NAME}
         __limeWaitForProcessEnd keylime_${NAME}
     fi
-    # check the log file if there was a Traceback and print it to the test log
-    # (and set RET=2 eventually)
-    if [ -f ${LOGFILE} ] && sed -n "$TAIL,\$ p" ${LOGFILE} | grep -q Traceback; then
-        #RET=2
-        # print the Traceback to the test log
-        sed -n "$TAIL,\$ p" ${LOGFILE}
-    fi
     # send SIGKILL if the process didn't stop yet
     if pgrep -f keylime_${NAME} &> /dev/null; then
+        pgrep -af keylime_${NAME}
         echo "Process wasn't terminated with SIGTERM, sending SIGKILL signal..."
         RET=9
         pkill -KILL -f keylime_${NAME}
         __limeWaitForProcessEnd keylime_${NAME}
     fi
-
+    # in case of an error print tail of service log
+    if [ $RET -ne 0 ] && [ -f ${LOGFILE} ]; then
+        echo "----- Tail of ${LOGFILE} -----"
+        sed -n "$TAIL,\$ p" ${LOGFILE}
+        echo "------------------------------"
+    fi
     # copy .coverage* files to a persistent location
     $__INTERNAL_limeCoverageEnabled && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
 
