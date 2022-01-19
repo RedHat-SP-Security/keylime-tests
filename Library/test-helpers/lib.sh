@@ -507,7 +507,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeStopIMAEmulator() {
 
-    __limeStopKeylimeService ima_emulator
+    __limeStopKeylimeService ima_emulator IMAEmulator
 
 }
 
