@@ -294,6 +294,7 @@ __limeStopKeylimeService() {
     fi
     # send SIGTERM if not stopped yet
     if pgrep -f keylime_${NAME} &> /dev/null; then
+pgrep -af keylime
         #if $__INTERNAL_limeCoverageEnabled; then
         #    echo "Process wasn't termnated after SIGINT, coverage data may not be correct"
         #    RET=1
