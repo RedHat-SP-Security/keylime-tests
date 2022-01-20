@@ -287,9 +287,11 @@ __limeStopKeylimeService() {
     [ $TAIL -eq 0 ] && TAIL=1
 
     # send SIGINT when measuring coverage to generate the report
-    if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
+    #if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
+    if pgrep -f keylime_${NAME} &> /dev/null; then
         pkill -INT -f keylime_${NAME}
-        __limeWaitForProcessEnd keylime_${NAME}
+        sleep 2
+        #__limeWaitForProcessEnd keylime_${NAME}
     fi
     # send SIGTERM if not stopped yet
     if pgrep -f keylime_${NAME} &> /dev/null; then
@@ -298,12 +300,13 @@ __limeStopKeylimeService() {
         #    RET=1
         #fi
         pkill -f keylime_${NAME}
-        __limeWaitForProcessEnd keylime_${NAME}
+        #__limeWaitForProcessEnd keylime_${NAME}
+        sleep 3
     fi
     # check the log file if there was a Traceback and print it to the test log
     # (and set RET=2 eventually)
     if [ -f ${LOGFILE} ] && sed -n "$TAIL,\$ p" ${LOGFILE} | grep -q Traceback; then
-        #RET=2
+        RET=2
         # print the Traceback to the test log
         sed -n "$TAIL,\$ p" ${LOGFILE}
     fi
