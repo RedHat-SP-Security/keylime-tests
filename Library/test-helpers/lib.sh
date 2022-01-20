@@ -106,7 +106,7 @@ Return success or failure depending on whether TPM emulator is used.
 
 limeTPMEmulated() {
     # naive approach, can be improved in future
-    rpm -q ibmswtpm2 &> /dev/null || rpm -q swtpm &> /dev/null
+    rpm -q swtpm &> /dev/null
 }
 
 
@@ -536,9 +536,6 @@ limeStartTPMEmulator() {
         mkdir -p /var/lib/tpm/swtpm
         rlServiceStart swtpm
     fi
-    if rpm -q ibmswtpm2 &> /dev/null; then
-        rlServiceStart ibm-tpm-emulator
-    fi
 
 }
 
@@ -563,9 +560,6 @@ limeStopTPMEmulator() {
 
     if rpm -q swtpm &> /dev/null; then
         rlServiceStop swtpm
-    fi
-    if rpm -q ibmswtpm2 &> /dev/null; then
-        rlServiceStop ibm-tpm-emulator
     fi
 
 }

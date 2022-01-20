@@ -11,55 +11,16 @@ if [ "$RUNNING" != "0" -a "$RUNNING" != "1" ]; then
     systemctl is-active --quiet tpm2-abrmd && RUNNING=1 || RUNNING=0
 fi
 
-TPM_EMULATOR=ibm-tpm-emulator
-rlIsFedora && TPM_EMULATOR=swtpm
+TPM_EMULATOR=swtpm
 
 rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         # for RHEL or CentOS Stream we use Sergio's build of IBM TPM emulator
-        if ! rlIsFedora; then
-            # configure Sergio's copr repo providing necessary dependencies
-            rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
-[copr:copr.fedorainfracloud.org:scorreia:keylime-c9s]
-name=Copr repo for keylime-c9s owned by scorreia
-baseurl=https://download.copr.fedorainfracloud.org/results/scorreia/keylime-c9s/centos-stream-9-\$basearch/
-type=rpm-md
-skip_if_unavailable=True
-gpgcheck=1
-gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime-c9s/pubkey.gpg
-repo_gpgcheck=0
-enabled=1
-enabled_metadata=1
-_EOF'
-            rlRun "yum -y install ibmswtpm2 cfssl tpm2-abrmd tpm2-tools"
-            # update tpm2-abrmd unit file
-            rlRun "cat > /etc/systemd/system/tpm2-abrmd.service <<_EOF
-[Unit]
-Description=TPM2 Access Broker and Resource Management Daemon
-# These settings are needed when using the device TCTI. If the
-# TCP mssim is used then the settings should be commented out.
-#After=dev-tpm0.device
-#Requires=dev-tpm0.device
-ConditionPathExistsGlob=
-
-[Service]
-Type=dbus
-BusName=com.intel.tss2.Tabrmd
-ExecStart=/usr/sbin/tpm2-abrmd --tcti=mssim
-User=tss
-
-[Install]
-WantedBy=multi-user.target
-_EOF"
-        fi
-
-        # for Fedora we use swtpm TPM emulator
-        if rlIsFedora; then
-            rlRun "yum -y install swtpm swtpm-tools tpm2-tss selinux-policy-devel tpm2-abrmd tpm2-tools"
-            # create swtpm unit file as it doesn't exist
-            rlRun "cat > /etc/systemd/system/swtpm.service <<_EOF
+        rlRun "yum -y install swtpm swtpm-tools tpm2-tss selinux-policy-devel tpm2-abrmd tpm2-tools"
+        # create swtpm unit file as it doesn't exist
+        rlRun "cat > /etc/systemd/system/swtpm.service <<_EOF
 [Unit]
 Description=swtpm TPM Software emulator
 
@@ -72,8 +33,8 @@ ExecStart=/usr/bin/swtpm socket --tpmstate dir=/var/lib/tpm/swtpm --log level=4 
 [Install]
 WantedBy=multi-user.target
 _EOF"
-            # update tpm2-abrmd unit file
-            rlRun "cat > /etc/systemd/system/tpm2-abrmd.service <<_EOF
+        # update tpm2-abrmd unit file
+        rlRun "cat > /etc/systemd/system/tpm2-abrmd.service <<_EOF
 [Unit]
 Description=TPM2 Access Broker and Resource Management Daemon
 # These settings are needed when using the device TCTI. If the
@@ -91,16 +52,15 @@ User=tss
 [Install]
 WantedBy=multi-user.target
 _EOF"
-            # now we need to build custom selinux module making swtpm_t a permissive domain
-            # since the policy module shipped with swtpm package doesn't seem to work
-            # see https://github.com/stefanberger/swtpm/issues/632 for more details
-            if ! semodule -l | grep -q swtpm_permissive; then
-                rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
-                rlAssertExists swtpm_permissive.pp
-                rlRun "semodule -i swtpm_permissive.pp"
-            fi
-            rlRun "setsebool -P tabrmd_connect_all_unreserved on"
+        # now we need to build custom selinux module making swtpm_t a permissive domain
+        # since the policy module shipped with swtpm package doesn't seem to work
+        # see https://github.com/stefanberger/swtpm/issues/632 for more details
+        if ! semodule -l | grep -q swtpm_permissive; then
+            rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
+            rlAssertExists swtpm_permissive.pp
+            rlRun "semodule -i swtpm_permissive.pp"
         fi
+        rlRun "setsebool -P tabrmd_connect_all_unreserved on"
         # allow tpm2-abrmd to connect to swtpm port
         rlRun "systemctl daemon-reload"
     rlPhaseEnd
