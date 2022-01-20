@@ -287,8 +287,8 @@ __limeStopKeylimeService() {
     [ $TAIL -eq 0 ] && TAIL=1
 
     # send SIGINT when measuring coverage to generate the report
-    #if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
-    if pgrep -f keylime_${NAME} &> /dev/null; then
+    if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
+    #if pgrep -f keylime_${NAME} &> /dev/null; then
         pkill -INT -f keylime_${NAME}
         sleep 2
         #__limeWaitForProcessEnd keylime_${NAME}
