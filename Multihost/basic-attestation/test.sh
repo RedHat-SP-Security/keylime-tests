@@ -108,8 +108,8 @@ Verifier() {
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
-        rlRun "rhts-sync-set -s VERIFIER_SETUP_DONE_${DEBUG_RUN_COUNTER}"
-        rlRun "rhts-sync-block -s AGENT_ALL_TESTS_DONE_${DEBUG_RUN_COUNTER} $AGENT" 0 "Waiting for the Agent to finish the test"
+        rlRun "sync-set VERIFIER_SETUP_DONE"
+        rlRun "sync-block AGENT_ALL_TESTS_DONE ${AGENT_IP}" 0 "Waiting for the Agent to finish the test"
     rlPhaseEnd
 
     rlPhaseStartTest "Verifier test"
@@ -130,7 +130,7 @@ Verifier() {
 Registrar() {
     rlPhaseStartSetup "Registrar setup"
         # Registrar setup goes here
-        rlRun "rhts-sync-block -s VERIFIER_SETUP_DONE_${DEBUG_RUN_COUNTER} $VERIFIER" 0 "Waiting for the Verifier to start"
+        rlRun "sync-block VERIFIER_SETUP_DONE ${VERIFIER_IP}" 0 "Waiting for the Verifier to start"
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
@@ -164,8 +164,8 @@ Registrar() {
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
 
-        rlRun "rhts-sync-set -s REGISTRAR_SETUP_DONE_${DEBUG_RUN_COUNTER}"
-        rlRun "rhts-sync-block -s AGENT_ALL_TESTS_DONE_${DEBUG_RUN_COUNTER} $AGENT" 0 "Waiting for the Agent to finish the test"
+        rlRun "sync-set REGISTRAR_SETUP_DONE"
+        rlRun "sync-block AGENT_ALL_TESTS_DONE ${AGENT_IP}" 0 "Waiting for the Agent to finish the test"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Registrar cleanup"
@@ -178,7 +178,7 @@ Registrar() {
 Agent() {
     rlPhaseStartSetup "Agent and tenant setup"
         # Agent and tenant setup goes here
-        rlRun "rhts-sync-block -s REGISTRAR_SETUP_DONE_${DEBUG_RUN_COUNTER} $REGISTRAR" 0 "Waiting for the Registrar finish to start"
+        rlRun "sync-block REGISTRAR_SETUP_DONE ${REGISTRAR_IP}" 0 "Waiting for the Registrar finish to start"
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
@@ -253,7 +253,7 @@ Agent() {
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent cleanup"
-        rlRun "rhts-sync-set -s AGENT_ALL_TESTS_DONE_${DEBUG_RUN_COUNTER}"
+        rlRun "sync-set AGENT_ALL_TESTS_DONE"
         rlRun "limeStopAgent"
         rlFileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
@@ -290,6 +290,7 @@ rlJournalStart
 
         # import keylime library
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
         rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
         # backup files
         limeBackupConfig
@@ -298,14 +299,19 @@ rlJournalStart
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
-    if echo $VERIFIER | grep -q $HOSTNAME ; then
+    MY_IP=$( hostname -I | awk '{ print $1 }' )
+    if echo " $HOSTNAME $MY_IP " | grep -q " $VERIFIER "; then
         Verifier
-    elif echo $REGISTRAR | grep -q $HOSTNAME ; then
+    elif echo " $HOSTNAME $MY_IP " | grep -q " ${REGISTRAR} "; then
         Registrar
-    elif echo $AGENT | grep -q $HOSTNAME ; then
+    elif echo " $HOSTNAME $MY_IP " | grep -q " ${AGENT} "; then
         Agent
+    elif echo " $HOSTNAME $MY_IP " | grep -q " ${AGENT2} "; then
+        Agent2
     else
-        rlReport "Unknown role" "FAIL"
+        rlPhaseStartTest
+            rlFail "Unknown role"
+        rlPhaseEnd
     fi
 
     rlPhaseStartCleanup

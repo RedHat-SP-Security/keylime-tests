@@ -1,0 +1,110 @@
+#!/bin/bash
+STATUS_FILE=/var/tmp/sync-status
+PORT=1918
+TMPFILE=$( mktemp )
+[ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] || SYNC_DEBUG=false
+
+function debug() {
+    $SYNC_DEBUG && echo -e $@
+}
+
+# enable debug mode?
+if [ "$1" == "-d" ]; then
+    SYNC_DEBUG=true
+    shift
+fi
+
+# for incorrect number parameters print help
+if [ -z "$1" -o -z "$2" -o "$1" == "-h" -o "$1" == "--help" ]; then
+    echo "Usage: $0 [-d] STATE HOST_IDENTIFIER"
+    echo "e.g. $0 TEST_READY foo.bar.com"
+    exit 1
+fi
+
+# get STATE
+# ${XTRA} is being added for compatibility purposes with Beaker/Restraing
+# also, ${XTRA} should be changed for each manual test run
+STATE="${XTRA}_$1"
+shift
+
+function is_blocked() {
+
+    BLOCKED=false
+    while [ -n "$1" ]; do
+
+        IDENTIFIER="$1"
+        debug "\nchecking STATE $STATE of IDENTIFIER $IDENTIFIER"
+
+        # when SYNC_PROVIDER not set, connect to the provided HOST_IDENTIFIER
+        if [ -n "$SYNC_PROVIDER" ]; then
+            PROVIDER="$SYNC_PROVIDER"
+        else
+            PROVIDER="$IDENTIFIER"
+        fi
+        debug "status PROVIDER $PROVIDER"
+
+        MY_FQDNS="$( hostname -A | sed -e 's/localhost\(.localdomain\)*//g' )"
+        MY_IPS="$( hostname -I )"
+        MY_IDENTIFIERS="$MY_FQDNS $MY_IPS"
+
+        # when I am the SYNC_PROVIDER read statuses locally
+        if echo " $MY_IDENTIFIERS " | egrep -q " $PROVIDER "; then
+            debug "reading statuses from local $STATUS_FILE"
+            cat $STATUS_FILE > $TMPFILE
+        else
+            # read the status file over the network
+            debug "reading statuses from $PROVIDER"
+            ncat --recv-only $PROVIDER $PORT 2> /dev/null > $TMPFILE
+        fi
+
+        if [ $? -eq 0 ]; then
+
+            $SYNC_DEBUG && echo "--- response ---" && cat $TMPFILE && echo "----------------"
+            # I am blocked if there is not a line with STATE for the given IDENTIFIER
+            egrep -q "^$STATE:" $TMPFILE || BLOCKED=true
+            egrep -q "^$STATE:.* $IDENTIFIER " $TMPFILE || BLOCKED=true
+            $BLOCKED && debug "$IDENTIFIER is blocked" || debug "$IDENTIFIER is not blocked"
+
+        else
+
+            # when getting status failed I am blocked
+            debug "getting status failed"
+            BLOCKED=true
+
+        fi
+
+        # when blocked, terminate the loop
+        if $BLOCKED; then
+            debug "$IDENTIFIER is blocked, terminating this round"
+            break
+        fi
+
+        # move to the next IDENTIFIER
+        shift
+
+    done
+
+    rm $TMPFILE
+    $BLOCKED && debug "\ndecision is BLOCKED" || debug "\ndecision is NOT BLOCKED"
+
+    if $BLOCKED; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+ROUND=1
+DELAYS="1 1 2 3 5 8 13 21 34 55"
+echo -n "Checking status - round $ROUND: "
+
+while is_blocked "$@"; do
+    echo "BLOCKED"
+    DELAY=${DELAYS%% *}  # current delay
+    DELAYS=${DELAYS#* }  # cut-off current delay for DELAYS list (except the last one)
+    sleep $DELAY
+    ROUND=$(( $ROUND+1 ))
+    echo -n "Checking status - round $ROUND: "
+done
+
+echo "UNBLOCKED"

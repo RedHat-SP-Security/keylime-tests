@@ -1,0 +1,14 @@
+[Unit]
+Description=sync-get service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ncat -l -k -e '/usr/bin/cat /var/tmp/sync-status' --send-only 1918
+TimeoutStopSec=5
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
+

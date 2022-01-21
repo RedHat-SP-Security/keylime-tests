@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# file for tracking sync states on this system (if used)
+STATUS_FILE=/var/tmp/sync-status
+[ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] || SYNC_DEBUG=false
+
+function debug() {
+    $SYNC_DEBUG && echo -e $@
+}
+
+# enable debug mode?
+if [ "$1" == "-d" ]; then
+    SYNC_DEBUG=true
+    shift
+fi
+
+# print help
+if [ -z "$1" -o "$1" == "-h" -o "$1" == "--help" ]; then
+    echo "Usage: $0 STATE [HOST_IDENTIFIER]"
+    echo "e.g. $0 TEST_READY foo.bar.com"
+    echo "     $0 TEST_READY foo.bar.com 10.0.2.35"
+    exit 1
+fi
+
+# save STATE
+# ${XTRA} is being added for compatibility purposes with Beaker/Restraing
+# also, ${XTRA} should be changed for each manual test run
+STATE="${XTRA}_$1"
+shift
+
+# save IDENTIFIERs
+IDENTIFIERS="$@"
+MY_FQDNS="$( hostname -A | sed -e 's/localhost\(.localdomain\)*//g' )"
+MY_IPS="$( hostname -I )"
+MY_IDENTIFIERS="$MY_FQDNS $MY_IPS"
+
+# use MY_IDENTIFIERS if IDENTIFIERS were not provided on cmdline
+if [ -z "$IDENTIFIERS" ]; then
+    IDENTIFIERS="$MY_IDENTIFIERS"
+fi
+
+# build a MESSAGE and remove redundant spaces
+MESSAGE=$( echo "$STATE: $IDENTIFIERS " | sed -r -e 's/[ ]+/ /g' )
+debug "MESSAGE='$MESSAGE'"
+
+# when SYNC_PROVIDER is not set or I am the SYNC_PROVIDER
+# and will store the message locally
+if [ -z "$SYNC_PROVIDER" ] || echo " $MY_IDENTIFIERS " | egrep -q " $SYNC_PROVIDER "; then
+
+    # check if the message hasn't been saved already
+    if grep -q "^$MESSAGE\$" $STATUS_FILE 2> /dev/null; then
+        debug "message has been already saved"
+    else
+        echo "$MESSAGE" >> $STATUS_FILE
+        debug "message saved to $STATUS_FILE"
+    fi
+ 
+else
+
+    # remove SYNC_PROVIDER is not yet implemented
+    :
+
+fi
+
+exit 0

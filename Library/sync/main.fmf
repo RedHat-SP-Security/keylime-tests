@@ -1,0 +1,16 @@
+summary: sync library
+description: 'beakerlib library providing synchronization capabilities for multi-host tests'
+contact: Karel Srot <ksrot@redhat.com>
+component: []
+test: ./runtest.sh
+framework: beakerlib
+require:
+- nmap-ncat
+- hostname
+- systemd
+duration: 5m
+enabled: true
+adjust:
+-   enabled: false
+    when: distro == rhel-4, rhel-5, rhel-6, rhel-7
+    continue: false
