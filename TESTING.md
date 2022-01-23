@@ -11,8 +11,8 @@ Install [`tmt`](https://tmt.readthedocs.io/en/latest/overview.html) and clone te
 
 ```
 # yum -y install tmt
-# git clone https://github.com/RedHat-SP-Security/keylime-tests.git
-# cd keylime-tests
+$ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
+$ cd keylime-tests
 ```
 
 With `tmt` you can easily run all test plans. Currently, there is one
@@ -20,7 +20,7 @@ test plan in the `plans/keylime-tests-github-ci` file.
 You may want to update it to run only the required tasks.
 
 ```
-# tmt run -vvv prepare discover provision -h local execute
+$ tmt run -vvv prepare discover provision -h local execute
 ```
 
 ### Manual test execution
@@ -50,14 +50,14 @@ First you need to install `tmt` tool and clone tests repository.
 
 ```
 # yum -y install tmt tmt-provision-virtual
-# git clone https://github.com/RedHat-SP-Security/keylime-tests.git
+$ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 ```
 
 Then you can run a test plan e.g. on F35 system.
 
 ```
-# cd keylime-tests
-# tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute finish
+$ cd keylime-tests
+$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute finish
 ```
 
 The above command will download Fedora-35 image and use it for a newly created virtual
@@ -66,8 +66,8 @@ However, for debugging purposes you may want to access test system once
 tests are finished. The `tmt login` command used below will give you a shell after all tests are finished.
 
 ```
-# cd keylime-tests
-# tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute login finish
+$ cd keylime-tests
+$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute login finish
 ```
 
 You can use it to inspect test logs or even modify test sources and run your tests
@@ -131,4 +131,8 @@ discover:
     ref: main
 ```
 
-Then you can run tests using the `tmt` tool as described in the section above.
+Then you can run tests using the `tmt` command as described in the section above.
+E.g. with
+```
+$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute finish
+```
