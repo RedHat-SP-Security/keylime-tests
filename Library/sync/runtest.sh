@@ -46,7 +46,7 @@ rlJournalStart
             rlRun -s "sync-block -d READY $( hostname -i )"
             rlAssertGrep "UNBLOCKED" $rlRun_LOG
             rlServiceStart sync-get
-            rlRun -s "ncat --recv-only localhost 1918"
+            rlRun -s "ncat --recv-only localhost 2134"
             rlAssertGrep "READY:.* $( hostname -i )" $rlRun_LOG -E
             rlServiceStop sync-get
         rlPhaseEnd

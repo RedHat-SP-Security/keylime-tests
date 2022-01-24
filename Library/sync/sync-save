@@ -1,0 +1,13 @@
+#!/bin/bash
+STATUS_FILE=/var/tmp/sync-status
+echo "connected"
+
+# read only 1st line
+LINE=$( head -1 <&0 )
+# do some dumb input sanitization
+LINE=${LINE//[^a-zA-Z0-9_ :\-\.]/}
+
+if ! grep -q "^$LINE\$" $STATUS_FILE; then
+    echo "$LINE" >> $STATUS_FILE
+fi
+grep -q "^$LINE\$" $STATUS_FILE && echo "saved: $LINE" || echo "error"

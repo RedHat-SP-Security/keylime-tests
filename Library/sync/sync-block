@@ -1,6 +1,6 @@
 #!/bin/bash
 STATUS_FILE=/var/tmp/sync-status
-PORT=1918
+PORT=2134
 TMPFILE=$( mktemp )
 [ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] || SYNC_DEBUG=false
 
@@ -21,10 +21,18 @@ if [ -z "$1" -o -z "$2" -o "$1" == "-h" -o "$1" == "--help" ]; then
     exit 1
 fi
 
+# sanitize remaining command line arguments
+ARGS="${@//[^a-zA-Z0-9_ :\-\.]/}"
+set -- $ARGS
+
 # get STATE
 # ${XTRA} is being added for compatibility purposes with Beaker/Restraing
 # also, ${XTRA} should be changed for each manual test run
-STATE="${XTRA}_$1"
+if [ -n "${XTRA}" ]; then
+    STATE="${XTRA}_$1"
+else
+    STATE="$1"
+fi
 shift
 
 function is_blocked() {
@@ -95,7 +103,7 @@ function is_blocked() {
 }
 
 ROUND=1
-DELAYS="1 1 2 3 5 8 13 21 34 55"
+DELAYS="1 1 2 3 5 8 13 21"
 echo -n "Checking status - round $ROUND: "
 
 while is_blocked "$@"; do

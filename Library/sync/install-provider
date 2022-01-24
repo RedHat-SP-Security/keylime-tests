@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# get the script location
+DIR=$( dirname $0 )
+STATUS_FILE=/var/tmp/sync-status
+
+touch $STATUS_FILE
+
+# check that all required files are present
+for FILE in sync-get.service sync-save.service sync-save; do
+    if ! [ -f "$DIR/$FILE" ]; then
+        echo "Cannot find '$DIR/$FILE'"
+        exit 1
+    fi
+done
+
+rpm -q nmap-ncat 2> /dev/null || yum -y install nmap-ncat
+
+# install the sync-save script
+which sync-save &> /dev/null || cp $DIR/sync-save /usr/local/bin && chmod a+x /usr/local/bin/sync-save
+
+# now install unit files and (re)start services
+for SERVICE in sync-get.service sync-save.service; do
+    cp "$DIR/$SERVICE" /etc/systemd/system
+    systemctl daemon-reload
+    systemctl stop $SERVICE &> /dev/null
+    systemctl --now enable $SERVICE &> /dev/null
+    sleep 1
+    if systemctl is-active $SERVICE; then
+        echo "$SERVICE service has been started"
+    else
+        echo "$SERVICE service start has failed"
+        exit 1
+    fi
+done
