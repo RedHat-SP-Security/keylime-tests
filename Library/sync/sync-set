@@ -2,6 +2,8 @@
 
 # file for tracking sync states on this system (if used)
 STATUS_FILE=/var/tmp/sync-status
+SYNC_PROVIDER_PORT=2135
+# save STDIN to TPMFILE
 [ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] || SYNC_DEBUG=false
 
 function debug() {
@@ -22,10 +24,18 @@ if [ -z "$1" -o "$1" == "-h" -o "$1" == "--help" ]; then
     exit 1
 fi
 
+# sanitize remaining command line arguments
+ARGS="${@//[^a-zA-Z0-9_ :\-\.]/}"
+set -- $ARGS
+
 # save STATE
 # ${XTRA} is being added for compatibility purposes with Beaker/Restraing
 # also, ${XTRA} should be changed for each manual test run
-STATE="${XTRA}_$1"
+if [ -n "${XTRA}" ]; then
+    STATE="${XTRA}_$1"
+else
+    STATE="$1"
+fi
 shift
 
 # save IDENTIFIERs
@@ -39,8 +49,10 @@ if [ -z "$IDENTIFIERS" ]; then
     IDENTIFIERS="$MY_IDENTIFIERS"
 fi
 
-# build a MESSAGE and remove redundant spaces
-MESSAGE=$( echo "$STATE: $IDENTIFIERS " | sed -r -e 's/[ ]+/ /g' )
+# build a MESSAGE, sanitize it and remove redundant spaces
+MESSAGE="$STATE: $IDENTIFIERS "
+MESSAGE="${MESSAGE//[^a-zA-Z0-9_ :\-\.]/}"
+MESSAGE=$( echo "$MESSAGE" | sed -r -e 's/[ ]+/ /g' )
 debug "MESSAGE='$MESSAGE'"
 
 # when SYNC_PROVIDER is not set or I am the SYNC_PROVIDER
@@ -57,8 +69,20 @@ if [ -z "$SYNC_PROVIDER" ] || echo " $MY_IDENTIFIERS " | egrep -q " $SYNC_PROVID
  
 else
 
-    # remove SYNC_PROVIDER is not yet implemented
-    :
+    debug "sending message to provider $SYNC_PROVIDER"
+    # remote SYNC_PROVIDER is not yet implemented
+    TMPFILE=$( mktemp )
+    I=1
+    # repeat indefinitely until message is confirmed to be received by SYNC_PROVIDER
+    while ! grep -q "^saved:" $TMPFILE; do
+        [ $I -eq 1 ] || sleep 10  # make some delay between failed attempts
+        echo "attempt $I"  # let's make this visible in a test log
+	# send message to the SYNC_PROVIDER through ncat
+        (echo "$MESSAGE" && sleep 1 ) | ncat $SYNC_PROVIDER $SYNC_PROVIDER_PORT > $TMPFILE
+        debug $( cat $TMPFILE )
+        I=$(( $I+1 ))
+    done
+    rm $TMPFILE
 
 fi
 

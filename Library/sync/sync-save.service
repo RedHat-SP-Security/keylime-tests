@@ -1,10 +1,10 @@
 [Unit]
-Description=sync-get service
+Description=sync-save service
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/ncat -l -k -e '/usr/bin/cat /var/tmp/sync-status' --send-only 2134
+ExecStart=ncat -l -k -e /usr/local/bin/sync-save 2135
 TimeoutStopSec=5
 Restart=always
 RestartSec=5s
