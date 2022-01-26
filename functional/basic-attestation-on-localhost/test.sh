@@ -6,11 +6,10 @@
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
-        # update /etc/keylime.conf
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         limeBackupConfig
-        rlRun "sed -i 's/^require_ek_cert.*/require_ek_cert = False/' /etc/keylime.conf"
-        rlRun "sed -i 's/^ca_implementation.*/ca_implementation = openssl/' /etc/keylime.conf"
+        # update /etc/keylime.conf
+        rlRun "limeUpdateConf tenant require_ek_cert False"
         # if IBM TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
