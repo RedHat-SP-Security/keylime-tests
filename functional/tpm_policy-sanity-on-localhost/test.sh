@@ -8,7 +8,7 @@ rlJournalStart
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         limeBackupConfig
-        # if IBM TPM emulator is present
+        # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
             rlRun "limeStartTPMEmulator"

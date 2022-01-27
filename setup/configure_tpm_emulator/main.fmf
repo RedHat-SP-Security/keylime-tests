@@ -1,4 +1,4 @@
-summary: Configures IBM TPM emulator on a running system
+summary: Configures TPM emulator on a running system
 contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
