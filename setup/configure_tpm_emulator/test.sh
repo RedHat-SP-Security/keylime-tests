@@ -17,7 +17,6 @@ rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        # for RHEL or CentOS Stream we use Sergio's build of IBM TPM emulator
         rlRun "yum -y install swtpm swtpm-tools tpm2-tss selinux-policy-devel tpm2-abrmd tpm2-tools"
         # create swtpm unit file as it doesn't exist
         rlRun "cat > /etc/systemd/system/swtpm.service <<_EOF
