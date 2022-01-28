@@ -6,5 +6,8 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
+- tpm2-abrmd
+recommend:
+- keylime
 duration: 15m
 enabled: true

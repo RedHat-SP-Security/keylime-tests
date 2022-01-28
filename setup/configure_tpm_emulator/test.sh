@@ -78,6 +78,14 @@ User=tss
 [Install]
 WantedBy=multi-user.target
 _EOF"
+        # also add drop-in update for eventual keylime_agent unit file
+        rlRun "mkdir /etc/systemd/system/keylime_agent.service.d"
+        rlRun 'cat > /etc/systemd/system/keylime_agent.service.d/10-tcti.conf <<_EOF
+[Service]
+Environment="TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd"
+_EOF'
+        rlRun "systemctl daemon-reload"
+
         if [ "${TPM_EMULATOR}" = "swtpm" ]; then
             # now we need to build custom selinux module making swtpm_t a permissive domain
             # since the policy module shipped with swtpm package doesn't seem to work
@@ -88,9 +96,8 @@ _EOF"
                 rlRun "semodule -i swtpm_permissive.pp"
             fi
         fi
-        rlRun "setsebool -P tabrmd_connect_all_unreserved on"
         # allow tpm2-abrmd to connect to swtpm port
-        rlRun "systemctl daemon-reload"
+        rlRun "setsebool -P tabrmd_connect_all_unreserved on"
     rlPhaseEnd
 
     rlPhaseStartSetup "Start TPM emulator"

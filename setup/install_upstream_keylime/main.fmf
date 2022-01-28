@@ -7,6 +7,8 @@ framework: beakerlib
 require:
  - git
  - yum
+ - gawk
+ - rpm-build
 duration: 5m
 enabled: true
 extra-nitrate: TC#0611727

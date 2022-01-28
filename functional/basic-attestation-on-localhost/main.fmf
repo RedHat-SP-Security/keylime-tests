@@ -7,6 +7,9 @@ framework: beakerlib
 require:
 - yum
 - expect
+- tpm2-abrmd
+recommend:
+- keylime
 duration: 15m
 enabled: true
 extra-nitrate: TC#0611725

@@ -8,6 +8,8 @@ require:
   - yum
   - tpm2-abrmd
   - tpm2-tools
+recommend:
+  - keylime
 duration: 5m
 enabled: true
 extra-nitrate: TC#0612863
