@@ -1,0 +1,15 @@
+summary: Basic test of postgresql DB usage on localhost
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - postgresql-server
+  - postgresql-contrib
+  - python3-psycopg2
+  - tpm2-abrmd
+  - tpm2-tools
+duration: 5m
+enabled: true

@@ -130,7 +130,7 @@ Return success.
 
 
 function limeUpdateConf() {
-  sed -i "/^\[$1\]/,/^\[/ s@^$2 *=.*@$2 = $3@$4" /etc/keylime.conf
+  sed -i "/^\[$1\]/,/^\[/ s|^$2 *=.*|$2 = $3|$4" /etc/keylime.conf
 }
 
 
