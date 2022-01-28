@@ -590,7 +590,7 @@ limeWaitForVerifier() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=8881
-    rlWaitForSocket $PORT -d 0.1
+    rlWaitForSocket $PORT -d 0.5 -t 30
 }
 
 true <<'=cut'
@@ -618,7 +618,7 @@ limeWaitForRegistrar() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=8891
-    rlWaitForSocket $PORT -d 0.1
+    rlWaitForSocket $PORT -d 0.5 -t 30
 
 }
 
@@ -647,7 +647,7 @@ limeWaitForTPMEmulator() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=2322
-    rlWaitForSocket $PORT -d 0.1
+    rlWaitForSocket $PORT -d 0.5 -t 30
 
 }
 
