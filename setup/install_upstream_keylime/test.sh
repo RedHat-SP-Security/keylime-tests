@@ -24,12 +24,11 @@ _EOF'
         rlRun "yum -y install $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-simplejson python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq patch"
         if [ -d /var/tmp/keylime_sources ]; then
             rlLogInfo "Installing keylime from /var/tmp/keylime_sources"
-            rlRun "pushd /var/tmp/keylime_sources"
         else
             rlLogInfo "Installing keylime from cloned upstream repo"
-            rlRun "rm -rf keylime && git clone https://github.com/keylime/keylime.git"
-            rlRun "pushd keylime"
+            rlRun "git clone https://github.com/keylime/keylime.git /var/tmp/keylime_sources"
         fi
+        rlRun "pushd /var/tmp/keylime_sources"
         rlRun "python3 setup.py install"
         rlRun "popd"
     rlPhaseEnd
