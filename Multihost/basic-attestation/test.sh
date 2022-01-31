@@ -288,10 +288,10 @@ _EOF"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
         # give the revocation notifier a bit more time to contact the agent
-        sleep 5
-        rlAssertNotExists /var/tmp/test_payload_file
+        rlRun "rlWaitForCmd 'tail $(limeAgentLogfile) | grep -q \"Executing revocation action\"' -m 10 -d 1 -t 10"
         rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
+        rlAssertNotExists /var/tmp/test_payload_file
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent cleanup"
