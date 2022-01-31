@@ -7,7 +7,7 @@ framework: beakerlib
 require:
   - yum
   - mariadb-server
-  - python3-mysqlclient
+  - python3-PyMySQL
   - tpm2-abrmd
   - tpm2-tools
 duration: 5m
