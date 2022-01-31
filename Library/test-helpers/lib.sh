@@ -590,7 +590,13 @@ limeWaitForVerifier() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=8881
-    rlWaitForSocket $PORT -d 0.5 -t 30
+    if ! rlWaitForSocket $PORT -d 0.5 -t 30; then
+        cat $( limeVerifierLogfile )
+        return 1
+    else
+        return 0
+    fi
+
 }
 
 true <<'=cut'
@@ -618,8 +624,12 @@ limeWaitForRegistrar() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=8891
-    rlWaitForSocket $PORT -d 0.5 -t 30
-
+    if ! rlWaitForSocket $PORT -d 0.5 -t 30; then
+        cat $( limeRegistrarLogfile )
+        return 1
+    else
+        return 0
+    fi
 }
 
 true <<'=cut'
