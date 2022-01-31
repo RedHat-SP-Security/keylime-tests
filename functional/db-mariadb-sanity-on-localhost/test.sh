@@ -41,13 +41,13 @@ rlJournalStart
         rlRun "limeUpdateConf tenant require_ek_cert False"
         # configure db for verifier using database_* options
         rlRun "limeUpdateConf cloud_verifier database_url ''"  # this must be empty
-        rlRun "limeUpdateConf cloud_verifier database_drivername mysql"
+        rlRun "limeUpdateConf cloud_verifier database_drivername mysql+pymysql"
         rlRun "limeUpdateConf cloud_verifier database_username verifier"
         rlRun "limeUpdateConf cloud_verifier database_password fire"
         rlRun "limeUpdateConf cloud_verifier database_host 127.0.0.1"
         rlRun "limeUpdateConf cloud_verifier database_name verifierdb"
         # configure db for registrar using database_url
-        rlRun "limeUpdateConf registrar database_url mysql://registrar:regi@127.0.0.1/registrardb"
+        rlRun "limeUpdateConf registrar database_url mysql+pymysql://registrar:regi@127.0.0.1/registrardb"
     rlPhaseEnd
 
     rlPhaseStartTest "Test service start with updated configuration"
