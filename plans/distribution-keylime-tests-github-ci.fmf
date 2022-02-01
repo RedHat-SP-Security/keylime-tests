@@ -3,6 +3,9 @@ summary:
 adjust:
     enabled: false
     when: distro = centos-stream
+prepare:
+  how: shell
+  script: dnf config-manager --set-enabled updates-testing updates-testing-modular
 discover:
   how: fmf
   test: 
