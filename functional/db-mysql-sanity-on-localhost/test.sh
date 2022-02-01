@@ -89,7 +89,7 @@ rlJournalStart
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        rlServiceStop mysql
+        rlServiceStop mysqld
         # submit log files
         rlFileSubmit $(limeVerifierLogfile)
         rlFileSubmit $(limeRegistrarLogfile)
