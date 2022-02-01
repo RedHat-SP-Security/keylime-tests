@@ -1,0 +1,17 @@
+summary: Basic test of mariadb usage on localhost
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+adjust:
+    enabled: false
+    when: distro = fedora
+require:
+  - yum
+  - python3-PyMySQL
+  - tpm2-abrmd
+  - tpm2-tools
+#  - mysql-sever  # not used due to conflict with mariadb
+duration: 15m
+enabled: true
