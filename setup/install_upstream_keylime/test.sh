@@ -30,6 +30,8 @@ _EOF'
         fi
         rlRun "pushd /var/tmp/keylime_sources"
         rlRun "python3 setup.py install"
+        # copy keylime.conf to /etc
+        rlRun "cp keylime.conf /etc"
         rlRun "popd"
     rlPhaseEnd
 
