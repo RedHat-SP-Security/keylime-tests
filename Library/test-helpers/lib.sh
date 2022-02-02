@@ -77,6 +77,11 @@ export __INTERNAL_limeCoverageEnabled=false
 [ -n "$COVERAGE" ] && __INTERNAL_limeCoverageEnabled=true
 [ -f "$__INTERNAL_limeCoverageDir/enabled" ] && __INTERNAL_limeCoverageEnabled=true
 
+export __INTERNAL_limeTraceEnabled=false
+[ -n "$limeTRACE" ] && __INTERNAL_limeTraceEnabled=true
+[ -f "$__INTERNAL_limeTmpDir/trace" ] && __INTERNAL_limeTraceEnabled=true
+
+
 export __INTERNAL_limeCoverageContext
 
 
@@ -248,7 +253,9 @@ __limeStartKeylimeService() {
     local NAME=$1
     local LOGFILE=$( __limeGetLogName $1 $2 )
 
-    if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
+    if $__INTERNAL_limeTraceEnabled && file $(which keylime_${NAME}) | grep -qi python; then
+        python3 -m trace --trace $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
+    elif $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
         coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
     else
         # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
