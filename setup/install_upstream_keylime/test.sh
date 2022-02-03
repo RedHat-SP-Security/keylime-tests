@@ -5,6 +5,8 @@
 rlJournalStart
 
     rlPhaseStartSetup "Install keylime and its dependencies"
+        # remove all install keylime packages
+        rlRun "yum remove -y python3-keylime\* keylime\*"
         # build and install keylime-99 dummy RPM
         rlRun -s "rpmbuild -bb keylime.spec"
         RPMPKG=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
