@@ -10,9 +10,9 @@ discover:
   how: fmf
   test: 
    - /setup/configure_tpm_emulator
-   - /setup/enable_keylime_coverage
+#   - /setup/enable_keylime_coverage
    - "/functional/.*"
-   - /setup/generate_coverage_report
+#   - /setup/generate_coverage_report
 
 execute:
     how: tmt

@@ -77,12 +77,49 @@ export __INTERNAL_limeCoverageEnabled=false
 [ -n "$COVERAGE" ] && __INTERNAL_limeCoverageEnabled=true
 [ -f "$__INTERNAL_limeCoverageDir/enabled" ] && __INTERNAL_limeCoverageEnabled=true
 
+[ "$limeIGNORE_SYSTEMD" == "1" -o "$limeIGNORE_SYSTEMD" == "true" ] && limeIGNORE_SYSTEMD=true || limeIGNORE_SYSTEMD=false
+
 export __INTERNAL_limeCoverageContext
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+true <<'=cut'
+=pod
+
+=head1 FUNCTIONS
+
+=head2 limeServiceUnitFileExists
+
+Test if a service has systemd unit file.
+
+    limeServiceUnitFileExists NAME
+
+=over
+
+=back
+
+Return 0 if unit file exists, 1 if not.
+
+=cut
+
+
+limeServiceUnitFileExists() {
+
+    if ${limeIGNORE_SYSTEMD}; then
+        return 1
+    fi
+
+    if systemctl is-enabled $1 2>&1 | grep -q 'Failed to get unit file state'; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+
 
 true <<'=cut'
 =pod
@@ -249,11 +286,18 @@ __limeStartKeylimeService() {
     local NAME=$1
     local LOGFILE=$( __limeGetLogName $1 $2 )
 
-    if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-        coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
+    # execute service using sytemd unit file
+    if limeServiceUnitFileExists keylime_${NAME}; then
+        systemctl start keylime_${NAME}
+
+    # if there is no unit file, execute the process directly
     else
-        # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
-        RUST_LOG=keylime_agent=trace keylime_${NAME} >> ${LOGFILE} 2>&1 &
+        if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
+            coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
+        else
+            # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
+            RUST_LOG=keylime_agent=trace keylime_${NAME} >> ${LOGFILE} 2>&1 &
+        fi
     fi
 
 }
@@ -288,20 +332,29 @@ __limeStopKeylimeService() {
     [ -f ${LOGFILE} ] && TAIL=$( cat ${LOGFILE} | wc -l )
     [ $TAIL -eq 0 ] && TAIL=1
 
-    # send SIGINT when measuring coverage to generate the report
-    if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
-        pkill -INT -f keylime_${NAME}
+    # when there is a unit file, stop service using systemctl
+    if limeServiceUnitFileExists keylime_${NAME}; then
+        systemctl stop keylime_${NAME}
         __limeWaitForProcessEnd keylime_${NAME}
+
+    # otherwise stop the process directly
+    else
+        # send SIGINT when measuring coverage to generate the report
+        if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
+            pkill -INT -f keylime_${NAME}
+            __limeWaitForProcessEnd keylime_${NAME}
+        fi
+        # send SIGTERM if not stopped yet
+        if pgrep -f keylime_${NAME} &> /dev/null; then
+            #if $__INTERNAL_limeCoverageEnabled; then
+            #    echo "Process wasn't termnated after SIGINT, coverage data may not be correct"
+            #    RET=1
+            #fi
+            pkill -f keylime_${NAME}
+            __limeWaitForProcessEnd keylime_${NAME}
+        fi
     fi
-    # send SIGTERM if not stopped yet
-    if pgrep -f keylime_${NAME} &> /dev/null; then
-        #if $__INTERNAL_limeCoverageEnabled; then
-        #    echo "Process wasn't termnated after SIGINT, coverage data may not be correct"
-        #    RET=1
-        #fi
-        pkill -f keylime_${NAME}
-        __limeWaitForProcessEnd keylime_${NAME}
-    fi
+
     # send SIGKILL if the process didn't stop yet
     if pgrep -f keylime_${NAME} &> /dev/null; then
         pgrep -af keylime_${NAME}
@@ -1017,6 +1070,22 @@ limeCreateTestDir() {
 # ~~~~~~~~~~~~~~~~~~~~
 #   Logging
 # ~~~~~~~~~~~~~~~~~~~~
+
+__limeServiceLogfile() {
+
+    local NAME=$1
+    local LOGNAME=$( __limeGetLogName $NAME $2 )
+
+    # for systemd service purge all logs since the beginning of the test
+    if limeServiceUnitFileExists keylime_${NAME}; then
+        local DATE=$( stat -c '%Y' $__INTERNAL_limeLogCurrentTest ) 2> /dev/null
+        journalctl -u keylime_${NAME} --since "@${DATE}" &> $LOGNAME
+    fi
+    # print a path to the log
+    echo $LOGNAME
+
+}
+
 true <<'=cut'
 =pod
 
@@ -1036,8 +1105,7 @@ Returns 0.
 
 limeVerifierLogfile() {
 
-    # currently return the variable
-    echo $__INTERNAL_limeLogVerifier
+    __limeServiceLogfile verifier
 
 }
 
@@ -1060,10 +1128,7 @@ Returns 0.
 
 limeRegistrarLogfile() {
 
-    # currently return the variable
-    # in the future for systemd services we may extract relevant parts
-    # using journactl and store them in a file
-    echo $__INTERNAL_limeLogRegistrar
+    __limeServiceLogfile registrar
 
 }
 
@@ -1086,8 +1151,7 @@ Returns 0.
 
 limeAgentLogfile() {
 
-    # currently return the variable
-    echo $__INTERNAL_limeLogAgent
+    __limeServiceLogfile agent
 
 }
 
@@ -1111,7 +1175,7 @@ Returns 0.
 limeIMAEmulatorLogfile() {
 
     # currently return the variable
-    echo $__INTERNAL_limeLogIMAEmulator
+    __limeServiceLogfile ima_emulator IMAEmulator
 
 }
 
@@ -1169,7 +1233,7 @@ Returns 0.
 =cut
 
 
-# create like_keylime_tenant wrapper
+# create lime_keylime_tenant wrapper
 cat > /usr/local/bin/lime_keylime_tenant <<EOF
 #!/bin/bash
 
