@@ -29,6 +29,9 @@ _EOF'
             rlRun "git clone https://github.com/keylime/keylime.git /var/tmp/keylime_sources"
         fi
         rlRun "pushd /var/tmp/keylime_sources"
+        # clear files that could be present from previous installation and be disruptive
+        # in particular db migration files
+        rlRun "rm -rf build/lib/keylime/migrations $( ls -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations )"
         rlRun "python3 setup.py install"
         # copy keylime.conf to /etc
         rlRun "cp keylime.conf /etc"
