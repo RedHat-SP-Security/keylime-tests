@@ -212,6 +212,7 @@ Agent() {
         rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT_IP}"
         rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT_IP}"
         rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -328,6 +329,7 @@ Agent2() {
         rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT2_IP}"
         rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT2_IP}"
         rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
