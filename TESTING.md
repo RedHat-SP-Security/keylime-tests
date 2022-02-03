@@ -15,9 +15,10 @@ $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 $ cd keylime-tests
 ```
 
-With `tmt` you can easily run all test plans. Currently, there is one
-test plan in the `plans/keylime-tests-github-ci` file.
-You may want to update it to run only the required tasks.
+With `tmt` you can easily run all test plans. Currently, there are two
+test plans in the `plans/` directory. These are being used for CI testing
+using Packit service. When running tests yourself you may want to update
+them (or even remove) in order to run only the required tasks.
 
 ```
 $ tmt run -vvv prepare discover provision -h local execute
@@ -53,7 +54,7 @@ First you need to install `tmt` tool and clone tests repository.
 $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 ```
 
-Then you can run a test plan e.g. on F35 system.
+Then you can run all test plans e.g. on F35 system.
 
 ```
 $ cd keylime-tests
@@ -81,6 +82,24 @@ is properly detected and prepare step adjustment enabling EPEL gets run.
 ```
 $ tmt -c distro=centos-stream-9 run -vvv prepare discover provision -h virtual -i centos-stream-9 -c system execute finish
 ```
+
+### Running tests from specific test plan or specific tests
+
+In case you do not want to run tests from all plans the easiest option would be tell `tmt` to run only specific tests.
+
+```
+$ tmt run -vvv prepare discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' provision -h virtual -i Fedora-35 -c system -i 1MT-Fedora-35 execute finish
+```
+This will run only tests whose names contains provided regexp patterns.
+
+You can also tell `tmt` to run only tests from a particular test plan. E.g.
+
+```
+$ tmt run -vvv plan --name upstream prepare discover -h fmf provision -h virtual -i Fedora-35 -c system -i 1MT-Fedora-35 execute finish
+```
+will execute only tests from test plans whose name contains "upstream".
+
+Finally, you can (locally) edit or remove test plans in the `plan/` directory in order to get to a desired state.
 
 ### Running multi-host tests
 
