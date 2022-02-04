@@ -56,12 +56,16 @@ Verifier() {
         rlRun "x509KeyGen verifier-client" 0 "Preparing RSA verifier-client certificate"
         rlRun "x509KeyGen registrar" 0 "Preparing RSA registrar certificate"
         rlRun "x509KeyGen tenant" 0 "Preparing RSA tenant certificate"
+        rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
+        [ -n "${AGENT2}" ] && rlRun "x509KeyGen agent2" 0 "Preparing RSA tenant certificate"
         rlRun "x509SelfSign ca" 0 "Selfsigning CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webserver --subjectAltName 'IP = ${VERIFIER_IP}' verifier" 0 "Signing verifier certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webclient --subjectAltName 'IP = ${VERIFIER_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $REGISTRAR' -t webserver --subjectAltName 'IP = ${REGISTRAR_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
         # remember, we are running tenant on agent server
-        rlRun "x509CertSign --CA ca --DN 'CN = ${AGENT}' -t webclient --subjectAltName 'IP = ${AGENT_IP}' tenant" 0 "Signing tenant certificate with our CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${AGENT}' -t webclient --subjectAltName 'IP = ${AGENT_IP}' tenant" 0 "Signing tenant certificate with our CA"
+        rlRun "x509SelfSign --DN 'CN = ${AGENT}' -t webserver agent" 0 "Self-signing agent certificate"
+        [ -n "${AGENT2}" ] && rlRun "x509SelfSign --DN 'CN = ${AGENT2}' -t webserver agent2" 0 "Self-signing agent2 certificate"
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
@@ -79,6 +83,10 @@ Verifier() {
         rlRun "cp $(x509Key registrar) http/registrar-key.pem"
         rlRun "cp $(x509Cert tenant) http/tenant-cert.pem"
         rlRun "cp $(x509Key tenant) http/tenant-key.pem"
+        rlRun "cp $(x509Cert agent) http/agent-cert.pem"
+        rlRun "cp $(x509Key agent) http/agent-key.pem"
+        [ -n "${AGENT2}" ] && rlRun "cp $(x509Cert agent2) http/agent2-cert.pem"
+        [ -n "${AGENT2}" ] && rlRun "cp $(x509Key agent2) http/agent2-key.pem"
         rlRun "pushd http"
         rlRun "python3 -m http.server 8000 &"
         HTTP_PID=$!
@@ -101,6 +109,8 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
+        rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
@@ -183,10 +193,15 @@ Agent() {
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
+        SECUREDIR=/var/lib/keylime/secure
         rlRun "mkdir -p $CERTDIR"
-        for F in cacert.pem tenant-cert.pem tenant-key.pem; do
+        rlRun "mkdir -p $SECUREDIR"
+        for F in cacert.pem tenant-cert.pem tenant-key.pem agent-key.pem agent-cert.pem; do
             rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
         done
+        # agent mTLS certs are supposed to be in the SECUREDIR
+        rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
+        rlRun "cp ${CERTDIR}/{agent-key.pem,agent-cert.pem} ${SECUREDIR}"
 
         # common configuration goes here
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
@@ -207,12 +222,16 @@ Agent() {
         rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
         rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
         rlRun "limeUpdateConf tenant registrar_private_key_pw ''"
+        rlRun "limeUpdateConf tenant agent_mtls_cert ${CERTDIR}/tenant-cert.pem"
+        rlRun "limeUpdateConf tenant agent_mtls_private_key ${CERTDIR}/tenant-key.pem"
 
         # configure agent
         rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT_IP}"
         rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT_IP}"
         rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
+        rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
+        rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -316,10 +335,16 @@ Agent2() {
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
+        SECUREDIR=/var/lib/keylime/secure
         rlRun "mkdir -p $CERTDIR"
-        for F in cacert.pem; do
+        rlRun "mkdir -p $SECUREDIR"
+        for F in cacert.pem agent2-key.pem agent2-cert.pem; do
             rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
         done
+        # agent mTLS certs are supposed to be in the SECUREDIR
+        rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
+        rlRun "cp ${CERTDIR}/{agent2-key.pem,agent2-cert.pem} ${SECUREDIR}"
+
 
         # common configuration goes here
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
@@ -333,6 +358,8 @@ Agent2() {
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
+        rlRun "limeUpdateConf cloud_agent rsa_keyname agent2-key.pem"
+        rlRun "limeUpdateConf cloud_agent mtls_cert agent2-cert.pem"
  
         # if TPM emulator is present
         if limeTPMEmulated; then
