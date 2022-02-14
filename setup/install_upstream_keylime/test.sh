@@ -25,7 +25,7 @@ _EOF'
         fi
         rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-simplejson python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq patch"
         # need to install few more pgs from pip on RHEL
-        if rlIsRHEL; then
+        if ! rlIsFedora; then
             rlRun "pip3 install lark-parser"
         fi
         if [ -d /var/tmp/keylime_sources ]; then
