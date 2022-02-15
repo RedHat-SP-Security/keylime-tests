@@ -73,6 +73,15 @@ $ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system exec
 You can use it to inspect test logs or even modify test sources and run your tests
 manually following the method described above. For this purpose you can find test sources under `/var/tmp/tmt/run-*/packit-ci/discover/default/tests/`.
 
+### Running tests on CentOS Stream
+
+The above applies also to CentOS Stream, except that one has to define a `--context` so that the distribution
+is properly detected and prepare step adjustment enabling EPEL gets run.
+
+```
+$ tmt -c distro=centos-stream-9 run -vvv prepare discover provision -h virtual -i centos-stream-9 -c system execute finish
+```
+
 ### Running multi-host tests
 
 `tmt` cannot schedule multi-host tests yet. However, we can use `tmt` to do the necessary setup and then execute the test manually.
