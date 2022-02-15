@@ -10,13 +10,13 @@ rlJournalStart
             FEDORA_EXTRA_PKGS="python3-lark-parser"
         else
             rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
-[copr:copr.fedorainfracloud.org:scorreia:keylime-c9s]
-name=Copr repo for keylime-c9s owned by scorreia
-baseurl=https://download.copr.fedorainfracloud.org/results/scorreia/keylime-c9s/centos-stream-9-\$basearch/
+[copr:copr.fedorainfracloud.org:scorreia:keylime]
+name=Copr repo for keylime owned by scorreia
+baseurl=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/centos-stream-\$releasever-\$basearch/
 type=rpm-md
 skip_if_unavailable=True
 gpgcheck=1
-gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime-c9s/pubkey.gpg
+gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/pubkey.gpg
 repo_gpgcheck=0
 enabled=1
 enabled_metadata=1

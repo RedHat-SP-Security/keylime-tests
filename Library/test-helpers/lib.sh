@@ -106,7 +106,8 @@ Return success or failure depending on whether TPM emulator is used.
 
 limeTPMEmulated() {
     # naive approach, can be improved in future
-    rpm -q swtpm &> /dev/null
+    _emulator=$(limeTPMEmulator)
+    rpm -q "${_emulator}" &> /dev/null
 }
 
 
@@ -115,7 +116,7 @@ true <<'=cut'
 
 =head2 limeUpdateConf
 
-Updates respective [SECTION] in /etc/keylime.conf file, 
+Updates respective [SECTION] in /etc/keylime.conf file,
 replacing OPTION = .* with OPTION = VALUE.
 
     limeUpdateConf SECTION OPTION VALUE
@@ -514,6 +515,83 @@ limeStopIMAEmulator() {
 true <<'=cut'
 =pod
 
+=head2 limeTPMEmulator
+
+Returns the name of the TPM emulator to use
+
+    limeTPMEmulator
+
+=over
+
+=back
+
+Returns 0 as exit status.
+
+=cut
+
+limeTPMEmulator() {
+    # We use swtpm by default, unless in EL8 -- since tpm2-tss shipped
+    # there does not support it, we will use ibmswtpm2 instead.
+    _tpm_emulator=swtpm
+    _platform_id="$(awk -F= '$1=="PLATFORM_ID" { print $2 ;}' \
+                    /etc/os-release | tr -d '"' | cut -d':' -f2)" ||:
+    [ "${_platform_id}" = "el8" ] && _tpm_emulator=ibmswtpm2
+    echo "${_tpm_emulator}"
+}
+
+true <<'=cut'
+=pod
+
+=head2 __limeStartTPMEmulator_swtpm
+
+Start TPM emulator swtpm
+
+    __limeStartTPMEmulator_swtpm
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+__limeStartTPMEmulator_swtpm() {
+
+    __limeStopTPMEmulator_swtpm
+    if rpm -q swtpm &> /dev/null; then
+        mkdir -p /var/lib/tpm/swtpm
+        rlServiceStart swtpm
+    fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 __limeStartTPMEmulator_ibmswtpm2
+
+Start TPM emulator ibmswtpm2
+
+    __limeStartTPMEmulator_ibmswtpm2
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+__limeStartTPMEmulator_ibmswtpm2() {
+    __limeStopTPMEmulator_ibmswtpm2
+    if rpm -q ibmswtpm2 &> /dev/null; then
+        rlServiceStart ibmswtpm2
+    fi
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeStartTPMEmulator
 
 Start the availabe TPM emulator
@@ -529,14 +607,68 @@ Returns 0 when the start was successful, non-zero otherwise.
 =cut
 
 limeStartTPMEmulator() {
+    _emulator=$(limeTPMEmulator)
 
-    limeStopTPMEmulator
+    case "${_emulator}" in
+    swtpm)
+        limeStopTPMEmulator
+        __limeStartTPMEmulator_swtpm
+        ;;
+    ibmswtpm2)
+        limeStopTPMEmulator
+        __limeStartTPMEmulator_ibmswtpm2
+        ;;
+    *)
+        rlLogWarning "Unsupported TPM emulator (${_emulator})"
+        return 1
+        ;;
+    esac
+}
+
+true <<'=cut'
+=pod
+
+=head2 __limeStopTPMEmulator_swtpm
+
+Stop swtpm TPM Emulator.
+
+    __limeStopTPMEmulator_swtpm
+
+=over
+
+=back
+
+Returns 0 when the stop was successful, non-zero otherwise.
+
+=cut
+
+__limeStopTPMEmulator_swtpm() {
     if rpm -q swtpm &> /dev/null; then
-        #rm -rf /var/lib/tpm/swtpm
-        mkdir -p /var/lib/tpm/swtpm
-        rlServiceStart swtpm
+        rlServiceStop swtpm
     fi
+}
 
+true <<'=cut'
+=pod
+
+=head2 __limeStopTPMEmulator_ibmswtpm2
+
+Stop ibmswtpm2 TPM Emulator.
+
+    __limeStopTPMEmulator_ibmswtpm2
+
+=over
+
+=back
+
+Returns 0 when the stop was successful, non-zero otherwise.
+
+=cut
+
+__limeStopTPMEmulator_ibmswtpm2() {
+    if rpm -q ibmswtpm2 &> /dev/null; then
+        rlServiceStop ibmswtpm2
+    fi
 }
 
 true <<'=cut'
@@ -557,11 +689,20 @@ Returns 0 when the stop was successful, non-zero otherwise.
 =cut
 
 limeStopTPMEmulator() {
+    _emulator=$(limeTPMEmulator)
 
-    if rpm -q swtpm &> /dev/null; then
-        rlServiceStop swtpm
-    fi
-
+    case "${_emulator}" in
+    swtpm)
+        __limeStopTPMEmulator_swtpm
+        ;;
+    ibmswtpm2)
+        __limeStopTPMEmulator_ibmswtpm2
+        ;;
+    *)
+        rlLogWarning "Unsupported TPM emulator (${_emulator})"
+        return 1
+        ;;
+    esac
 }
 
 
@@ -771,7 +912,7 @@ true <<'=cut'
 Creates allowlist.txt and excludelist.txt to be used for testing purposes.
 Allowlist will contain only initramdisk related content.
 Exclude list will contain all root dir / content except /keylime-tests.
-This is based on an assumption that content used for testing purposes will 
+This is based on an assumption that content used for testing purposes will
 be created under /keylime-tests in a directory with an unique name.
 See limeExtendNextExcludelist and limeCreateTestDir for more details.
 
@@ -920,7 +1061,7 @@ Returns 0.
 limeRegistrarLogfile() {
 
     # currently return the variable
-    # in the future for systemd services we may extract relevant parts 
+    # in the future for systemd services we may extract relevant parts
     # using journactl and store them in a file
     echo $__INTERNAL_limeLogRegistrar
 

@@ -11,13 +11,38 @@ if [ "$RUNNING" != "0" -a "$RUNNING" != "1" ]; then
     systemctl is-active --quiet tpm2-abrmd && RUNNING=1 || RUNNING=0
 fi
 
-TPM_EMULATOR=swtpm
+# We use ibmswtpm2 for EL8 and swtpm for the other platforms.
+rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+TPM_EMULATOR=$(limeTPMEmulator)
+
+# Packages list based on the TPM emulator.
+TPM_PKGS_SWTPM="swtpm swtpm-tools"
+TPM_PKGS_IBMSWTPM="ibmswtpm2"
+
+TPM_PKGS="${TPM_PKGS_SWTPM}"
+[ "${TPM_EMULATOR}" = "ibmswtpm2" ] && TPM_PKGS="${TPM_PKGS_IBMSWTPM}"
 
 rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
-        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun "yum -y install swtpm swtpm-tools tpm2-tss selinux-policy-devel tpm2-abrmd tpm2-tools"
+        # for RHEL and CentOS Stream configure Sergio's copr repo providing
+        # necessary dependencies.
+        if rlIsRHEL 8 || rlIsCentOS 8; then
+            rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
+[copr:copr.fedorainfracloud.org:scorreia:keylime]
+name=Copr repo for keylime owned by scorreia
+baseurl=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/centos-stream-\$releasever-\$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
+_EOF'
+        fi
+
+        rlRun "yum -y install ${TPM_PKGS} tpm2-tss selinux-policy-devel tpm2-abrmd tpm2-tools"
         # create swtpm unit file as it doesn't exist
         rlRun "cat > /etc/systemd/system/swtpm.service <<_EOF
 [Unit]
@@ -33,6 +58,8 @@ ExecStart=/usr/bin/swtpm socket --tpmstate dir=/var/lib/tpm/swtpm --log level=4 
 WantedBy=multi-user.target
 _EOF"
         # update tpm2-abrmd unit file
+        _tcti=swtpm
+        [ "${TPM_EMULATOR}" = "ibmswtpm2" ] && _tcti=mssim
         rlRun "cat > /etc/systemd/system/tpm2-abrmd.service <<_EOF
 [Unit]
 Description=TPM2 Access Broker and Resource Management Daemon
@@ -45,19 +72,21 @@ ConditionPathExistsGlob=
 [Service]
 Type=dbus
 BusName=com.intel.tss2.Tabrmd
-ExecStart=/usr/sbin/tpm2-abrmd --tcti=swtpm
+ExecStart=/usr/sbin/tpm2-abrmd --tcti=${_tcti}
 User=tss
 
 [Install]
 WantedBy=multi-user.target
 _EOF"
-        # now we need to build custom selinux module making swtpm_t a permissive domain
-        # since the policy module shipped with swtpm package doesn't seem to work
-        # see https://github.com/stefanberger/swtpm/issues/632 for more details
-        if ! semodule -l | grep -q swtpm_permissive; then
-            rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
-            rlAssertExists swtpm_permissive.pp
-            rlRun "semodule -i swtpm_permissive.pp"
+        if [ "${TPM_EMULATOR}" = "swtpm" ]; then
+            # now we need to build custom selinux module making swtpm_t a permissive domain
+            # since the policy module shipped with swtpm package doesn't seem to work
+            # see https://github.com/stefanberger/swtpm/issues/632 for more details
+            if ! semodule -l | grep -q swtpm_permissive; then
+                rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
+                rlAssertExists swtpm_permissive.pp
+                rlRun "semodule -i swtpm_permissive.pp"
+            fi
         fi
         rlRun "setsebool -P tabrmd_connect_all_unreserved on"
         # allow tpm2-abrmd to connect to swtpm port
