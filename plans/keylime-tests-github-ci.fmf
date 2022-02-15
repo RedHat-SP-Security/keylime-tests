@@ -1,5 +1,12 @@
 summary:
   Tests used by Packit/TFT CI on Github
+adjust:
+  - when: distro == centos-stream-9
+    prepare+:
+       script: yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+  - when: distro == centos-stream-8
+    prepare+:
+       script: yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 discover:
   how: fmf
   test: 
