@@ -6,7 +6,7 @@ rlJournalStart
 
     rlPhaseStartSetup "Install coverage script its dependencies"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun 'pip3 install coverage'
+        rlRun 'pip3 install coverage==5.5'
         rlRun "touch $__INTERNAL_limeCoverageDir/enabled"
     rlPhaseEnd
 
