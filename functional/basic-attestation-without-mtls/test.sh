@@ -33,15 +33,6 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        # when using unit files we need to adjust them
-        if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
-            rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"
-            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-rust_log_trace.conf <<_EOF
-[Service]
-Environment=\"RUST_LOG=keylime_agent=trace\"
-_EOF"
-            rlRun "systemctl daemon-reload"
-        fi
         # create allowlist and excludelist
         limeCreateTestLists
         # create expect script to add agent
@@ -55,23 +46,14 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Check that agent cannot start without explicitly enabling insecure payload"
-        if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
-            rlRun "limeStartAgent"
-        else
-            rlRun "RUST_LOG=keylime_agent=trace limeStartAgent"
-        fi
+        rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}" 1
         rlAssertGrep "enable_insecure_payload. has to be set to .True." $(limeAgentLogfile) -E
     rlPhaseEnd
 
     rlPhaseStartTest "Check that empty script_payload allows the agent to start"
         rlRun "limeUpdateConf cloud_agent payload_script ''"
-        if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
-            rlRun "systemctl daemon-reload"
-            rlRun "limeStartAgent"
-        else
-            rlRun "RUST_LOG=keylime_agent=trace limeStartAgent"
-        fi
+        rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "expect add.expect"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
@@ -87,12 +69,7 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeUpdateConf cloud_agent enable_insecure_payload True"
         rlRun "limeUpdateConf cloud_agent payload_script 'autorun.sh'"
-        if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
-            rlRun "systemctl daemon-reload"
-            rlRun "limeStartAgent"
-        else
-            rlRun "RUST_LOG=keylime_agent=trace limeStartAgent"
-        fi
+        rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
 
