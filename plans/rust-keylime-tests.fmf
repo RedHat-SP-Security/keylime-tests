@@ -1,0 +1,20 @@
+summary:
+  Tests for keylime rust agent
+adjust:
+  - when: distro == centos-stream-9
+    prepare+:
+       script: yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+  - when: distro == centos-stream-8
+    enabled: false
+discover:
+  how: fmf
+  test:
+   - /setup/configure_tpm_emulator
+   - /setup/install_upstream_keylime
+   - /setup/install_upstream_rust_keylime
+   - /functional/basic-attestation-on-localhost
+   - /functional/basic-attestation-without-mtls
+   - /functional/keylime_tenant-commands-on-localhost
+
+execute:
+    how: tmt
