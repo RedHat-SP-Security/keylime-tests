@@ -533,9 +533,9 @@ limeTPMEmulator() {
     # We use swtpm by default, unless in EL8 -- since tpm2-tss shipped
     # there does not support it, we will use ibmswtpm2 instead.
     _tpm_emulator=swtpm
-    _platform_id="$(awk -F= '$1=="PLATFORM_ID" { print $2 ;}' \
-                    /etc/os-release | tr -d '"' | cut -d':' -f2)" ||:
-    [ "${_platform_id}" = "el8" ] && _tpm_emulator=ibmswtpm2
+    if rlIsRHEL 8 || rlIsCentOS 8; then
+        _tpm_emulator=ibmswtpm2
+    fi
     echo "${_tpm_emulator}"
 }
 

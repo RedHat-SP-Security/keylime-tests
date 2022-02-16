@@ -11,20 +11,20 @@ if [ "$RUNNING" != "0" -a "$RUNNING" != "1" ]; then
     systemctl is-active --quiet tpm2-abrmd && RUNNING=1 || RUNNING=0
 fi
 
-# We use ibmswtpm2 for EL8 and swtpm for the other platforms.
-rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-TPM_EMULATOR=$(limeTPMEmulator)
-
 # Packages list based on the TPM emulator.
+# We use ibmswtpm2 for EL8 and swtpm for the other platforms.
 TPM_PKGS_SWTPM="swtpm swtpm-tools"
 TPM_PKGS_IBMSWTPM="ibmswtpm2"
-
-TPM_PKGS="${TPM_PKGS_SWTPM}"
-[ "${TPM_EMULATOR}" = "ibmswtpm2" ] && TPM_PKGS="${TPM_PKGS_IBMSWTPM}"
 
 rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
+
+        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+
+        TPM_EMULATOR="$(limeTPMEmulator)"
+        [ "${TPM_EMULATOR}" == "ibmswtpm2" ] && TPM_PKGS="${TPM_PKGS_IBMSWTPM}" || TPM_PKGS="${TPM_PKGS_SWTPM}"
+
         # for RHEL and CentOS Stream configure Sergio's copr repo providing
         # necessary dependencies.
         if rlIsRHEL 8 || rlIsCentOS 8; then
