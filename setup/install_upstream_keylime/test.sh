@@ -5,6 +5,13 @@
 rlJournalStart
 
     rlPhaseStartSetup "Install keylime and its dependencies"
+        # remove all install keylime packages
+        rlRun "yum remove -y python3-keylime\* keylime\*"
+        # build and install keylime-99 dummy RPM
+        rlRun -s "rpmbuild -bb keylime.spec"
+        RPMPKG=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
+        # replace installed keylime with our newly built dummy package
+        rlRun "rpm -Uvh $RPMPKG"
         # for RHEL and CentOS Stream configure Sergio's copr repo providing necessary dependencies
         if rlIsFedora; then
             FEDORA_EXTRA_PKGS="python3-lark-parser"

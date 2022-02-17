@@ -455,6 +455,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
         rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
+        rlAssertRpm keylime
         # backup files
         limeBackupConfig
 

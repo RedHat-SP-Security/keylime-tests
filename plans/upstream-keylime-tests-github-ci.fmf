@@ -1,5 +1,5 @@
 summary:
-  Tests used by Packit/TFT CI on Github
+  Tests used by Packit/TFT CI on Github to test upstream keylime
 adjust:
   - when: distro == centos-stream-9
     prepare+:
@@ -14,8 +14,6 @@ discover:
    - /setup/install_upstream_keylime
    - /setup/enable_keylime_coverage
    - "/functional/.*"
-#   - /setup/install_upstream_rust_keylime
-#   - "/functional/.*"
    - /setup/generate_coverage_report
 
 execute:

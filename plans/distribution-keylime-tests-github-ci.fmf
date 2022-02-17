@@ -1,0 +1,22 @@
+summary:
+  Tests used by Packit/TFT CI on Github to test distribution keylime
+adjust:
+    enabled: false
+    when: distro = centos-stream
+prepare:
+  how: shell
+  script:
+   - rm -f /etc/yum.repos.d/tag-repository.repo
+   - dnf config-manager --set-enabled updates-testing updates-testing-modular
+   - dnf makecache
+   - dnf -y update
+discover:
+  how: fmf
+  test: 
+   - /setup/configure_tpm_emulator
+#   - /setup/enable_keylime_coverage
+   - "/functional/.*"
+#   - /setup/generate_coverage_report
+
+execute:
+    how: tmt

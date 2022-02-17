@@ -6,5 +6,13 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
+- tpm2-abrmd
+recommend:
+- keylime
+- keylime-verifier
+- keylime-registrar
+- python3-keylime-agent
+- keylime-tenant
+- keylime-tools
 duration: 15m
 enabled: true

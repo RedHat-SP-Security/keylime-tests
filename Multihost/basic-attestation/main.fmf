@@ -11,6 +11,14 @@ require:
   - yum
   - bind-utils
   - expect
+  - tpm2-abrmd
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
 duration: 10m
 enabled: true
 extra-nitrate: TC#0611986
