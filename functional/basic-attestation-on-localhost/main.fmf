@@ -8,6 +8,8 @@ require:
 - yum
 - expect
 - tpm2-abrmd
+- openssl
+- nmap-ncat
 recommend:
 - keylime
 - keylime-verifier
