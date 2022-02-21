@@ -6,7 +6,9 @@ adjust:
        script: yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
   - when: distro == centos-stream-8
     prepare+:
-       script: yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+       script:
+         - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+         - yum config-manager --set-enabled powertools
 discover:
   how: fmf
   test: 
