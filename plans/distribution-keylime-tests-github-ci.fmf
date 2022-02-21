@@ -8,8 +8,6 @@ prepare:
   script:
    - rm -f /etc/yum.repos.d/tag-repository.repo
    - dnf config-manager --set-enabled updates-testing updates-testing-modular
-   - dnf makecache
-   - dnf -y update
 discover:
   how: fmf
   test: 
