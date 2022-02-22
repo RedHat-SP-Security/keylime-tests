@@ -2,6 +2,7 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
 rlJournalStart
 
@@ -40,15 +41,14 @@ rlJournalStart
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         rlRun "limeStartAgent"
-        sleep 5
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime tenant"
-        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
-        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
@@ -59,7 +59,7 @@ rlJournalStart
         rlRun "tpm2_pcrevent 23 ${DATAFILE}"
         rlRun -s "tpm2_pcrread sha1:23+sha256:23"
         rlAssertNotGrep "0000" $rlRun_LOG
-        rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "keylime.tpm - ERROR - PCR #23: .* from quote does not match expected value" $(limeVerifierLogfile) -E
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
     rlPhaseEnd
@@ -71,7 +71,7 @@ rlJournalStart
         SHA256=$( tpm2_pcrread sha256:23 | tail -1 | cut -d 'x' -f 2 )
         TPM_POLICY="{\"23\":[\"${SHA1}\",\"${SHA256}\"]}"
         rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname --tpm_policy '${TPM_POLICY}' -c update"
-        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
