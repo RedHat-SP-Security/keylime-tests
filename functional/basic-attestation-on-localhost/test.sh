@@ -2,6 +2,7 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
 rlJournalStart
 
@@ -36,13 +37,12 @@ rlJournalStart
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         rlRun "limeStartAgent"
-        sleep 5
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime tenant"
-        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
 spawn lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
@@ -51,9 +51,10 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
@@ -61,7 +62,7 @@ _EOF"
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
         rlRun "rlWaitForCmd 'tail $(limeAgentLogfile) | grep -q \"Executing revocation action\"' -m 10 -d 1 -t 10"

@@ -826,6 +826,41 @@ limeWaitForRegistrar() {
     fi
 }
 
+
+true <<'=cut'
+=pod
+
+=head2 limeWaitForAgent
+
+Use rlWaitForSocket to wait for the agent to start.
+
+    limeWaitForAgent [PORT_NUMBER]
+
+=over
+
+=item
+
+    PORT_NUMBER - Port number to wait for, 9002 by default.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeWaitForAgent() {
+
+    local PORT
+    [ -n "$1" ] && PORT=$1 || PORT=9002
+    if ! rlWaitForSocket $PORT -d 0.5 -t 30; then
+        cat $( limeAgentLogfile )
+        return 1
+    else
+        return 0
+    fi
+}
+
+
 true <<'=cut'
 =pod
 
@@ -859,12 +894,12 @@ limeWaitForTPMEmulator() {
 true <<'=cut'
 =pod
 
-=head2 limeWaitForTenantStatus
+=head2 limeWaitForAgentStatus
 
 Run 'lime_keylime_tenant -c status' wrapper repeatedly up to TIMEOUT seconds
 until the expected agent status is returned.
 
-    limeWaitForTenantStatus UUID STATUS [TIMEOUT]
+    limeWaitForAgentStatus UUID STATUS [TIMEOUT]
 
 =over
 
@@ -886,16 +921,66 @@ Returns 0 when the start was successful, 1 otherwise.
 
 =cut
 
-limeWaitForTenantStatus() {
+limeWaitForAgentStatus() {
     local TIMEOUT=30
     local UUID="$1"
     local STATUS="$2"
     local OUTPUT=`mktemp`
+    [ -z "$1" ] && return 3
+    [ -z "$2" ] && return 4
     [ -n "$3" ] && TIMEOUT=$3
 
     for I in `seq $TIMEOUT`; do
         lime_keylime_tenant -c status -u $UUID &> $OUTPUT
 	if egrep -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
+            cat $OUTPUT
+	    rm $OUTPUT
+	    return 0
+	fi
+        sleep 1
+    done
+    cat $OUTPUT
+    rm $OUTPUT
+    return 1
+}
+
+
+true <<'=cut'
+=pod
+
+=head2 limeWaitForAgentRegistration
+
+Run 'lime_keylime_tenant -c regstatus' wrapper repeatedly up to TIMEOUT seconds
+until the expected agent is registered.
+
+    limeWaitForAgentRegistration UUID [TIMEOUT]
+
+=over
+
+=item
+
+    UUID - Agent UUID to query the status for.
+
+=item
+
+    TIMEOUT - Maximum time in seconds to wait (default 30).
+
+=back
+
+Returns 0 when the start was successful, 1 otherwise.
+
+=cut
+
+limeWaitForAgentRegistration() {
+    local TIMEOUT=30
+    local UUID="$1"
+    local OUTPUT=`mktemp`
+    [ -z "$1" ] && return 3
+    [ -n "$2" ] && TIMEOUT=$2
+
+    for I in `seq $TIMEOUT`; do
+        lime_keylime_tenant -c regstatus -u $UUID &> $OUTPUT
+	if grep -q "Agent $UUID exists on registrar" $OUTPUT; then
             cat $OUTPUT
 	    rm $OUTPUT
 	    return 0

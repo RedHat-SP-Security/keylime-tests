@@ -188,6 +188,10 @@ Registrar() {
 
 Agent() {
     rlPhaseStartSetup "Agent and tenant setup"
+
+        # this is the default ID, we are not changing it
+        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
+
         # Agent and tenant setup goes here
         rlRun "sync-block REGISTRAR_SETUP_DONE ${REGISTRAR_IP}" 0 "Waiting for the Registrar finish to start"
 
@@ -251,7 +255,7 @@ Agent() {
         sleep 5
 
         rlRun "limeStartAgent"
-        sleep 5
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
     rlPhaseEnd
@@ -275,7 +279,7 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForTenantStatus ${AGENT2_ID} 'Get Quote'"
+        rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
         rlRun -s "keylime_tenant -c status -u ${AGENT2_ID}"
@@ -294,9 +298,10 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
@@ -306,7 +311,7 @@ _EOF"
         limeExtendNextExcludelist $TESTDIR
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        rlRun "limeWaitForTenantStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         # give the revocation notifier a bit more time to contact the agent
         rlRun "rlWaitForCmd 'tail $(limeAgentLogfile) | grep -q \"Executing revocation action\"' -m 10 -d 1 -t 10"
         rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
@@ -330,6 +335,9 @@ _EOF"
 
 Agent2() {
     rlPhaseStartSetup "Agent2 setup"
+
+        AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
+
         # Agent setup goes here
         rlRun "sync-block REGISTRAR_SETUP_DONE ${REGISTRAR_IP}" 0 "Waiting for the Registrar finish to start"
 
@@ -357,7 +365,7 @@ Agent2() {
         rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
 
         # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
+        rlRun "limeUpdateConf cloud_agent agent_uuid ${AGENT2_ID}"
         rlRun "limeUpdateConf cloud_agent rsa_keyname agent2-key.pem"
         rlRun "limeUpdateConf cloud_agent mtls_cert agent2-cert.pem"
  
@@ -378,8 +386,8 @@ Agent2() {
         fi
         sleep 5
 
-        limeStartAgent
-        sleep 5
+        rlRun "limeStartAgent"
+        rlRun "limeWaitForAgentRegistration ${AGENT2_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
 

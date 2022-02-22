@@ -59,19 +59,19 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-	rlRun -s "sudo -u postgres psql -c 'SELECT datname FROM pg_database;'"
-	rlAssertGrep "verifierdb" $rlRun_LOG
-	rlAssertGrep "registrardb" $rlRun_LOG
+        rlRun -s "sudo -u postgres psql -c 'SELECT datname FROM pg_database;'"
+        rlAssertGrep "verifierdb" $rlRun_LOG
+        rlAssertGrep "registrardb" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test adding keylime tenant"
+        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "limeStartAgent"
-        sleep 5
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
-        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
-        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd

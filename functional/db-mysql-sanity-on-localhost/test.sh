@@ -2,6 +2,7 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
 rlJournalStart
 
@@ -17,8 +18,8 @@ rlJournalStart
         rlRun "rm -rf /var/lib/mysql/*"
  
         # check if mariadb is installed and replace it with mysql-server
-	PKGS=$( rpm -qa | grep 'mariadb' | xargs echo )
-	if [ -n "$PKGS" ]; then
+        PKGS=$( rpm -qa | grep 'mariadb' | xargs echo )
+        if [ -n "$PKGS" ]; then
             rlRun "yum -y remove $PKGS"
         fi
         rlRun "yum -y install mysql-server"
@@ -67,19 +68,18 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-	rlRun -s "echo 'show databases;' | mysql -u root"
-	rlAssertGrep "verifierdb" $rlRun_LOG
-	rlAssertGrep "registrardb" $rlRun_LOG
+        rlRun -s "echo 'show databases;' | mysql -u root"
+        rlAssertGrep "verifierdb" $rlRun_LOG
+        rlAssertGrep "registrardb" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test adding keylime tenant"
         rlRun "limeStartAgent"
-        sleep 5
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
-        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
-        rlRun "limeWaitForTenantStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
