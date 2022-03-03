@@ -5,9 +5,6 @@
 rlJournalStart
 
     rlPhaseStartSetup "Install keylime and its dependencies"
-        # log env variables exported by Packit CI
-        rlRun "PACKIT_COMMIT_SHA=${PACKIT_COMMIT_SHA}"
-        rlRun "PACKIT_TARGET_SHA=${PACKIT_TARGET_SHA}"
         # remove all install keylime packages
         rlRun "yum remove -y python3-keylime\* keylime\*"
         # build and install keylime-99 dummy RPM
