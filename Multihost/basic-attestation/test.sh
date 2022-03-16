@@ -313,7 +313,7 @@ _EOF"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         # give the revocation notifier a bit more time to contact the agent
-        rlRun "rlWaitForCmd 'tail $(limeAgentLogfile) | grep -q \"Executing revocation action\"' -m 10 -d 1 -t 10"
+        rlRun "rlWaitForCmd 'tail $(limeAgentLogfile) | grep -q \"Executing revocation action\"' -m 20 -d 1 -t 20"
         rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
         rlAssertNotExists /var/tmp/test_payload_file
@@ -387,7 +387,9 @@ Agent2() {
         sleep 5
 
         rlRun "limeStartAgent"
-        rlRun "limeWaitForAgentRegistration ${AGENT2_ID}"
+        # cannot use limeWaitForAgentRegistration as we do not have tenant configured
+        # so let's just wait for 20 seconds
+        rlRun "sleep 20"
         # create allowlist and excludelist
         limeCreateTestLists
 
