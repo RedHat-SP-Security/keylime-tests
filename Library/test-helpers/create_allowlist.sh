@@ -4,56 +4,17 @@
 # Copyright 2017 Massachusetts Institute of Technology.
 ################################################################################
 
-# this matches the file available at
-# https://github.com/keylime/keylime/blob/master/scripts/create_allowlist.sh
-# with the exception of excluding root dir / content
-# since it will be added to exclude list
-
-# Configure the installer here
-INITRAMFS_TOOLS_GIT=https://salsa.debian.org/kernel-team/initramfs-tools.git
-INITRAMFS_TOOLS_VER="master"
-
-
-# Grabs Debian's initramfs_tools from Git repo if no other options exist
-if [[ ! `command -v unmkinitramfs` && ! -x "/usr/lib/dracut/skipcpio" ]] ; then
-    # Create temp dir for pulling in initramfs-tools
-    TMPDIR=`mktemp -d` || exit 1
-    echo "INFO: Downloading initramfs-tools: $TMPDIR"
-
-    # Clone initramfs-tools repo
-    pushd $TMPDIR
-    git clone $INITRAMFS_TOOLS_GIT initramfs-tools
-    pushd initramfs-tools
-    git checkout $INITRAMFS_TOOLS_VER
-    popd # $TMPDIR
-    popd
-
-    shopt -s expand_aliases
-    alias unmkinitramfs=$TMPDIR/initramfs-tools/unmkinitramfs
+if [ $# -lt 1 -o "$1" == "-h" -o "$1" == "--help" ]; then
+    echo "Usage:  `basename $0` LISTNAME [hash-algo] [-- FILE1 FILE2 ...]" >&2
+    exit 1;
 fi
-
 
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root" 1>&2
     exit 1
 fi
 
-if [ $# -lt 1 ]
-then
-    echo "Usage:  `basename $0` list.txt [hash-algo]" >&2
-    exit $NOARGS;
-fi
-
-# Where to look for initramfs image
-INITRAMFS_LOC="/boot/"
-if [ -d "/ostree" ]; then
-    # If we are on an ostree system change where we look for initramfs image
-    loc=$(grep -E "/ostree/[^/]([^/]*)" -o /proc/cmdline | head -n 1 | cut -d / -f 3)
-    INITRAMFS_LOC="/boot/ostree/${loc}/"
-fi
-
-if [ $# -eq 2 ]
-then
+if [ "$2" != "--" ]; then
     ALGO=$2
 else
     ALGO=sha1sum
@@ -62,8 +23,25 @@ fi
 OUTPUT=$(readlink -f $1)
 rm -f $OUTPUT
 
+# now process additional arguments after "--"
+while [ $# -gt 0 -a "$1" != "--" ]; do
+    shift
+done
+if [ "$1" == "--" ]; then
+    shift;
+fi
 
 echo "Writing allowlist to $OUTPUT with $ALGO..."
+
+# process individual files
+while [ $# -gt 0 ]; do
+    if test -f "$1"; then
+        $ALGO "$1" >> $OUTPUT
+    else
+        echo "Error: $1 is not a regular file" >&2
+    fi
+    shift
+done
 
 # Add boot_aggregate from /sys/kernel/security/ima/ascii_runtime_measurements (IMA Log) file.
 # The boot_aggregate measurement is always the first line in the IMA Log file.
