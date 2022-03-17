@@ -1048,7 +1048,8 @@ true <<'=cut'
 =head2 limeCreateTestLists
 
 Creates allowlist.txt and excludelist.txt to be used for testing purposes.
-Allowlist will contain only initramdisk related content.
+Allowlist will contain only initramdisk related content and files provided
+as command line arguments.
 Exclude list will contain all root dir / content except /keylime-tests.
 This is based on an assumption that content used for testing purposes will
 be created under /keylime-tests in a directory with an unique name.
@@ -1067,7 +1068,7 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 limeCreateTestLists() {
 
     # generate allowlist
-    bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum && \
+    bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum -- $@ && \
     # generate excludelist
     bash $limeLibraryDir/create_excludelist.sh excludelist.txt && \
     # make sure the file exists
