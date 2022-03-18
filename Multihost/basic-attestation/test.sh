@@ -97,7 +97,7 @@ Verifier() {
         # Verifier configuration
         rlRun "limeUpdateConf cloud_verifier cloudverifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier registrar_ip ${REGISTRAR_IP}"
-        #rlRun "limeUpdateConf cloud_verifier check_client_cert False"
+        rlRun "limeUpdateConf cloud_verifier check_client_cert True"
         rlRun "limeUpdateConf cloud_verifier tls_dir $CERTDIR"
         rlRun "limeUpdateConf cloud_verifier ca_cert cacert.pem"
         rlRun "limeUpdateConf cloud_verifier my_cert verifier-cert.pem"
@@ -155,7 +155,7 @@ Registrar() {
 
         # configure registrar
         rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
-        #rlRun "limeUpdateConf registrar check_client_cert False"
+        rlRun "limeUpdateConf registrar check_client_cert True"
         rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
         rlRun "limeUpdateConf registrar ca_cert cacert.pem"
         rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
