@@ -1,4 +1,5 @@
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
+#!/bin/bash
+
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -45,7 +46,19 @@ rlJournalStart
         #rlRun "mkdir -p ${AGENT_WORKDIR}/secure"
         rlRun "cp /var/lib/keylime/cv_ca/{cacert.crt,client*} ${AGENT_WORKDIR}/cv_ca"
         rlRun "chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_WORKDIR}"
-        rlRun "KEYLIME_DIR=${AGENT_WORKDIR} limeStartAgent"
+        # when using unit files we need to adjust them
+        if [ -f /etc/systemd/system/keylime_agent.service ]; then
+            rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"
+            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf <<_EOF
+[Service]
+Environment=\"KEYLIME_DIR=${AGENT_WORKDIR}\"
+_EOF"
+            rlRun "systemctl daemon-reload"
+            rlRun "limeStartAgent"
+        else
+            # otherwise exporting KEYLIME_DIR this way would be enough
+            rlRun "KEYLIME_DIR=${AGENT_WORKDIR} limeStartAgent"
+        fi
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         ps -ef | grep keylime_agent
         rlRun "pgrep -f keylime_agent -u root" 1 "keylime_agent should not be running as root"
@@ -54,7 +67,7 @@ rlJournalStart
         limeCreateTestLists
     rlPhaseEnd
 
-    rlPhaseStartTest "Add keylime tenant"
+    rlPhaseStartTest "Add keylime agent"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
 spawn lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
@@ -94,6 +107,10 @@ _EOF"
             rlRun "limeStopIMAEmulator"
             rlFileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+        fi
+        if [ -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf ]; then
+            rlRun "rm -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf"
+            rlRun "systemctl daemon-reload"
         fi
         rlServiceRestore tpm2-abrmd
         limeClearData

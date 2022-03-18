@@ -1294,6 +1294,8 @@ fi
 # create context depending on the test directory by
 # cuting-off the *keylime-tests* (git repo dir) part
 __INTERNAL_limeCoverageContext=$( cat $__INTERNAL_limeLogCurrentTest | sed -e 's#.*keylime-tests[^/]*\(/.*\)#\1#' )
+# we need to save context to a place where systemd can access it without SELinux complaining
+echo "limeCoverageContext=$__INTERNAL_limeCoverageContext" > /etc/systemd/limeLib.context
 
 true <<'=cut'
 =pod

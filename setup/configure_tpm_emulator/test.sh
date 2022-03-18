@@ -79,8 +79,11 @@ User=tss
 WantedBy=multi-user.target
 _EOF"
         # also add drop-in update for eventual keylime_agent unit file
-        rlRun "mkdir /etc/systemd/system/keylime_agent.service.d"
+        rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
         rlRun 'cat > /etc/systemd/system/keylime_agent.service.d/10-tcti.conf <<_EOF
+[Unit]
+# we want to unset this since there is no /dev/tmp0
+ConditionPathExistsGlob=
 [Service]
 Environment="TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd"
 _EOF'

@@ -2,6 +2,8 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+[ "$INSTALL_SERVICE_FILES" == "0" -o "$INSTALL_SERVICE_FILES" == "false" ] && INSTALL_SERVICE_FILES=false || INSTALL_SERVICE_FILES=true
+
 rlJournalStart
 
     rlPhaseStartSetup "Install keylime and its dependencies"
@@ -54,6 +56,10 @@ _EOF'
         rlRun "python3 setup.py install"
         # copy keylime.conf to /etc
         rlRun "cp keylime.conf /etc"
+        if $INSTALL_SERVICE_FILES; then
+            rlRun "cd services; bash installer.sh"
+            rlRun "systemctl daemon-reload"
+        fi
         rlRun "popd"
     rlPhaseEnd
 
