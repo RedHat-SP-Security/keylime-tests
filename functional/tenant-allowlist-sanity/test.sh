@@ -175,7 +175,7 @@ EOF"
 
     rlPhaseStartTest "Test addallowlist from --allowlist-url not matching --allowlist-sig-url"
         rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list22 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig-url 'http://localhost:8000/allowlist.sig' --allowlist-sig-key key.pub" 0
-        rlAssertGrep "Allowlist GPG signature verification failed comparing allowlist \(.*\) against gpg_sig_file \(allowlist.sig\)" $rlRun_LOG -E
+        rlAssertGrep "Allowlist GPG signature verification failed comparing allowlist \(.*\) against gpg_sig_file \(.*\)" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
