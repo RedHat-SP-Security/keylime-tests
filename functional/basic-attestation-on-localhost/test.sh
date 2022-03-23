@@ -5,17 +5,99 @@
 SSL_SERVER_PORT=8980
 CERT_DIR="/var/lib/keylime/ca"
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
+MY_IP=127.0.0.1
+HOSTNAME=$( hostname )
 
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rlRun 'rlImport "certgen/certgen"' || rlDie "cannot import openssl/certgen library"
         rlAssertRpm keylime
-        limeBackupConfig
+
+        # generate TLS certificates for all
+        # we are going to use 4 certificates
+        # verifier = webserver cert used for the verifier server
+        # verifier-client = webclient cert used for the verifier's connection to registrar server
+        # registrar = webserver cert used for the registrar server
+        # tenant = webclient cert used (twice) by the tenant, running on AGENT server
+        # btw, we could live with just one key instead of generating multiple keys.. but that's just how openssl/certgen works
+        rlRun "x509KeyGen ca" 0 "Preparing RSA CA certificate"
+        rlRun "x509KeyGen verifier" 0 "Preparing RSA verifier certificate"
+        rlRun "x509KeyGen verifier-client" 0 "Preparing RSA verifier-client certificate"
+        rlRun "x509KeyGen registrar" 0 "Preparing RSA registrar certificate"
+        rlRun "x509KeyGen tenant" 0 "Preparing RSA tenant certificate"
+        rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
+        rlRun "x509SelfSign ca" 0 "Selfsigning CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with our CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with our CA"
+        rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
+
+        # copy verifier certificates to proper location
+        CERTDIR=/var/lib/keylime/certs
+        rlRun "mkdir -p $CERTDIR"
+        rlRun "cp $(x509Cert ca) $CERTDIR/cacert.pem"
+        rlRun "cp $(x509Cert verifier) $CERTDIR/verifier-cert.pem"
+        rlRun "cp $(x509Key verifier) $CERTDIR/verifier-key.pem"
+        rlRun "cp $(x509Cert verifier-client) $CERTDIR/verifier-client-cert.pem"
+        rlRun "cp $(x509Key verifier-client) $CERTDIR/verifier-client-key.pem"
+        rlRun "cp $(x509Cert registrar) $CERTDIR/registrar-cert.pem"
+        rlRun "cp $(x509Key registrar) $CERTDIR/registrar-key.pem"
+        rlRun "cp $(x509Cert tenant) $CERTDIR/tenant-cert.pem"
+        rlRun "cp $(x509Key tenant) $CERTDIR/tenant-key.pem"
+        rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
+        rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
+        # assign cert ownership to keylime user if it exists
+        id keylime && rlRun "chown -R keylime.keylime $CERTDIR"
+
         # update /etc/keylime.conf
-        rlRun "limeUpdateConf tenant require_ek_cert False"
+        limeBackupConfig
+        # general section
+        rlRun "limeUpdateConf general tls_check_hostnames True"
+        # verifier
+        rlRun "limeUpdateConf cloud_verifier check_client_cert True"
+        rlRun "limeUpdateConf cloud_verifier tls_dir $CERTDIR"
+        rlRun "limeUpdateConf cloud_verifier ca_cert cacert.pem"
+        rlRun "limeUpdateConf cloud_verifier my_cert verifier-cert.pem"
+        rlRun "limeUpdateConf cloud_verifier private_key verifier-key.pem"
+        rlRun "limeUpdateConf cloud_verifier private_key_pw ''"
+        rlRun "limeUpdateConf cloud_verifier registrar_tls_dir $CERTDIR"
+        rlRun "limeUpdateConf cloud_verifier registrar_ca_cert cacert.pem"
+        rlRun "limeUpdateConf cloud_verifier registrar_my_cert verifier-client-cert.pem"
+        rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
+        rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
+        rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
+        rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_webhook yes"
         rlRun "limeUpdateConf cloud_verifier webhook_url https://localhost:${SSL_SERVER_PORT}"
+        # tenant
+        rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
+        rlRun "limeUpdateConf tenant ca_cert cacert.pem"
+        rlRun "limeUpdateConf tenant my_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant private_key tenant-key.pem"
+        rlRun "limeUpdateConf tenant private_key_pw ''"
+        rlRun "limeUpdateConf tenant registrar_tls_dir $CERTDIR"
+        # for tenant registrar_* TLS options we can use save values as above
+        rlRun "limeUpdateConf tenant registrar_ca_cert cacert.pem"
+        rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
+        rlRun "limeUpdateConf tenant registrar_private_key_pw ''"
+        rlRun "limeUpdateConf tenant agent_mtls_cert ${CERTDIR}/tenant-cert.pem"
+        rlRun "limeUpdateConf tenant agent_mtls_private_key ${CERTDIR}/tenant-key.pem"
+        # registrar
+        rlRun "limeUpdateConf registrar check_client_cert True"
+        rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
+        rlRun "limeUpdateConf registrar ca_cert cacert.pem"
+        rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
+        rlRun "limeUpdateConf registrar private_key registrar-key.pem"
+        rlRun "limeUpdateConf registrar private_key_pw ''"
+        # agent
+        rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
+        rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
+        rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator

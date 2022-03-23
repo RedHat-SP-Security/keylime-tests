@@ -5,6 +5,7 @@ component:
 test: ./test.sh
 framework: beakerlib
 require:
+- library(openssl/certgen)
 - yum
 - expect
 - tpm2-abrmd
