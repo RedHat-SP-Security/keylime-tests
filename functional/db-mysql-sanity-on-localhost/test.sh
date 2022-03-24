@@ -91,12 +91,12 @@ rlJournalStart
         rlRun "limeStopVerifier"
         rlServiceStop mysqld
         # submit log files
-        rlFileSubmit $(limeVerifierLogfile)
-        rlFileSubmit $(limeRegistrarLogfile)
-        rlFileSubmit $(limeAgentLogfile)
+        limeLogfileSubmit $(limeVerifierLogfile)
+        limeLogfileSubmit $(limeRegistrarLogfile)
+        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            rlFileSubmit $(limeIMAEmulatorLogfile)
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
         fi
 

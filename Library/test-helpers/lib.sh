@@ -1265,6 +1265,36 @@ limeIMAEmulatorLogfile() {
 
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeLogfileSubmit
+
+Wrapper around Beakerlib function rlFileSubmit that prints the provided file
+to STDOUT if the test failed, i.e. $__INTERNAL_TEST_STATE > 0.
+
+    limeLogfileSubmit FILE
+
+=over
+
+=back
+
+Returns 0.
+
+=cut
+
+
+limeLogfileSubmit() {
+
+    local STATE=${__INTERNAL_TEST_STATE:-0}
+
+    if [ ${STATE} -gt 0 -a -n "$1" ]; then
+        cat $1
+    fi
+    rlFileSubmit $1
+
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Initialization
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
