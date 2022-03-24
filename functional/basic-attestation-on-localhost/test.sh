@@ -196,12 +196,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        rlFileSubmit $(limeVerifierLogfile)
-        rlFileSubmit $(limeRegistrarLogfile)
-        rlFileSubmit $(limeAgentLogfile)
+        limeLogfileSubmit $(limeVerifierLogfile)
+        limeLogfileSubmit $(limeRegistrarLogfile)
+        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            rlFileSubmit $(limeIMAEmulatorLogfile)
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
         fi
         rlRun "rm /etc/pki/ca-trust/source/anchors/keylime-ca.crt"

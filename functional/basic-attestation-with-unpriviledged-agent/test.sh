@@ -100,12 +100,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        rlFileSubmit $(limeVerifierLogfile)
-        rlFileSubmit $(limeRegistrarLogfile)
-        rlFileSubmit $(limeAgentLogfile)
+        limeLogfileSubmit $(limeVerifierLogfile)
+        limeLogfileSubmit $(limeRegistrarLogfile)
+        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            rlFileSubmit $(limeIMAEmulatorLogfile)
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
         fi
         if [ -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf ]; then

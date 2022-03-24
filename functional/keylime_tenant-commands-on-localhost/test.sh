@@ -121,12 +121,12 @@ rlJournalStart
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        rlFileSubmit $(limeVerifierLogfile)
-        rlFileSubmit $(limeRegistrarLogfile)
-        rlFileSubmit $(limeAgentLogfile)
+        limeLogfileSubmit $(limeVerifierLogfile)
+        limeLogfileSubmit $(limeRegistrarLogfile)
+        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            rlFileSubmit $(limeIMAEmulatorLogfile)
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
         fi
         rlServiceRestore tpm2-abrmd
