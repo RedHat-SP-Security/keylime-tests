@@ -50,9 +50,19 @@ _EOF'
             rlRun "git clone https://github.com/keylime/keylime.git /var/tmp/keylime_sources"
         fi
         rlRun "pushd /var/tmp/keylime_sources"
+        # print more details about the code we are going to use
+        rlLogInfo "Getting more details about the Packit environment"
+        env | grep "PACKIT_"
+        rlLogInfo "Getting more details about the code we are going to use"
+        if [ -d .git ]; then
+            git config --get remote.origin.url
+            git status
+            git log -n 10 --oneline
+        fi
         # clear files that could be present from previous installation and be disruptive
         # in particular db migration files
-        rlRun "rm -rf build/lib/keylime/migrations $( ls -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations )"
+        rlRun "rm -rf build/lib/keylime/migrations"
+        [ -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations ] && rlRun "rm -rf /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations"
         rlRun "python3 setup.py install"
         # copy keylime.conf to /etc
         rlRun "cp keylime.conf /etc"
