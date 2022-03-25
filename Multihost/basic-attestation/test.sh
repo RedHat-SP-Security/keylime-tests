@@ -69,12 +69,13 @@ Verifier() {
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
-        rlRun "mkdir -p $CERTDIR"
-        rlRun "cp $(x509Cert ca) $CERTDIR/cacert.pem"
-        rlRun "cp $(x509Cert verifier) $CERTDIR/verifier-cert.pem"
-        rlRun "cp $(x509Key verifier) $CERTDIR/verifier-key.pem"
-        rlRun "cp $(x509Cert verifier-client) $CERTDIR/verifier-client-cert.pem"
-        rlRun "cp $(x509Key verifier-client) $CERTDIR/verifier-client-key.pem"
+        rlRun "mkdir -p ${CERTDIR}"
+        rlRun "cp $(x509Cert ca) ${CERTDIR}/cacert.pem"
+        rlRun "cp $(x509Cert verifier) ${CERTDIR}/verifier-cert.pem"
+        rlRun "cp $(x509Key verifier) ${CERTDIR}/verifier-key.pem"
+        rlRun "cp $(x509Cert verifier-client) ${CERTDIR}/verifier-client-cert.pem"
+        rlRun "cp $(x509Key verifier-client) ${CERTDIR}/verifier-client-key.pem"
+        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
 
         # expose necessary certificates to clients
         rlRun "mkdir http"
@@ -98,12 +99,12 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier cloudverifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf cloud_verifier check_client_cert True"
-        rlRun "limeUpdateConf cloud_verifier tls_dir $CERTDIR"
+        rlRun "limeUpdateConf cloud_verifier tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf cloud_verifier ca_cert cacert.pem"
         rlRun "limeUpdateConf cloud_verifier my_cert verifier-cert.pem"
         rlRun "limeUpdateConf cloud_verifier private_key verifier-key.pem"
         rlRun "limeUpdateConf cloud_verifier private_key_pw ''"
-        rlRun "limeUpdateConf cloud_verifier registrar_tls_dir $CERTDIR"
+        rlRun "limeUpdateConf cloud_verifier registrar_tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf cloud_verifier registrar_ca_cert cacert.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_my_cert verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
@@ -144,10 +145,11 @@ Registrar() {
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
-        rlRun "mkdir -p $CERTDIR"
+        rlRun "mkdir -p ${CERTDIR}"
         for F in cacert.pem registrar-cert.pem registrar-key.pem; do
-            rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
+            rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
+        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
 
         # common configuration goes here
         rlRun "limeUpdateConf general tls_check_hostnames True"
@@ -156,7 +158,7 @@ Registrar() {
         # configure registrar
         rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf registrar check_client_cert True"
-        rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
+        rlRun "limeUpdateConf registrar tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf registrar ca_cert cacert.pem"
         rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
         rlRun "limeUpdateConf registrar private_key registrar-key.pem"
@@ -198,14 +200,16 @@ Agent() {
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
         SECUREDIR=/var/lib/keylime/secure
-        rlRun "mkdir -p $CERTDIR"
+        rlRun "mkdir -p ${CERTDIR}"
         rlRun "mkdir -p $SECUREDIR"
         for F in cacert.pem tenant-cert.pem tenant-key.pem agent-key.pem agent-cert.pem; do
-            rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
+            rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
+        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
         # agent mTLS certs are supposed to be in the SECUREDIR
         rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
         rlRun "cp ${CERTDIR}/{agent-key.pem,agent-cert.pem} ${SECUREDIR}"
+        id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
         # common configuration goes here
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
@@ -215,13 +219,13 @@ Agent() {
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf tenant cloudverifier_ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
+        rlRun "limeUpdateConf tenant tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf tenant ca_cert cacert.pem"
         rlRun "limeUpdateConf tenant my_cert tenant-cert.pem"
         rlRun "limeUpdateConf tenant private_key tenant-key.pem"
         rlRun "limeUpdateConf tenant private_key_pw ''"
         # for registrar_* TLS options we can use save values as above
-        rlRun "limeUpdateConf tenant registrar_tls_dir $CERTDIR"
+        rlRun "limeUpdateConf tenant registrar_tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf tenant registrar_ca_cert cacert.pem"
         rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
         rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
@@ -344,15 +348,16 @@ Agent2() {
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
         SECUREDIR=/var/lib/keylime/secure
-        rlRun "mkdir -p $CERTDIR"
+        rlRun "mkdir -p ${CERTDIR}"
         rlRun "mkdir -p $SECUREDIR"
         for F in cacert.pem agent2-key.pem agent2-cert.pem; do
-            rlRun "wget -O $CERTDIR/$F 'http://$VERIFIER:8000/$F'"
+            rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
+        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
         # agent mTLS certs are supposed to be in the SECUREDIR
         rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
         rlRun "cp ${CERTDIR}/{agent2-key.pem,agent2-cert.pem} ${SECUREDIR}"
-
+        id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
         # common configuration goes here
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
