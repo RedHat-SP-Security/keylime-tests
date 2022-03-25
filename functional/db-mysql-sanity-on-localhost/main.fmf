@@ -12,7 +12,6 @@ require:
   - python3-PyMySQL
   - tpm2-abrmd
   - tpm2-tools
-#  - mysql-sever  # not used due to conflict with mariadb
 recommend:
   - keylime
   - keylime-verifier
@@ -22,3 +21,4 @@ recommend:
   - keylime-tools
 duration: 15m
 enabled: true
+extra-nitrate: TC#0613124
