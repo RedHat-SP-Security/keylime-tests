@@ -163,19 +163,19 @@ EOF"
         rlRun "sed 's/^000/111/' allowlist.txt > allowlist2.txt"
         rlRun "gpg --verify allowlist.sig allowlist2.txt" 1
         rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list20 --allowlist allowlist2.txt --allowlist-sig allowlist.sig --allowlist-sig-key key.pub" 1
-        rlAssertGrep "Allowlist GPG signature verification failed comparing allowlist (allowlist2.txt) against gpg_sig_file (allowlist.sig)" $rlRun_LOG
+        rlAssertGrep "signature verification failed" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist from --allowlist-url not matching --allowlist-sig"
         rlRun "curl 'http://localhost:8000/allowlist2.txt'"
         rlRun "gpg --verify allowlist.sig allowlist2.txt" 1
         rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list21 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig allowlist.sig --allowlist-sig-key key.pub" 1
-        rlAssertGrep "Allowlist GPG signature verification failed comparing allowlist \(.*\) against gpg_sig_file \(allowlist.sig\)" $rlRun_LOG -E
+        rlAssertGrep "signature verification failed" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist from --allowlist-url not matching --allowlist-sig-url"
         rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list22 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig-url 'http://localhost:8000/allowlist.sig' --allowlist-sig-key key.pub" 1
-        rlAssertGrep "Allowlist GPG signature verification failed comparing allowlist \(.*\) against gpg_sig_file \(.*\)" $rlRun_LOG -E
+        rlAssertGrep "signature verification failed" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
