@@ -3,13 +3,19 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 # the script expects these env variables to be set from the outside
-# PACKIT_FULL_REPO_NAME - we run patchcov only for 'keylime/keylime'
-# PACKIT_TARGET_SHA - this is set by Packit CI
-# PATCH_COVERAGE_TRESHOLD - this is the treshhold for the coverage pass/fail test (default 0)
+# PACKIT_SOURCE_URL - repo URL from which PR comes from
+# PACKIT_SOURCE_BRANCH - branch from which PR comes from
+# PACKIT_TARGET_URL - repo URL which PR targets
+# PACKIT_TARGET_BRANCH - branch which PR targets
+# PACKIT_SOURCE_SHA - last commit in the PACKIT_SOURCE_BRANCH
 
 [ -n "${PATCH_COVERAGE_TRESHOLD}" ] || PATCH_COVERAGE_TRESHOLD=0
-#PACKIT_TARGET_SHA=3590e21b7e4b48a2023aadf2486b116ef5be2375
-#PACKIT_FULL_REPO_NAME="keylime/keylime"
+
+#export PACKIT_TARGET_BRANCH=master
+#export PACKIT_SOURCE_BRANCH=quote_before_register
+#export PACKIT_TARGET_URL=https://github.com/keylime/keylime
+#export PACKIT_SOURCE_URL=https://github.com/ansasaki/keylime
+#export PACKIT_SOURCE_SHA=a79b05642bbe04af0ef0a356afd4f5af276898bb
 
 rlJournalStart
 
@@ -30,22 +36,23 @@ rlJournalStart
         rlRun "popd"
     rlPhaseEnd
 
-# generate patch coverage report only if PACKIT_TARGET_SHA has been populated
-if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_TARGET_SHA}" ] && [ "${PACKIT_FULL_REPO_NAME}" == "keylime/keylime" ]; then
+# generate patch coverage report only if PACKIT variables were populated and we are targeting keylime repo
+if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_SOURCE_URL}" ] && [ -n "${PACKIT_SOURCE_BRANCH}" ] && \
+  [ "${PACKIT_TARGET_URL}" == "https://github.com/keylime/keylime" ] && [ -n "${PACKIT_TARGET_BRANCH}" ] && \
+  [ -n "${PACKIT_SOURCE_SHA}" ]; then
 
     rlPhaseStartTest "Generate patch coverage report"
         # log env variables exported by Packit CI
-        rlRun "PACKIT_COMMIT_SHA=${PACKIT_COMMIT_SHA}"
-        rlRun "PACKIT_TARGET_SHA=${PACKIT_TARGET_SHA}"
-        # from Packit CI / TMT we do not have the git repo, only files.. so we need to recreate the patch
+        rlRun "env | grep PACKIT_"
+        # from Packit CI / TMT we do not have the .git dir in /var/tmp/keylime_sources.. so we need to recreate the patch
+        # using PACKIT_ variables
         rlRun "TmpDir=\$( mktemp -d )"
-        rlRun "git clone https://github.com/keylime/keylime.git ${TmpDir}"
+        rlRun "git clone --branch ${PACKIT_SOURCE_BRANCH} ${PACKIT_SOURCE_URL} ${TmpDir}"
         rlRun "pushd ${TmpDir}"
-        rlRun "git checkout ${PACKIT_TARGET_SHA}"
-        rlRun "popd"
-        rlRun "cp -r /var/tmp/keylime_sources/* ${TmpDir}"
-        rlRun "pushd ${TmpDir}"
-        rlRun "git diff > $__INTERNAL_limeCoverageDir/patch.txt"
+        rlRun "git remote add PR_TARGET ${PACKIT_TARGET_URL}"
+        rlRun "git fetch PR_TARGET"
+        rlRun "ANCESTOR_COMMIT=\$( git merge-base ${PACKIT_SOURCE_BRANCH} PR_TARGET/${PACKIT_TARGET_BRANCH} )"
+        rlRun "git diff ${ANCESTOR_COMMIT}..${PACKIT_SOURCE_SHA} > $__INTERNAL_limeCoverageDir/patch.txt"
         rlRun "popd"
         rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
         rlRun "rm -rf ${TmpDir}"
