@@ -66,9 +66,14 @@ Expire-Date: 0
 EOF"
         rlRun "gpg --batch --pinentry-mode=loopback --passphrase '' --generate-key gpg.script"
         rlRun "gpg --list-secret-keys"
-        rlRun "gpg --armor -o key.pub --export joe@foo.bar"
+        rlRun "gpg --armor -o gpg-key.pub --export joe@foo.bar"
         # sign our allowlist.txt
-        rlRun "gpg --detach-sign -o allowlist.sig allowlist.txt"
+        rlRun "gpg --detach-sign -o allowlist-gpg.sig allowlist.txt"
+	# generate ECDSA key and sign our allowlist
+	rlRun "openssl ecparam -genkey -name secp384r1 -noout -out ecdsa-priv.pem"
+	rlRun "openssl ec -in ecdsa-priv.pem -pubout -out ecdsa-pub.pem"
+	rlRun "openssl dgst -sha256 -binary allowlist.txt > allowlist.hash256"
+	rlRun "openssl pkeyutl -sign -inkey ecdsa-priv.pem -in allowlist.hash256 -out allowlist-hash256.sig"
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist"
@@ -87,14 +92,20 @@ EOF"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addallowlist providing --allowlist-url and --allowlist-sig and --allowlist-sig-key"
-        rlRun "gpg --verify allowlist.sig allowlist.txt"
-        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list4 --allowlist-url 'http://localhost:8000/allowlist.txt' --allowlist-sig allowlist.sig --allowlist-sig-key key.pub"
+    rlPhaseStartTest "Test addallowlist providing --allowlist-url and --allowlist-sig and --allowlist-sig-key with GPG key"
+        rlRun "gpg --verify allowlist-gpg.sig allowlist.txt"
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list4 --allowlist-url 'http://localhost:8000/allowlist.txt' --allowlist-sig allowlist-gpg.sig --allowlist-sig-key gpg-key.pub"
+        rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test addallowlist providing --allowlist-url and --allowlist-sig and --allowlist-sig-key with ECDSA key"
+        rlRun "openssl pkeyutl -in allowlist.hash256 -inkey ecdsa-pub.pem -pubin -verify -sigfile allowlist-hash256.sig"
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list7 --allowlist-url 'http://localhost:8000/allowlist.txt' --allowlist-sig allowlist-hash256.sig --allowlist-sig-key ecdsa-pub.pem"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist providing --allowlist-url and --allowlist-sig-url and --allowlist-sig-key"
-        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list5 --allowlist-url 'http://localhost:8000/allowlist.txt' --allowlist-sig-url 'http://localhost:8000/allowlist.sig' --allowlist-sig-key key.pub"
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list5 --allowlist-url 'http://localhost:8000/allowlist.txt' --allowlist-sig-url 'http://localhost:8000/allowlist-gpg.sig' --allowlist-sig-key gpg-key.pub"
     rlPhaseEnd
 
     rlPhaseStartTest "Test showallowlist"
@@ -159,22 +170,29 @@ EOF"
         rlAssertGrep "Checksum of allowlist does not match!" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addallowlist not matching --allowlist-sig"
+    rlPhaseStartTest "Test addallowlist not matching --allowlist-sig with GPG key"
         rlRun "sed 's/^000/111/' allowlist.txt > allowlist2.txt"
-        rlRun "gpg --verify allowlist.sig allowlist2.txt" 1
-        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list20 --allowlist allowlist2.txt --allowlist-sig allowlist.sig --allowlist-sig-key key.pub" 1
+        rlRun "gpg --verify allowlist-gpg.sig allowlist2.txt" 1
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list20 --allowlist allowlist2.txt --allowlist-sig allowlist-gpg.sig --allowlist-sig-key gpg-key.pub" 1
+        rlAssertGrep "signature verification failed" $rlRun_LOG
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test addallowlist not matching --allowlist-sig with ECDSA key"
+        rlRun "openssl dgst -sha256 -binary allowlist2.txt > allowlist2.hash256"
+        rlRun "openssl pkeyutl -in allowlist2.hash256 -inkey ecdsa-pub.pem -pubin -verify -sigfile allowlist-hash256.sig" 1
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list23 --allowlist allowlist2.txt --allowlist-sig allowlist-hash256.sig --allowlist-sig-key ecdsa-pub.pem" 1
         rlAssertGrep "signature verification failed" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist from --allowlist-url not matching --allowlist-sig"
         rlRun "curl 'http://localhost:8000/allowlist2.txt'"
-        rlRun "gpg --verify allowlist.sig allowlist2.txt" 1
-        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list21 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig allowlist.sig --allowlist-sig-key key.pub" 1
+        rlRun "gpg --verify allowlist-gpg.sig allowlist2.txt" 1
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list21 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig allowlist-gpg.sig --allowlist-sig-key gpg-key.pub" 1
         rlAssertGrep "signature verification failed" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist from --allowlist-url not matching --allowlist-sig-url"
-        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list22 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig-url 'http://localhost:8000/allowlist.sig' --allowlist-sig-key key.pub" 1
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list22 --allowlist-url 'http://localhost:8000/allowlist2.txt' --allowlist-sig-url 'http://localhost:8000/allowlist-gpg.sig' --allowlist-sig-key gpg-key.pub" 1
         rlAssertGrep "signature verification failed" $rlRun_LOG
     rlPhaseEnd
 
