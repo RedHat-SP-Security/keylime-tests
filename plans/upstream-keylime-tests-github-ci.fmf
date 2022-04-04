@@ -16,6 +16,7 @@ discover:
    - /setup/install_upstream_keylime
    - /setup/enable_keylime_coverage
    - "/functional/.*"
+   - /upstream/run_keylime_tests
    - /setup/generate_coverage_report
 
 execute:
