@@ -277,16 +277,16 @@ if [ -n "${AGENT2}" ]; then
         # register
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --allowlist allowlist2.txt --exclude excludelist2.txt --include payload --cert default -c add
+spawn lime_keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --allowlist allowlist2.txt --exclude excludelist2.txt --include payload --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
         rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
+        rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
-        rlRun -s "keylime_tenant -c status -u ${AGENT2_ID}"
+        rlRun -s "lime_keylime_tenant -c status -u ${AGENT2_ID}"
         rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
     rlPhaseEnd
 fi
@@ -296,7 +296,7 @@ fi
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
+spawn lime_keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
