@@ -33,6 +33,12 @@ rlJournalStart
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
+        # for PRs upload the archive to transfer.sh
+        if [ -n "${PACKIT_SOURCE_URL}" ]; then
+            rlRun -s "curl --upload-file coverage.tar.gz https://transfer.sh"
+            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
+        fi
         rlRun "popd"
     rlPhaseEnd
 
