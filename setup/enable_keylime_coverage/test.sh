@@ -25,7 +25,7 @@ EnvironmentFile=/etc/systemd/limeLib.context
 # we need to change WorkingDirectory since .coverage* files will be stored there
 WorkingDirectory=/var/tmp/limeLib/coverage
 ExecStart=
-ExecStart=/usr/local/bin/coverage run -p --context \\\${limeCoverageContext} /usr/local/bin/keylime_${F}
+ExecStart=/usr/local/bin/coverage run /usr/local/bin/keylime_${F}
 _EOF"
         done
 	rlRun "systemctl daemon-reload"
