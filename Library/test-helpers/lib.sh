@@ -293,7 +293,7 @@ __limeStartKeylimeService() {
     # if there is no unit file, execute the process directly
     else
         if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-            coverage run -p --context $__INTERNAL_limeCoverageContext $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
+            coverage run $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
         else
             # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
             RUST_LOG=keylime_agent=trace keylime_${NAME} >> ${LOGFILE} 2>&1 &
@@ -1321,12 +1321,22 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
     [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator
 fi
 
+# prepare coveragerc file
+cat > /var/tmp/limeLib/coverage/coveragerc <<_EOF
+[run]
+parallel = True
+concurrency = multiprocessing,thread
+context = foo
+omit = test_*
+_EOF
 # set code coverage context depending on a test
 # create context depending on the test directory by
 # cuting-off the *keylime-tests* (git repo dir) part
 __INTERNAL_limeCoverageContext=$( cat $__INTERNAL_limeLogCurrentTest | sed -e 's#.*keylime-tests[^/]*\(/.*\)#\1#' )
+sed -i "s#context =.*#context = ${__INTERNAL_limeCoverageContext}#" /var/tmp/limeLib/coverage/coveragerc
 # we need to save context to a place where systemd can access it without SELinux complaining
-echo "limeCoverageContext=$__INTERNAL_limeCoverageContext" > /etc/systemd/limeLib.context
+echo "COVERAGE_RCFILE=/var/tmp/limeLib/coverage/coveragerc" > /etc/systemd/limeLib.context
+export COVERAGE_RCFILE=/var/tmp/limeLib/coverage/coveragerc
 
 true <<'=cut'
 =pod
@@ -1356,7 +1366,7 @@ cat > /usr/local/bin/lime_keylime_tenant <<EOF
 #!/bin/bash
 
 if $__INTERNAL_limeCoverageEnabled; then
-    coverage run -p --context $__INTERNAL_limeCoverageContext \$( which keylime_tenant ) "\$@"
+    coverage run \$( which keylime_tenant ) "\$@"
 else
     keylime_tenant "\$@"
 fi
