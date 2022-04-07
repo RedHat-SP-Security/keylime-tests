@@ -47,7 +47,7 @@ rlJournalStart
         rlRun "cp /var/lib/keylime/cv_ca/{cacert.crt,client*} ${AGENT_WORKDIR}/cv_ca"
         rlRun "chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_WORKDIR}"
         # when using unit files we need to adjust them
-        if [ -f /etc/systemd/system/keylime_agent.service ]; then
+        if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
             rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"
             rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf <<_EOF
 [Service]
