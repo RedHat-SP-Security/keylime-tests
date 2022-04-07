@@ -2,10 +2,20 @@
 
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# Upstream.
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 AGENT_USER=kagent
 AGENT_GROUP=tss
 AGENT_WORKDIR=/var/lib/keylime-agent
+KEYLIME_UPSTREAM=true
+
+# Distribution.
+if rpm -q keylime-base; then
+    AGENT_USER=keylime
+    AGENT_GROUP=keylime
+    AGENT_WORKDIR=/var/lib/keylime
+    KEYLIME_UPSTREAM=
+fi
 
 rlJournalStart
 
@@ -39,30 +49,38 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        # do special configuration for the agent
-        rlRun "limeUpdateConf cloud_agent run_as ${AGENT_USER}:${AGENT_GROUP}"
-        rlRun "useradd -s /sbin/nologin -g ${AGENT_GROUP} ${AGENT_USER}"
-        rlRun "mkdir -p ${AGENT_WORKDIR}/cv_ca"
-        #rlRun "mkdir -p ${AGENT_WORKDIR}/secure"
-        rlRun "cp /var/lib/keylime/cv_ca/{cacert.crt,client*} ${AGENT_WORKDIR}/cv_ca"
-        rlRun "chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_WORKDIR}"
-        # when using unit files we need to adjust them
-        if [ -f /etc/systemd/system/keylime_agent.service ]; then
-            rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"
-            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf <<_EOF
+
+        # Do special configuration for the agent when testing upstream.
+        # When testing the distribution packages, we use their default
+        # configuration.
+        if [ "${KEYLIME_UPSTREAM}" ]; then
+            rlRun "limeUpdateConf cloud_agent run_as ${AGENT_USER}:${AGENT_GROUP}"
+            rlRun "useradd -s /sbin/nologin -g ${AGENT_GROUP} ${AGENT_USER}"
+            rlRun "mkdir -p ${AGENT_WORKDIR}/cv_ca"
+            #rlRun "mkdir -p ${AGENT_WORKDIR}/secure"
+            rlRun "cp /var/lib/keylime/cv_ca/{cacert.crt,client*} ${AGENT_WORKDIR}/cv_ca"
+            rlRun "chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_WORKDIR}"
+            # when using unit files we need to adjust them
+            if [ -f /etc/systemd/system/keylime_agent.service ]; then
+                rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"
+                rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf <<_EOF
 [Service]
 Environment=\"KEYLIME_DIR=${AGENT_WORKDIR}\"
 _EOF"
-            rlRun "systemctl daemon-reload"
-            rlRun "limeStartAgent"
+                rlRun "systemctl daemon-reload"
+                rlRun "limeStartAgent"
+            else
+                # otherwise exporting KEYLIME_DIR this way would be enough
+                rlRun "KEYLIME_DIR=${AGENT_WORKDIR} limeStartAgent"
+            fi
         else
-            # otherwise exporting KEYLIME_DIR this way would be enough
-            rlRun "KEYLIME_DIR=${AGENT_WORKDIR} limeStartAgent"
+            # Distribution keylime -- just start the agent as-is.
+            limeStartAgent
         fi
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         ps -ef | grep keylime_agent
         rlRun "pgrep -f keylime_agent -u root" 1 "keylime_agent should not be running as root"
-        rlRun "pgrep -f keylime_agent -u kagent" 0 "keylime_agent shouldbe running as kagent"
+        rlRun "pgrep -f keylime_agent -u ${AGENT_USER}" 0 "keylime_agent should be running as ${AGENT_USER}"
         # create allowlist and excludelist
         limeCreateTestLists
     rlPhaseEnd
@@ -117,9 +135,11 @@ _EOF"
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
         #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
-        rlRun "userdel -r ${AGENT_USER}"
         mount | grep -q "${AGENT_WORKDIR}/secure" && rlRun "umount ${AGENT_WORKDIR}/secure"
-        rlRun "rm -rf ${AGENT_WORKDIR}"
+        if [ "${KEYLIME_UPSTREAM}" ]; then
+             rlRun "userdel -r ${AGENT_USER}"
+             rlRun "rm -rf ${AGENT_WORKDIR}"
+        fi
     rlPhaseEnd
 
 rlJournalEnd
