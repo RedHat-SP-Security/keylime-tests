@@ -16,7 +16,7 @@ rlJournalStart
         rlRun "rpm -Uvh $RPMPKG"
         # for RHEL and CentOS Stream configure Sergio's copr repo providing necessary dependencies
         if rlIsFedora; then
-            FEDORA_EXTRA_PKGS="python3-lark-parser"
+            FEDORA_EXTRA_PKGS="python3-lark-parser python3-packaging"
         else
             # on C9S we need to enable LEGACY crypto policy to enable SHA1 RPM signatures
             if rlIsRHEL 9 || rlIsCentOS 9; then
@@ -37,11 +37,16 @@ enabled=1
 enabled_metadata=1
 _EOF'
             RHEL_EXTRA_PKGS="cfssl python3-pip"
+            if rlIsRHEL 8 || rlIsCentOS 8; then
+                RHEL_EXTRA_PIP_PKGS="packaging"
+            else
+                RHEL_EXTRA_PKGS="$RHEL_EXTRA_PKGS python3-packaging"
+            fi
         fi
-        rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-packaging python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq patch"
+        rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq patch"
         # need to install few more pgs from pip on RHEL
         if ! rlIsFedora; then
-            rlRun "pip3 install lark-parser"
+            rlRun "pip3 install lark-parser $RHEL_EXTRA_PIP_PKGS"
         fi
         if [ -d /var/tmp/keylime_sources ]; then
             rlLogInfo "Installing keylime from /var/tmp/keylime_sources"
