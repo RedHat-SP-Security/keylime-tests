@@ -8,15 +8,11 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
         if rlIsRHEL 8 || rlIsCentOS 8; then
-            # need to use pip version of packaging module due to a bug causing test failure
-            # File "/usr/local/lib/python3.6/site-packages/keylime-6.3.1-py3.6.egg/keylime/api_version.py", line 26, in latest_minor_version
-            #   major_v = str(v_obj.major)
-            #   AttributeError: 'Version' object has no attribute 'major'
-            rlLogInfo "I have to remove python3-packaging as it is old and doesn't work well with tests"
-            rlRun "rpm -e python3-packaging"
+            # need to use pip version of packaging module since we need v20 at minimum
+            # https://github.com/keylime/keylime/issues/970
+            rpm -q python3-packaging && rlRun "rpm -e python3-packaging" 0 "Removing python3-packaging as it is old and we need v20+"
             rlRun "pip3 install packaging"
         fi
-
         # backup keylime
         rlRun "rlFileBackup --missing-ok /var/lib/keylime"
         limeBackupConfig
