@@ -60,12 +60,16 @@ rlJournalStart
 
     for TEST in `ls test_*.py`; do
         rlPhaseStartTest "Run $TEST"
-            if ${__INTERNAL_limeCoverageEnabled}; then
-                # update coverage context to this particular test
-                rlRun "sed -i 's#context =.*#context = ${TEST}#' /var/tmp/limeLib/coverage/coveragerc"
-                rlRun "/usr/local/bin/coverage run ${PWD}/${TEST}"
+            if [ "${TEST}" == "test_restful.py" ] && ( rlIsRHEL 8 || rlIsCentOS 8); then
+                rlLogInfo "Skipping test_restful.py on RHEL-8/CentOS Stream 8 as the test is not stable"
             else
-                rlRun "python3 ${PWD}/${TEST}"
+                if ${__INTERNAL_limeCoverageEnabled}; then
+                    # update coverage context to this particular test
+                    rlRun "sed -i 's#context =.*#context = ${TEST}#' /var/tmp/limeLib/coverage/coveragerc"
+                    rlRun "/usr/local/bin/coverage run ${PWD}/${TEST}"
+                else
+                    rlRun "python3 ${PWD}/${TEST}"
+                fi
             fi
         rlPhaseEnd
     done
