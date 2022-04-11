@@ -76,9 +76,9 @@ def should_ignore_line(line):
 
 def get_test_code(c):
     (q, r) = divmod(c, 26)
-    a = chr(r+ord('A')-1)
+    a = chr(r+ord('A'))
     if q > 0:
-        b = chr(q+ord('a'))
+        b = chr(q+ord('a')-1)
     else:
         b = ''
     return a+b
