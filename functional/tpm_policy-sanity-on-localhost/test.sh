@@ -34,7 +34,6 @@ rlJournalStart
         # configure TPM policy with PCR bank 23
         TPM_POLICY='{\"23\":[\"0000000000000000000000000000000000000000\",\"0000000000000000000000000000000000000000000000000000000000000000\"]}'
         rlRun "limeUpdateConf tenant tpm_policy '${TPM_POLICY}'"
-        rlRun "limeUpdateConf tenant vtpm_policy {}"
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
