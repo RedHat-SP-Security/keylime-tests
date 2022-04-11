@@ -134,7 +134,7 @@ EOF"
 
     rlPhaseStartTest "Try to add allowlist without specifying --allowlist"
         # this would succeed, not sure if this is OK
-        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list6 --tpm_policy '{}' --vtpm_policy '{}'"
+        rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list6 --tpm_policy '{}'"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
         rlRun -s "lime_keylime_tenant -c showallowlist --allowlist-name list6"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'name': 'list6'.*'ima_policy': None}}" $rlRun_LOG -E
