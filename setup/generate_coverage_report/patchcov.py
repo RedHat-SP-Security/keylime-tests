@@ -55,10 +55,11 @@ def find_best_filename_match(filename, table_files):
 
 
 def print_line(line, prefix=''):
-
-    if len(prefix)>5:
-        prefix = prefix[:5]+'+'
-    print('{0: <8} {1}'.format(prefix, line))
+    text_code_max_length = 7  # maximum length of test codes
+    if len(prefix)>text_code_max_length:
+        prefix = prefix[:text_code_max_length]+'+'
+    format_str = '{0: <%s} {1}' % str(text_code_max_length+3)
+    print(format_str.format(prefix, line))
 
 
 # returns True with the line should be ignored
@@ -72,6 +73,15 @@ def should_ignore_line(line):
         return True
     return False
 
+
+def get_test_code(c):
+    (q, r) = divmod(c, 26)
+    a = chr(r+ord('A')-1)
+    if q > 0:
+        b = chr(q+ord('a'))
+    else:
+        b = ''
+    return a+b
 
 def get_patch_coverage(patch_path, db_path):
 
@@ -124,20 +134,27 @@ def get_patch_coverage(patch_path, db_path):
                 line_no = int(re.sub(r'.*\+([0-9]+),.*', r'\1', line)) - 1
                 print_line(line)
 
-            # this is an added line which we want to measure
-            elif line.startswith('+'):
+            # removed lines we just print
+            elif line.startswith('-'):
+                print_line(line)
+
+            # these are either added/modified or untouched lines - both we want to present
+            else:
                 line_no += 1
                 # if we should not ignore the line:
                 if not should_ignore_line(line):
-                    code_lines_total += 1
+                    # but we do stats only for added/modified lines
+                    if line.startswith('+'):
+                        code_lines_total += 1
                     # find if the line has test coverage
                     line_coverage = get_file_coverage(cur, file_id)
                     contexts = [row[1] for row in line_coverage if line_no in row[2]]
                     # if there was a test coverage
                     if contexts:
-                        code_lines_covered += 1
+                        if line.startswith('+'):
+                            code_lines_covered += 1
                         contexts_used |= set(contexts)
-                        prefix = ''.join([chr(c+ord('A')-1) for c in contexts])
+                        prefix = ''.join([get_test_code(c) for c in contexts])
                     else:
                         prefix = '!'
                     print_line(line, prefix)
@@ -145,15 +162,6 @@ def get_patch_coverage(patch_path, db_path):
                 # if the change should not be counted
                 else:
                     print_line(line, '~')
-
-            # removed lines we just print
-            elif line.startswith('-'):
-                print_line(line)
-
-            # what remains are unchanged lines that we use for line counting
-            else:
-                line_no += 1
-                print_line(line)
 
         # write info that this file is skipped and enable skipping
         elif not skip_file:
@@ -170,7 +178,7 @@ def get_patch_coverage(patch_path, db_path):
     print('  ~  line is not being measured')
     for row in table_context:
         if row[0] in contexts_used:
-            prefix = chr(row[0]+ord('A')-1)
+            prefix = get_test_code(row[0])
             name = re.sub('^.*\/discover\/default\/tests', '', row[1])
             print('  {}  {}'.format(prefix, name))
     print()
