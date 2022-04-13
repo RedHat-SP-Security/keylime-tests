@@ -17,7 +17,6 @@ rlJournalStart
         rlRun "rlFileBackup --missing-ok /var/lib/keylime"
         limeBackupConfig
         # update keylime configuration
-        rlRun "limeUpdateConf general tls_check_hostnames True"
         rlRun "limeUpdateConf cloud_agent run_as root:root"
         # need to adjust file permissions since we are running keylime as root (for now)
         rlRun "rm -f /var/log/keylime/*"

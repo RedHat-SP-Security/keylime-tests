@@ -93,8 +93,6 @@ Verifier() {
         HTTP_PID=$!
         rlRun "popd"
 
-        # common configuration
-        rlRun "limeUpdateConf general tls_check_hostnames True"
         # Verifier configuration
         rlRun "limeUpdateConf cloud_verifier cloudverifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier registrar_ip ${REGISTRAR_IP}"
@@ -152,7 +150,6 @@ Registrar() {
         id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
 
         # common configuration goes here
-        rlRun "limeUpdateConf general tls_check_hostnames True"
         rlRun "limeUpdateConf general receive_revocation_ip ${REGISTRAR_IP}"
 
         # configure registrar
@@ -213,7 +210,6 @@ Agent() {
 
         # common configuration goes here
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf general tls_check_hostnames True"
 
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
@@ -361,7 +357,6 @@ Agent2() {
 
         # common configuration goes here
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf general tls_check_hostnames True"
 
         # configure agent
         rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT2_IP}"
