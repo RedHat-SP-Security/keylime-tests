@@ -54,8 +54,6 @@ rlJournalStart
 
         # update /etc/keylime.conf
         limeBackupConfig
-        # general section
-        rlRun "limeUpdateConf general tls_check_hostnames True"
         # verifier
         rlRun "limeUpdateConf cloud_verifier check_client_cert True"
         rlRun "limeUpdateConf cloud_verifier tls_dir $CERTDIR"
