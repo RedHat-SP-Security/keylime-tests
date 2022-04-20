@@ -30,14 +30,20 @@ rlJournalStart
         rlAssertExists .coverage
         rlRun "coverage html --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*' --show-contexts"
         rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
         # for PRs upload the archive to transfer.sh
         if [ -n "${PACKIT_SOURCE_URL}" ]; then
+            # upload coverage.tar.gz
             rlRun -s "curl --upload-file coverage.tar.gz https://transfer.sh"
             URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
+            # upload coverage.xml
+            rlRun -s "curl --upload-file coverage/coverage.xml https://transfer.sh"
+            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            rlLogInfo "coverage.xml report is available at $URL"
         fi
         rlRun "popd"
     rlPhaseEnd
