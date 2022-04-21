@@ -31,15 +31,32 @@ rlJournalStart
         rlRun "coverage combine"
         ls -l .coverage*
         rlAssertExists .coverage
+        # packit summary report
+        rlLogInfo "keylime-tests code coverage summary report"
+        rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "mv coverage.xml coverage.packit.xml"
-        rlRun "mv .coverage .coverage-packit"
+        rlRun "mv .coverage .coverage.packit"
+        # testsuite summary report
+        if [ -f coverage.testsuite ]; then
+            rlLogInfo "keylime testsuite code coverage summary report"
+            rlRun "cp coverage.testsuite .coverage"
+            rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        fi
+        # unittests summary report
+        if [ -f coverage.unittests ]; then
+            rlLogInfo "keylime unittests code coverage summary report"
+            rlRun "cp coverage.unittests .coverage"
+            rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        fi
         # now create overall report including upstream tests
         [ -f coverage.testsuite ] && rlRun "cp coverage.testsuite .coverage.testsuite"
         [ -f coverage.unittests ] && rlRun "cp coverage.unittests .coverage.unittests"
+        rm -f .coverage
         ls -l .coverage*
         rlRun "coverage combine"
         ls -l .coverage*
+        rlLogInfo "combined code coverage summary report"
         rlRun "coverage html --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*' --show-contexts"
         rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "cd .."
