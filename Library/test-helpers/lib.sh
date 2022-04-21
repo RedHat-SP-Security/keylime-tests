@@ -1322,11 +1322,10 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
 fi
 
 # prepare coveragerc file
+KEYLIMESRC=$( ls -d /usr/local/lib/python*/site-packages/keylime-*/keylime )
 cat > /var/tmp/limeLib/coverage/coveragerc <<_EOF
 [run]
-source =
-  /usr/local/bin
-  /usr/local/lib/python*/site-packages/keylime-*/
+source = /usr/local/bin,$KEYLIMESRC
 parallel = True
 concurrency = multiprocessing,thread
 context = foo
