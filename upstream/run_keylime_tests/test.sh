@@ -54,7 +54,18 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Run unit tests"
-        rlRun "python3 -m unittest discover -s keylime -p '*_test.py' -v"
+        if ${__INTERNAL_limeCoverageEnabled}; then
+            rlRun "/usr/local/bin/coverage run -m unittest discover -s keylime -p '*_test.py' -v"
+
+            # generate separate XML report for unit tests
+            ls -a .coverage*
+            rlRun "coverage combine"
+            rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+            rlRun "mv coverage.xml ${__INTERNAL_limeCoverageDir}/coverage.unittests.xml"
+            rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/coverage.unittests"
+        else
+            rlRun "python3 -m unittest discover -s keylime -p '*_test.py' -v"
+        fi
     rlPhaseEnd
 
     for TEST in `ls test_*.py`; do
@@ -66,6 +77,13 @@ rlJournalStart
                     # update coverage context to this particular test
                     rlRun "sed -i 's#context =.*#context = ${TEST}#' /var/tmp/limeLib/coverage/coveragerc"
                     rlRun "/usr/local/bin/coverage run ${PWD}/${TEST}"
+
+                    # generate separate XML report for upstream tests
+                    ls -al .coverage*
+                    rlRun "coverage combine"
+                    rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+                    rlRun "mv coverage.xml ${__INTERNAL_limeCoverageDir}/coverage.testsuite.xml"
+                    rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/coverage.testsuite"
                 else
                     rlRun "python3 ${PWD}/${TEST}"
                 fi
@@ -77,12 +95,6 @@ rlJournalStart
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
-        fi
-        # move test coverage files away to preserve them
-        if ${__INTERNAL_limeCoverageEnabled}; then
-            ls -al .coverage*
-            rlRun "coverage combine"
-            rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/.coverage.testsuite"
         fi
         popd
         limeClearData
