@@ -77,13 +77,6 @@ rlJournalStart
                     # update coverage context to this particular test
                     rlRun "sed -i 's#context =.*#context = ${TEST}#' /var/tmp/limeLib/coverage/coveragerc"
                     rlRun "/usr/local/bin/coverage run ${PWD}/${TEST}"
-
-                    # generate separate XML report for upstream tests
-                    ls -al .coverage*
-                    rlRun "coverage combine"
-                    rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
-                    rlRun "mv coverage.xml ${__INTERNAL_limeCoverageDir}/coverage.testsuite.xml"
-                    rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/coverage.testsuite"
                 else
                     rlRun "python3 ${PWD}/${TEST}"
                 fi
@@ -96,6 +89,14 @@ rlJournalStart
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
         fi
+
+        # generate separate XML report for upstream tests
+        ls -al .coverage*
+        rlRun "coverage combine"
+        rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        rlRun "mv coverage.xml ${__INTERNAL_limeCoverageDir}/coverage.testsuite.xml"
+        rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/coverage.testsuite"
+ 
         popd
         limeClearData
         limeRestoreConfig
