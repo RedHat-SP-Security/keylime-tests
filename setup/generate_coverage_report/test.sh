@@ -27,14 +27,19 @@ rlJournalStart
     rlPhaseStartTest "Generate overall coverage report"
         rlRun "pushd ${__INTERNAL_limeCoverageDir}"
         # first create combined report for Packit tests
+        ls -l .coverage*
         rlRun "coverage combine"
+        ls -l .coverage*
         rlAssertExists .coverage
         rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "mv coverage.xml coverage.packit.xml"
+        rlRun "mv .coverage .coverage-packit"
         # now create overall report including upstream tests
-        [ -f coverage.testsuite ] && cp coverage.testsuite .coverage.testsuite
-        [ -f coverage.unittests ] && cp coverage.unittests .coverage.unittests
+        [ -f coverage.testsuite ] && rlRun "cp coverage.testsuite .coverage.testsuite"
+        [ -f coverage.unittests ] && rlRun "cp coverage.unittests .coverage.unittests"
+        ls -l .coverage*
         rlRun "coverage combine"
+        ls -l .coverage*
         rlRun "coverage html --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*' --show-contexts"
         rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "cd .."
