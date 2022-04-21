@@ -1324,6 +1324,9 @@ fi
 # prepare coveragerc file
 cat > /var/tmp/limeLib/coverage/coveragerc <<_EOF
 [run]
+source =
+  /usr/local/bin
+  /usr/local/lib/python*/site-packages/keylime-*/
 parallel = True
 concurrency = multiprocessing,thread
 context = foo
