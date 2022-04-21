@@ -26,11 +26,17 @@ rlJournalStart
 
     rlPhaseStartTest "Generate overall coverage report"
         rlRun "pushd ${__INTERNAL_limeCoverageDir}"
+        # first create combined report for Packit tests
         rlRun "coverage combine"
         rlAssertExists .coverage
+        rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        rlRun "mv coverage.xml coverage.packit.xml"
+        # now create overall report including upstream tests
+        [ -f coverage.testsuite ] && cp coverage.testsuite .coverage.testsuite
+        [ -f coverage.unittests ] && cp coverage.unittests .coverage.unittests
+        rlRun "coverage combine"
         rlRun "coverage html --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*' --show-contexts"
         rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
-        rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
@@ -40,10 +46,15 @@ rlJournalStart
             rlRun -s "curl --upload-file coverage.tar.gz https://transfer.sh"
             URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
-            # upload coverage.xml
-            rlRun -s "curl --upload-file coverage/coverage.xml https://transfer.sh"
-            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
-            rlLogInfo "coverage.xml report is available at $URL"
+            # upload coverage.xml reports
+            for REPORT in coverage.packit.xml coverage.testsuite.xml coverage.unittests.xml; do
+                ls coverage/$REPORT
+                if [ -f coverage/$REPORT ]; then
+                    rlRun -s "curl --upload-file coverage/$REPORT https://transfer.sh"
+                    URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+                    rlLogInfo "$REPORT report is available at $URL"
+                fi
+            done
         fi
         rlRun "popd"
     rlPhaseEnd
