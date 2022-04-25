@@ -81,14 +81,15 @@ rlJournalStart
         rlRun "popd"
     rlPhaseEnd
 
+    # log env variables exported by Packit CI
+    env | grep PACKIT_
+
 # generate patch coverage report only if PACKIT variables were populated and we are targeting keylime repo
 if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_SOURCE_URL}" ] && [ -n "${PACKIT_SOURCE_BRANCH}" ] && \
   [ "${PACKIT_TARGET_URL}" == "https://github.com/keylime/keylime" ] && [ -n "${PACKIT_TARGET_BRANCH}" ] && \
   [ -n "${PACKIT_SOURCE_SHA}" ]; then
 
     rlPhaseStartTest "Generate patch coverage report"
-        # log env variables exported by Packit CI
-        rlRun "env | grep PACKIT_"
         # from Packit CI / TMT we do not have the .git dir in /var/tmp/keylime_sources.. so we need to recreate the patch
         # using PACKIT_ variables
         rlRun "TmpDir=\$( mktemp -d )"
