@@ -90,12 +90,14 @@ rlJournalStart
             rlRun "limeStopTPMEmulator"
         fi
 
-        # generate separate XML report for upstream tests
-        ls -al .coverage*
-        rlRun "coverage combine"
-        rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
-        rlRun "mv coverage.xml ${__INTERNAL_limeCoverageDir}/coverage.testsuite.xml"
-        rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/coverage.testsuite"
+        if ${__INTERNAL_limeCoverageEnabled}; then
+            # generate separate XML report for upstream tests
+            ls -al .coverage*
+            rlRun "coverage combine"
+            rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+            rlRun "mv coverage.xml ${__INTERNAL_limeCoverageDir}/coverage.testsuite.xml"
+            rlRun "mv .coverage ${__INTERNAL_limeCoverageDir}/coverage.testsuite"
+        fi
  
         popd
         limeClearData
