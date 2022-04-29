@@ -21,8 +21,6 @@ rlJournalStart
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             export TCTI=tabrmd:
-            # workaround for https://github.com/keylime/rust-keylime/pull/286
-            export PATH=/usr/bin:$PATH
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         else
@@ -45,14 +43,14 @@ rlJournalStart
         limeCreateTestLists
     rlPhaseEnd
 
-    rlPhaseStartTest "Add keylime tenant"
+    rlPhaseStartTest "Add keylime agent"
         rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 
-    rlPhaseStartTest "Fail keylime tenant"
+    rlPhaseStartTest "Fail keylime agent"
         rlRun "DATAFILE=\$( mktemp )"
         rlRun "echo 'foo' > ${DATAFILE}"
         rlRun "tpm2_pcrevent 23 ${DATAFILE}"

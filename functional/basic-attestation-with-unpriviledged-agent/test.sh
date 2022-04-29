@@ -26,8 +26,6 @@ rlJournalStart
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             export TCTI=tabrmd:
-            # workaround for https://github.com/keylime/rust-keylime/pull/286
-            export PATH=/usr/bin:$PATH
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         else
@@ -83,7 +81,7 @@ _EOF"
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
-    rlPhaseStartTest "Fail keylime tenant"
+    rlPhaseStartTest "Fail keylime agent"
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
