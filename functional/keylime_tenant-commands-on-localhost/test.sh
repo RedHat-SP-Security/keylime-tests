@@ -76,7 +76,7 @@ rlJournalStart
         rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
 
-    rlPhaseStartTest "Fail keylime tenant"
+    rlPhaseStartTest "Fail keylime agent"
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"

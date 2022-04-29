@@ -107,8 +107,6 @@ rlJournalStart
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             export TCTI=tabrmd:
-            # workaround for https://github.com/keylime/rust-keylime/pull/286
-            export PATH=/usr/bin:$PATH
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         else
@@ -155,7 +153,7 @@ _EOF"
         SSL_SERVER_PID=$!
     rlPhaseEnd
 
-    rlPhaseStartTest "Add keylime tenant"
+    rlPhaseStartTest "Add keylime agent"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
 spawn lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
@@ -171,7 +169,7 @@ _EOF"
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
-    rlPhaseStartTest "Fail keylime tenant"
+    rlPhaseStartTest "Fail keylime agent"
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"

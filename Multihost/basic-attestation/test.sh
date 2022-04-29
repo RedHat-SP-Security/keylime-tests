@@ -261,7 +261,7 @@ Agent() {
     rlPhaseEnd
 
 if [ -n "${AGENT2}" ]; then
-    rlPhaseStartTest "keylime tenant test: Add Agent2"
+    rlPhaseStartTest "keylime attestation test: Add Agent2"
         # wait for Agent2 setup is done
         rlRun "sync-block AGENT2_SETUP_DONE ${AGENT2}" 0 "Waiting for the Agent2 setup to finish"
 
@@ -287,7 +287,7 @@ _EOF"
     rlPhaseEnd
 fi
 
-    rlPhaseStartTest "keylime tenant test: Add Agent"
+    rlPhaseStartTest "keylime attestation test: Add Agent"
         # register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat > script.expect <<_EOF
@@ -305,7 +305,7 @@ _EOF"
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
-    rlPhaseStartTest "Agent test: Fail keylime tenant"
+    rlPhaseStartTest "Agent attestation test: Fail keylime agent"
         # fail AGENT and confirm it has failed validation
         TESTDIR=`limeCreateTestDir`
         limeExtendNextExcludelist $TESTDIR

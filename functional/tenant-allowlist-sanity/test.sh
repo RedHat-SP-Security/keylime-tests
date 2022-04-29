@@ -26,8 +26,6 @@ rlJournalStart
             # start ima emulator
             export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             export TCTI=tabrmd:
-            # workaround for https://github.com/keylime/rust-keylime/pull/286
-            export PATH=/usr/bin:$PATH
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         else
