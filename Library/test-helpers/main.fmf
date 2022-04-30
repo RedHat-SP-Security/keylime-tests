@@ -1,5 +1,5 @@
 summary: test-helpers
-description: 'provides helper shell functions for keylime testing'
+description: Beakerlib library implementing various keylime related functions that should simplify test implementation.
 contact: Karel Srot <ksrot@redhat.com>
 component: []
 test: ./runtest.sh

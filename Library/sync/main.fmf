@@ -1,5 +1,5 @@
 summary: sync library
-description: 'beakerlib library providing synchronization capabilities for multi-host tests'
+description: Beakerlib library implementing custom synchronization mechanism for multi-host tests enabling running those tests outside of Beaker (RH) environment.
 contact: Karel Srot <ksrot@redhat.com>
 component: []
 test: ./runtest.sh
