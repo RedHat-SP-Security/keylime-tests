@@ -1,4 +1,9 @@
 summary: Basic test of mariadb usage on localhost
+description: |
+ Running all services and DB on localhost.
+ Configure verifier and registrar to use mariadb DB.
+ Start verifier, registrar, agent.
+ Register agent, confirm it passes attestation.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime

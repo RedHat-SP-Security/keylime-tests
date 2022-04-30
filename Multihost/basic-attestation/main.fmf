@@ -1,4 +1,12 @@
 summary: Tests basic keylime attestation scenario on multiple hosts
+description: |
+ Running services on different systems - verifier, registrar, agent1+tenant, agent2.
+ Uses custom build certificates.
+ Starts verifier, registrar, agent, agent2.
+ Registers both agent2 providing a payload with autorun.sh and python revocation script.
+ Verifiers that systems passed attestation and autorun.sh has been executed.
+ Does changes on a system with agent1 and verifies that system has failed attestation.
+ Confirms that the revocation script has been executed only on both agents.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime

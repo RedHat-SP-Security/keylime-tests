@@ -1,4 +1,8 @@
 summary: Tests keylime attestation with agent runnig as unpriviledged user
+description: |
+ Configures keylime agent to run as unprivileged user using /usr/lib/keylime-agent as its $KEYLIME_DIR.
+ Executes basic agent attestation and revocation scenario to confirm it works.
+ With services running as keylime user this test may seem unnecessary but at least we can verify that agent can be separated from other keylime services.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
