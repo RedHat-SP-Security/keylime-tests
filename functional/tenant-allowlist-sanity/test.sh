@@ -167,7 +167,7 @@ EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist not matching --allowlist-sig with GPG key"
-        rlRun "sed 's/^000/111/' allowlist.txt > allowlist2.txt"
+        rlRun "sed 's/0/1/' allowlist.txt > allowlist2.txt"
         rlRun "gpg --verify allowlist-gpg.sig allowlist2.txt" 1
         rlRun -s "lime_keylime_tenant -c addallowlist --allowlist-name list20 --allowlist allowlist2.txt --allowlist-sig allowlist-gpg.sig --allowlist-sig-key gpg-key.pub" 1
         rlAssertGrep "signature verification failed" $rlRun_LOG
