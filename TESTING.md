@@ -88,14 +88,14 @@ $ tmt -c distro=centos-stream-9 run -vvv prepare discover provision -h virtual -
 In case you do not want to run tests from all plans the easiest option would be tell `tmt` to run only specific tests.
 
 ```
-$ tmt run -vvv prepare discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' provision -h virtual -i Fedora-35 -c system -i 1MT-Fedora-35 execute finish
+$ tmt run -vvv prepare discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' provision -h virtual -i Fedora-35 -c system execute finish
 ```
 This will run only tests whose names contains provided regexp patterns.
 
 You can also tell `tmt` to run only tests from a particular test plan. E.g.
 
 ```
-$ tmt run -vvv plan --name upstream prepare discover -h fmf provision -h virtual -i Fedora-35 -c system -i 1MT-Fedora-35 execute finish
+$ tmt run -vvv plan --name upstream prepare discover -h fmf provision -h virtual -i Fedora-35 -c system execute finish
 ```
 will execute only tests from test plans whose name contains "upstream".
 
