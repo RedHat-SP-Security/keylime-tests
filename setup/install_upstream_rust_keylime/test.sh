@@ -21,7 +21,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Test installed binaries"
-        rlRun "TCTI=tabrmd keylime_agent --help" 0,1
+        rlRun "keylime_agent --help" 0,1
     rlPhaseEnd
 
 rlJournalEnd

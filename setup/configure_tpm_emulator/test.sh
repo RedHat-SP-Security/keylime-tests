@@ -25,6 +25,14 @@ rlJournalStart
         TPM_EMULATOR="$(limeTPMEmulator)"
         [ "${TPM_EMULATOR}" == "ibmswtpm2" ] && TPM_PKGS="${TPM_PKGS_IBMSWTPM}" || TPM_PKGS="${TPM_PKGS_SWTPM}"
 
+        export TPM2TOOLS_TCTI="tabrmd:bus_name=com.intel.tss2.Tabrmd"
+        rlLogInfo "exported TPM2TOOLS_TCTI=$TPM2TOOLS_TCTI"
+        # configure global environment variables
+        rlRun "cat > /etc/profile.d/limeLib_tcti.sh <<_EOF
+export TPM2TOOLS_TCTI=${TPM2TOOLS_TCTI}
+export TCTI=${TPM2TOOLS_TCTI}
+_EOF"
+
         # for RHEL and CentOS Stream configure Sergio's copr repo providing
         # necessary dependencies.
         if rlIsRHEL 8 || rlIsCentOS 8; then
@@ -80,13 +88,14 @@ WantedBy=multi-user.target
 _EOF"
         # also add drop-in update for eventual keylime_agent unit file
         rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
-        rlRun 'cat > /etc/systemd/system/keylime_agent.service.d/10-tcti.conf <<_EOF
+        rlRun "cat > /etc/systemd/system/keylime_agent.service.d/10-tcti.conf <<_EOF
 [Unit]
 # we want to unset this since there is no /dev/tmp0
 ConditionPathExistsGlob=
 [Service]
-Environment="TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd"
-_EOF'
+Environment=\"TPM2TOOLS_TCTI=${TPM2TOOLS_TCTI}\"
+Environment=\"TCTI=${TPM2TOOLS_TCTI}\"
+_EOF"
         rlRun "systemctl daemon-reload"
 
         if [ "${TPM_EMULATOR}" = "swtpm" ]; then
@@ -104,8 +113,6 @@ _EOF'
     rlPhaseEnd
 
     rlPhaseStartSetup "Start TPM emulator"
-        export TPM2TOOLS_TCTI="tabrmd:bus_name=com.intel.tss2.Tabrmd"
-        rlLogInfo "exported TPM2TOOLS_TCTI=$TPM2TOOLS_TCTI"
         rlServiceStop tpm2-abrmd
         rlServiceStart $TPM_EMULATOR
         rlRun "limeWaitForTPMEmulator"

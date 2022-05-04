@@ -246,7 +246,6 @@ Agent() {
             rlServiceStart tpm2-abrmd
             sleep 5
             # start ima emulator
-            export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             limeInstallIMAConfig
             rlRun "limeStartIMAEmulator"
         else
@@ -378,7 +377,6 @@ Agent2() {
             rlServiceStart tpm2-abrmd
             sleep 5
             # start ima emulator
-            export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             limeInstallIMAConfig
             limeStartIMAEmulator
         else

@@ -24,7 +24,6 @@ rlJournalStart
             rlServiceStart tpm2-abrmd
             sleep 5
             # start ima emulator
-            export TPM2TOOLS_TCTI=tabrmd:bus_name=com.intel.tss2.Tabrmd
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         else
@@ -39,9 +38,8 @@ rlJournalStart
         # when using unit files we need to adjust them
         if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
             rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"
-            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf <<_EOF
+            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-rust_log_trace.conf <<_EOF
 [Service]
-Environment=\"TCTI=${TPM2TOOLS_TCTI}\"
 Environment=\"RUST_LOG=keylime_agent=trace\"
 _EOF"
             rlRun "systemctl daemon-reload"
@@ -62,7 +60,7 @@ _EOF"
         if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
             rlRun "limeStartAgent"
         else
-            rlRun "TCTI=${TPM2TOOLS_TCTI} RUST_LOG=keylime_agent=trace limeStartAgent"
+            rlRun "RUST_LOG=keylime_agent=trace limeStartAgent"
         fi
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}" 1
         rlAssertGrep "enable_insecure_payload. has to be set to .True." $(limeAgentLogfile) -E
@@ -74,7 +72,7 @@ _EOF"
             rlRun "systemctl daemon-reload"
             rlRun "limeStartAgent"
         else
-            rlRun "TCTI=${TPM2TOOLS_TCTI} RUST_LOG=keylime_agent=trace limeStartAgent"
+            rlRun "RUST_LOG=keylime_agent=trace limeStartAgent"
         fi
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "expect add.expect"
@@ -95,7 +93,7 @@ _EOF"
             rlRun "systemctl daemon-reload"
             rlRun "limeStartAgent"
         else
-            rlRun "TCTI=${TPM2TOOLS_TCTI} RUST_LOG=keylime_agent=trace limeStartAgent"
+            rlRun "RUST_LOG=keylime_agent=trace limeStartAgent"
         fi
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
