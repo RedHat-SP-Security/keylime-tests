@@ -26,8 +26,6 @@ rlJournalStart
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
         sleep 5
         # start keylime_verifier
@@ -103,12 +101,12 @@ _EOF"
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
         if [ -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf ]; then
             rlRun "rm -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf"
             rlRun "systemctl daemon-reload"
         fi
-        rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR

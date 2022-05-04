@@ -39,8 +39,6 @@ rlJournalStart
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
 
         # configure keylime
@@ -94,17 +92,17 @@ rlJournalStart
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
 
         # check if mariadb was installed and reinstall it
-	if [ -n "$PKGS" ]; then
+        if [ -n "$PKGS" ]; then
             rlRun "yum -y remove mysql-server"
             rlRun "yum -y install $PKGS"
             rlRun "rpm -q $PKGS"
         fi
 
         # restore files and services
-        rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
         rlFileRestore

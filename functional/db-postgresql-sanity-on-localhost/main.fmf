@@ -14,7 +14,6 @@ require:
   - postgresql-server
   - postgresql-contrib
   - python3-psycopg2
-  - tpm2-abrmd
   - tpm2-tools
 recommend:
   - keylime

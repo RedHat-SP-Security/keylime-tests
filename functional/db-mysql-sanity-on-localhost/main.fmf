@@ -15,7 +15,6 @@ adjust:
 require:
   - yum
   - python3-PyMySQL
-  - tpm2-abrmd
   - tpm2-tools
 recommend:
   - keylime

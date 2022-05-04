@@ -19,7 +19,6 @@ require:
   - yum
   - bind-utils
   - expect
-  - tpm2-abrmd
 recommend:
   - keylime
   - keylime-verifier
