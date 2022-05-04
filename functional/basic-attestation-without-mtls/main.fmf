@@ -1,17 +1,17 @@
 summary: Tests keylime attestation with mTLS disabled for agent
 description: |
- Configures the keylime agent to run without mTLS, and tests restrictions
- related with 'mtls_cert_enabled', 'enable_insecure_payload', and
- 'payload_script' options.
- First, test that when mTLS is disabled via 'mtls_cert_enabled=False', the agent
- will not start when 'payload_script' is not empty and 'enable_insecure_payload'
- is 'False'.
- Then, test that setting 'payload_script' to be empty allows the agent to run.
- Finally, test that 'enable_insecure_payload' must be 'True' for the agent to
- execute the payload script while mTLS is disabled.
- In the end it is tested that failing the attestation by running a script not
- listed in the allowlist still triggers the revocation scripts to be executed.
- All services (verifier, registrar, and agent) are executed on localhost.
+    Configures the keylime agent to run without mTLS, and tests restrictions
+    related with 'mtls_cert_enabled', 'enable_insecure_payload', and
+    'payload_script' options.
+    First, test that when mTLS is disabled via 'mtls_cert_enabled=False', the agent
+    will not start when 'payload_script' is not empty and 'enable_insecure_payload'
+    is 'False'.
+    Then, test that setting 'payload_script' to be empty allows the agent to run.
+    Finally, test that 'enable_insecure_payload' must be 'True' for the agent to
+    execute the payload script while mTLS is disabled.
+    In the end it is tested that failing the attestation by running a script not
+    listed in the allowlist still triggers the revocation scripts to be executed.
+    All services (verifier, registrar, and agent) are executed on localhost.
 contact: Anderson Toshiyuki Sasaki <ansasaki@redhat.com>
 component:
   - keylime
@@ -32,3 +32,4 @@ recommend:
   - keylime-tools
 duration: 10m
 enabled: true
+extra-nitrate: TC#0613576
