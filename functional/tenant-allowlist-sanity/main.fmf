@@ -7,7 +7,6 @@ test: ./test.sh
 framework: beakerlib
 require:
   - yum
-  - tpm2-abrmd
   - openssl
   - gnupg2
 recommend:

@@ -12,7 +12,6 @@ test: ./test.sh
 framework: beakerlib
 require:
   - yum
-  - tpm2-abrmd
   - tpm2-tools
 recommend:
   - keylime

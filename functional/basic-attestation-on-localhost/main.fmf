@@ -17,7 +17,6 @@ require:
 - library(openssl/certgen)
 - yum
 - expect
-- tpm2-abrmd
 - openssl
 - nmap-ncat
 recommend:

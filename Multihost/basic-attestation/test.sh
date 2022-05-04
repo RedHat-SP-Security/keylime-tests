@@ -248,8 +248,6 @@ Agent() {
             # start ima emulator
             limeInstallIMAConfig
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
         sleep 5
 
@@ -326,8 +324,8 @@ _EOF"
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
-        rlServiceRestore tpm2-abrmd
         rlRun "rm -f /var/tmp/test_payload_file"
     rlPhaseEnd
 }
@@ -379,8 +377,6 @@ Agent2() {
             # start ima emulator
             limeInstallIMAConfig
             limeStartIMAEmulator
-        else
-            rlServiceStart tpm2-abrmd
         fi
         sleep 5
 
@@ -423,8 +419,8 @@ Agent2() {
             limeStopIMAEmulator
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             limeStopTPMEmulator
+            rlServiceRestore tpm2-abrmd
         fi
-        rlServiceRestore tpm2-abrmd
     rlPhaseEnd
 }
 

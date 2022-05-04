@@ -26,8 +26,6 @@ rlJournalStart
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
         sleep 5
         # start keylime_verifier
@@ -204,10 +202,10 @@ EOF"
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
         limeClearData
         limeRestoreConfig
-        rlServiceRestore tpm2-abrmd
         rlRun "popd"
         rlRun "rm -rf ${TmpDir}"
         rlRun "gpgconf --kill gpg-agent"

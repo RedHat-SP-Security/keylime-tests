@@ -21,8 +21,6 @@ rlJournalStart
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
         sleep 5
         # update /etc/keylime.conf
@@ -82,8 +80,8 @@ rlJournalStart
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
-        rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
     rlPhaseEnd

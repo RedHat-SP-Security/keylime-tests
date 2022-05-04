@@ -6,7 +6,6 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
-- tpm2-abrmd
 - openssl
 - python3-cryptography
 - python3-pyyaml

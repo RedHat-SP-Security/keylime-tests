@@ -107,8 +107,6 @@ rlJournalStart
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
         sleep 5
         # start keylime_verifier
@@ -197,13 +195,13 @@ _EOF"
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
         rlRun "rm /etc/pki/ca-trust/source/anchors/keylime-ca.crt"
         rlRun "update-ca-trust"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
-        rlServiceRestore tpm2-abrmd
         #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
     rlPhaseEnd
 

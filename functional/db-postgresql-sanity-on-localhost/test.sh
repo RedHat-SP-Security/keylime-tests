@@ -20,8 +20,6 @@ rlJournalStart
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
 
         # backup and configure postgresql db
@@ -86,9 +84,9 @@ rlJournalStart
             rlRun "limeStopIMAEmulator"
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
         fi
         # restore files and services
-        rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
         rlFileRestore
