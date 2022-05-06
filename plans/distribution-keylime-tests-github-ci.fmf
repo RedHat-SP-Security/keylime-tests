@@ -4,10 +4,14 @@ adjust:
     enabled: false
     when: distro = centos-stream
 prepare:
-  how: shell
-  script:
-   - rm -f /etc/yum.repos.d/tag-repository.repo
-   - dnf config-manager --set-enabled updates-testing updates-testing-modular
+  - how: shell
+    script:
+     - rm -f /etc/yum.repos.d/tag-repository.repo
+     - dnf config-manager --set-enabled updates-testing updates-testing-modular
+  - how: shell
+    order: 90
+    script:
+     - sed -i "s/tpm_hash_alg =.*/tpm_hash_alg = sha256/" /etc/keylime.conf
 discover:
   how: fmf
   test: 

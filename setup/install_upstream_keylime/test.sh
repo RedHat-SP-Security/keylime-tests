@@ -18,12 +18,6 @@ rlJournalStart
         if rlIsFedora; then
             FEDORA_EXTRA_PKGS="python3-lark-parser python3-packaging"
         else
-            # on C9S we need to enable LEGACY crypto policy to enable SHA1 RPM signatures
-            if rlIsRHEL 9 || rlIsCentOS 9; then
-                rlRun "dnf upgrade -y https://kojihub.stream.centos.org/kojifiles/packages/crypto-policies/20220223/1.git5203b41.el9/noarch/crypto-policies-20220223-1.git5203b41.el9.noarch.rpm https://kojihub.stream.centos.org/kojifiles/packages/crypto-policies/20220223/1.git5203b41.el9/noarch/crypto-policies-scripts-20220223-1.git5203b41.el9.noarch.rpm"
-                rlRun "update-crypto-policies --set LEGACY"
-            fi
-
             rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
 [copr:copr.fedorainfracloud.org:scorreia:keylime]
 name=Copr repo for keylime owned by scorreia
@@ -75,6 +69,8 @@ _EOF'
         rlRun "python3 setup.py install"
         # copy keylime.conf to /etc
         rlRun "cp keylime.conf /etc"
+        # need to update default hash algorithm to sha256, sha1 is obsolete
+        rlRun "sed -i 's/tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime.conf"
         if $INSTALL_SERVICE_FILES; then
             rlRun "cd services; bash installer.sh"
             rlRun "systemctl daemon-reload"

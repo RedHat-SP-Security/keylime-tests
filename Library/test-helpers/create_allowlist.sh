@@ -17,7 +17,7 @@ fi
 if [ "$2" != "--" ]; then
     ALGO=$2
 else
-    ALGO=sha1sum
+    ALGO=sha256sum
 fi
 
 OUTPUT=$(readlink -f $1)
@@ -47,5 +47,5 @@ done
 # The boot_aggregate measurement is always the first line in the IMA Log file.
 # The format of the log lines is the following:
 #     <PCR_ID> <PCR_Value> <IMA_Template> <File_Digest> <File_Name> <File_Signature>
-# File_Digest may start with the digest algorithm specified (e.g "sha1:", "sha256:") depending on the template used.
+# File_Digest may start with the digest algorithm specified (e.g "sha256:") depending on the template used.
 head -n 1 /sys/kernel/security/ima/ascii_runtime_measurements | awk '{ print $4 "  boot_aggregate" }' | sed 's/.*://' >> $OUTPUT

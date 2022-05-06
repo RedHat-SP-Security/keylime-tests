@@ -285,6 +285,12 @@ __limeStartKeylimeService() {
 
     local NAME=$1
     local LOGFILE=$( __limeGetLogName $1 $2 )
+    local ARGS
+
+    # set sha256 as default hash for ima emulator
+    if [ "$1" == "ima_emulator" ]; then
+        ARGS="--hash_algs sha256 --ima-hash-alg sha256"
+    fi
 
     # execute service using sytemd unit file
     if limeServiceUnitFileExists keylime_${NAME}; then
@@ -293,10 +299,10 @@ __limeStartKeylimeService() {
     # if there is no unit file, execute the process directly
     else
         if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-            coverage run $(which keylime_${NAME}) >> ${LOGFILE} 2>&1 &
+            coverage run $(which keylime_${NAME}) ${ARGS} >> ${LOGFILE} 2>&1 &
         else
             # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
-            RUST_LOG=keylime_agent=trace keylime_${NAME} >> ${LOGFILE} 2>&1 &
+            RUST_LOG=keylime_agent=trace keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &
         fi
     fi
 
