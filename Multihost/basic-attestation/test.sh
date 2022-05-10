@@ -110,6 +110,9 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
+        fi
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
@@ -237,6 +240,10 @@ Agent() {
         rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
         rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
 
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+        fi
+
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -309,11 +316,13 @@ _EOF"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        # give the revocation notifier a bit more time to contact the agent
-        rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: ${AGENT_IP}\"' -m 20 -d 1 -t 20"
-        rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-        rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
-        rlAssertNotExists /var/tmp/test_payload_file
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION-unset} = unset; then
+            # give the revocation notifier a bit more time to contact the agent
+            rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: ${AGENT_IP}\"' -m 20 -d 1 -t 20"
+            rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
+            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
+            rlAssertNotExists /var/tmp/test_payload_file
+        fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent cleanup"
@@ -366,6 +375,10 @@ Agent2() {
         rlRun "limeUpdateConf cloud_agent rsa_keyname agent2-key.pem"
         rlRun "limeUpdateConf cloud_agent mtls_cert agent2-cert.pem"
  
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+        fi
+
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -406,8 +419,13 @@ Agent2() {
 
         # installed payload should not have been deleted for Agent2
         rlAssertExists /var/tmp/test_payload_file
-        rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-        rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'" 1
+            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'" 1
+        else
+            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
+            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent2 cleanup"
