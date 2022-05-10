@@ -43,7 +43,11 @@ _EOF'
                 RHEL_EXTRA_PKGS="$RHEL_EXTRA_PKGS python3-packaging"
             fi
         fi
-        rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools python3-zmq patch"
+        rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch"
+	# enable the following condition once https://github.com/keylime/keylime/pull/987 is merged
+	# if test ${KEYLIME_TEST_DISABLE_REVOCATION-unset} = unset; then
+            rlRun "yum -y install python3-zmq"
+	# fi
         # need to install few more pgs from pip on RHEL
         if ! rlIsFedora; then
             rlRun "pip3 install lark-parser $RHEL_EXTRA_PIP_PKGS"

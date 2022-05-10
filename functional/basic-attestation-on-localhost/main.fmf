@@ -6,7 +6,7 @@ description: |
  Registers agent providing a payload with autorun.sh and python revocation script.
  Verifiers that system passed attestation and autorun.sh has been executed.
  Does changes on a system and verifies that system has failed attestation.
- Confirms that the revocation script has been executed.
+ Confirms that the revocation script has been executed unless revocation is disabled through the KEYLIME_TEST_DISABLE_REVOCATION environment variable.
  Confirms that webhook_notifier connected to the configured URL over HTTPS.
 contact: Karel Srot <ksrot@redhat.com>
 component:

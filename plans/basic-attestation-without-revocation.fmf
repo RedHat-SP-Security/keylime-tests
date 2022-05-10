@@ -1,0 +1,42 @@
+summary:
+  Tests upstream keylime without revocation actions
+
+environment:
+  KEYLIME_TEST_DISABLE_REVOCATION: 1
+
+prepare:
+  how: shell
+  script:
+   - rm -f /etc/yum.repos.d/tag-repository.repo
+
+discover:
+  how: fmf
+  test: 
+   - /setup/configure_tpm_emulator
+   - /setup/install_upstream_keylime
+   - /setup/enable_keylime_coverage
+   - "/functional/basic-attestation-.*"
+   - /setup/generate_coverage_report
+
+execute:
+    how: tmt
+
+adjust:
+  - when: distro == centos-stream-9
+    prepare+:
+       script+:
+        - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+
+  - when: distro == centos-stream-8
+    prepare+:
+       script+:
+         - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+#         - yum config-manager --set-enabled powertools
+
+  # discover step adjustments
+  # disable code coverage measurement everywhere except F35 and CS9
+  - when: distro != centos-stream-9 and distro != fedora-35
+    discover+:
+       test-:
+         - /setup/enable_keylime_coverage
+         - /setup/generate_coverage_report

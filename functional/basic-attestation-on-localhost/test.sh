@@ -70,6 +70,9 @@ rlJournalStart
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_webhook yes"
         rlRun "limeUpdateConf cloud_verifier webhook_url https://localhost:${SSL_SERVER_PORT}"
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
+        fi
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
@@ -96,6 +99,9 @@ rlJournalStart
         rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
         rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
         rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+        fi
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -172,10 +178,12 @@ _EOF"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
-        rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
-        rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-        rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
-        rlAssertNotExists /var/tmp/test_payload_file
+        if test ${KEYLIME_TEST_DISABLE_REVOCATION-unset} = unset; then
+            rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
+            rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
+            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
+            rlAssertNotExists /var/tmp/test_payload_file
+        fi
         cat ${SSL_SERVER_LOG}
         rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${SSL_SERVER_LOG} -i
         rlAssertNotGrep ERROR ${SSL_SERVER_LOG} -i
