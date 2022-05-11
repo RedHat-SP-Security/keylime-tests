@@ -104,7 +104,7 @@ rlJournalStart
  
     rlPhaseStartTest "-c delete"
         rlRun -s "lime_keylime_tenant -c delete"
-        rlAssertGrep "INFO - CV completed deletion of agent $AGENT_ID" $rlRun_LOG
+        rlAssertGrep "(INFO - CV completed deletion of agent $AGENT_ID|INFO - Agent $AGENT_ID deleted from the CV)" $rlRun_LOG -E
         rlRun -s "lime_keylime_tenant -c cvstatus"
         rlAssertGrep "Verifier at 127.0.0.1 with Port 8881 does not have agent $AGENT_ID" $rlRun_LOG
     rlPhaseEnd
