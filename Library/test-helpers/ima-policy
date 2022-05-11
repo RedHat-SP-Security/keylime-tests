@@ -15,4 +15,4 @@ measure func=BPRM_CHECK
 measure func=FILE_MMAP mask=MAY_EXEC
 measure func=MODULE_CHECK uid=0
 
-appraise func=BPRM_CHECK fowner=0 appraise_type=imasig
+appraise func=BPRM_CHECK fowner=1 appraise_type=imasig
