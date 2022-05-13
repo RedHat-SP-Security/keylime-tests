@@ -19,6 +19,7 @@ require:
   - yum
   - bind-utils
   - expect
+  - wget
 recommend:
   - keylime
   - keylime-verifier
