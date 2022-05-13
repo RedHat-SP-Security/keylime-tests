@@ -81,6 +81,15 @@ export __INTERNAL_limeCoverageEnabled=false
 
 export __INTERNAL_limeCoverageContext
 
+export __INTERNAL_limeIMADir
+export __INTERNAL_limeIMAKeysDir="/etc/keys"
+export limeIMAPrivateKey=${__INTERNAL_limeIMAKeysDir}/privkey_evm.pem
+export limeIMAPublicKey=${__INTERNAL_limeIMAKeysDir}/x509_evm.pem
+export limeIMACertificateDER=${__INTERNAL_limeIMAKeysDir}/x509_evm.der
+
+
+export limeTestUser=limetester
+export limeTestUserUID=11235
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
@@ -1031,8 +1040,10 @@ limeInstallIMAConfig() {
 
     if [ -f "$1" ]; then
         FILE="$1"
+    elif limeTPMEmulated; then
+        FILE=$limeLibraryDir/ima-policy-swtpm
     else
-        FILE=$limeLibraryDir/ima-policy
+        FILE=$limeLibraryDir/ima-policy-hwtpm
     fi
 
     mkdir -p /etc/ima/ && cat $FILE > /etc/ima/ima-policy && \
@@ -1045,6 +1056,51 @@ limeInstallIMAConfig() {
         echo -e "~~~~~~~~~~~~~~~~~~~~\nInstalled policy\n~~~~~~~~~~~~~~~~~~~~"
         cat /sys/kernel/security/ima/policy
         echo -e "~~~~~~~~~~~~~~~~~~~~"
+    fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeInstallIMAKeys
+
+Generate and install IMA/EVM keys to /etc/keys/
+
+    limeInstallIMAKeys
+
+=back
+
+Returns 0 when the initialization was successfull, non-zero otherwise.
+
+=cut
+
+limeInstallIMAKeys() {
+
+    if ! [ -f ${limeIMAPrivateKey} ]; then
+        local CONFIG=$( mktemp )
+        cat <<END >${CONFIG}
+[ req ]
+default_bits = 2048
+default_md = sha256
+distinguished_name = req_distinguished_name
+prompt = no
+string_mask = utf8only
+x509_extensions = myexts
+
+[ req_distinguished_name ]
+O = IMAlimeLib
+CN = Executable Signing Key
+emailAddress = lime@no.body.com
+
+[ myexts ]
+basicConstraints=critical,CA:FALSE
+keyUsage=digitalSignature
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid
+END
+        openssl req -x509 -new -nodes -utf8 -days 90 -batch -x509 -config ${CONFIG} -outform DER -out ${limeIMACertificateDER} -keyout ${limeIMAPrivateKey} && \
+        openssl rsa -pubout -in ${limeIMAPrivateKey} -out ${limeIMAPublicKey} && \
+        ls -l ${__INTERNAL_limeIMAKeysDir}
     fi
 }
 
@@ -1309,6 +1365,7 @@ limeLogfileSubmit() {
 
 mkdir -p $__INTERNAL_limeTmpDir
 mkdir -p $__INTERNAL_limeCoverageDir
+mkdir -p $__INTERNAL_limeIMAKeysDir
 
 # set monitor mode so we can kill the background process
 # https://unix.stackexchange.com/questions/372541/why-doesnt-sigint-work-on-a-background-process-in-a-script
@@ -1382,6 +1439,10 @@ EOF
 # make it executable
 chmod a+x /usr/local/bin/lime_keylime_tenant
 
+# create limeTestUser if it does not exists
+if ! id ${limeTestUser}; then
+    useradd -m --user-group ${limeTestUser} --uid ${limeTestUserUID}
+fi
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Verification

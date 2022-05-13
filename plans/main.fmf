@@ -1,0 +1,3 @@
+# define context to filter out all test requiring TPM device
+context:
+  swtpm: yes
