@@ -1,0 +1,31 @@
+summary: Tests basic keylime attestation with IMA signatures enabled
+description: |
+    Configures IMA signatures for a test scripts and verifies that
+    system can be successfully verified by the verifier when IMA
+    signatures are correct and that it fails verification when a test
+    script is modified. Scenario is heavily inspired by
+    https://en.opensuse.org/SDB:Ima_evm#IMA_and_EVM_in_practice
+    and evmctl man page
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - attr
+  - ima-evm-utils
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 5m
+adjust:
+  - when: swtpm == yes
+    enabled: false
+    because: "This tests needs TPM device since kernel boot"
+enabled: true
+extra-nitrate: TC#0613616

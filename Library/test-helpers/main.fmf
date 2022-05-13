@@ -4,6 +4,8 @@ contact: Karel Srot <ksrot@redhat.com>
 component: []
 test: ./runtest.sh
 framework: beakerlib
+require:
+ - openssl
 recommend:
 duration: 5m
 enabled: true
