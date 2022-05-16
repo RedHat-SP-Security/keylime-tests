@@ -38,7 +38,7 @@ _EOF'
             fi
         fi
         rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch"
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION-unset} = unset; then
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "yum -y install python3-zmq"
         fi
         # need to install few more pgs from pip on RHEL
