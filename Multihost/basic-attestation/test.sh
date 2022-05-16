@@ -110,7 +110,7 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         fi
 
@@ -240,7 +240,7 @@ Agent() {
         rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
         rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
 
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
 
@@ -316,7 +316,7 @@ _EOF"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION-unset} = unset; then
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             # give the revocation notifier a bit more time to contact the agent
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: ${AGENT_IP}\"' -m 20 -d 1 -t 20"
             rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
@@ -375,7 +375,7 @@ Agent2() {
         rlRun "limeUpdateConf cloud_agent rsa_keyname agent2-key.pem"
         rlRun "limeUpdateConf cloud_agent mtls_cert agent2-cert.pem"
  
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
 
@@ -417,12 +417,9 @@ Agent2() {
         # waif for Agent to finish his tests (including failed validation)
         rlRun "sync-block AGENT_ALL_TESTS_DONE ${AGENT_IP}"
 
-        # installed payload should not have been deleted for Agent2
-        rlAssertExists /var/tmp/test_payload_file
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
-            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'" 1
-            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'" 1
-        else
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            # installed payload should not have been deleted for Agent2
+            rlAssertExists /var/tmp/test_payload_file
             rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
             rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
         fi

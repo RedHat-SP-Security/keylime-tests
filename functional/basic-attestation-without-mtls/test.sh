@@ -15,7 +15,7 @@ rlJournalStart
         rlRun "limeUpdateConf cloud_agent mtls_cert_enabled False"
         rlRun "limeUpdateConf cloud_agent enable_insecure_payload False"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert_enabled False"
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION+set} = set; then
+        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
             rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
@@ -93,7 +93,7 @@ _EOF"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
-        if test ${KEYLIME_TEST_DISABLE_REVOCATION-unset} = unset; then
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
             rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
             rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
