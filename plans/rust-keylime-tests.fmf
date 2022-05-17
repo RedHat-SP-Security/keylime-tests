@@ -14,6 +14,7 @@ discover:
    - /setup/install_upstream_rust_keylime
    - /functional/basic-attestation-on-localhost
    - /functional/basic-attestation-without-mtls
+   - /functional/basic-attestation-with-unpriviledged-agent
    - /functional/keylime_tenant-commands-on-localhost
 
 execute:
