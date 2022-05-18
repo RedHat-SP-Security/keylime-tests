@@ -20,8 +20,6 @@ framework: beakerlib
 require:
   - yum
   - expect
-  - openssl
-  - nmap-ncat
 recommend:
   - keylime
   - keylime-verifier
