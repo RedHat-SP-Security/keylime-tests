@@ -38,7 +38,7 @@ rlJournalStart
         SCRIPT="${TESTDIR}/echo"
         rlRun "echo -e '#!/bin/bash\necho boom' > ${SCRIPT} && chmod a+x ${SCRIPT} && chown ${limeTestUser}.${limeTestUser} ${SCRIPT}"
         ls -l ${SCRIPT}
-        #ALG_ARG="-a sha256"
+        ALG_ARG="-a sha256"
         rlRun "evmctl ima_sign ${ALG_ARG} ${SCRIPT}"
         rlRun -s "getfattr -m ^security.ima --dump ${SCRIPT}"
         rlRun "evmctl ima_verify ${ALG_ARG} ${SCRIPT}"

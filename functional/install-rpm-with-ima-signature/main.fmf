@@ -1,0 +1,42 @@
+summary: Installs RPM with a file signed with IMA signature
+description: |
+    Registers an agent on the verifier and confirms is passes attestation.
+    Then install custom built RPM having a file signed with IMA signature
+    and verifies that a system still passes attestation.
+    Scenario is heavily inspired by
+    https://en.opensuse.org/SDB:Ima_evm#IMA_and_EVM_in_practice
+    https://bugzilla.redhat.com/show_bug.cgi?id=1896046#c10
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - attr
+  - ima-evm-utils
+  - rpm-build
+  - rpm-sign
+  - gawk
+  - expect
+  - gnupg2
+  - rng-tools
+  - rpm-plugin-ima
+  - pinentry
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 5m
+adjust:
+  - when: swtpm == yes
+    enabled: false
+    because: This tests needs TPM device since kernel boot
+  - when: distro <= fedora-36
+    enabled: false
+    because: rpm issue not fixed in F36 https://github.com/rpm-software-management/rpm/pull/1914
+enabled: true
+extra-nitrate: TC#0613628
