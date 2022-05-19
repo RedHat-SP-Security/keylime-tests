@@ -24,6 +24,7 @@ rlJournalStart
 	# update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
+        rlRun "limeUpdateConf cloud_verifier quote_interval 2"
         rlRun "limeUpdateConf cloud_agent listen_notifications False"
 
         # start keylime_verifier
@@ -110,7 +111,8 @@ EOF
     rlPhaseEnd
 
     rlPhaseStartTest "Confirm the system is still compliant"
-        rlRun "sleep 30" 0 "Wait 30 seconds to give verifier some time to do new attestation"
+        # verifier request new quote every 2 seconds so 10 seconds should be enough
+        rlRun "sleep 10" 0 "Wait 10 seconds to give verifier some time to do a new attestation"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "lime_keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
