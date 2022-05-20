@@ -17,6 +17,9 @@
 #export PACKIT_SOURCE_URL=https://github.com/ansasaki/keylime
 #export PACKIT_SOURCE_SHA=a79b05642bbe04af0ef0a356afd4f5af276898bb
 
+UPLOAD_URL=https://free.keep.sh
+#UPLOAD_URL=https://transfer.sh
+
 rlJournalStart
 
     rlPhaseStartSetup
@@ -62,17 +65,17 @@ rlJournalStart
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
-        # for PRs upload the archive to transfer.sh
+        # for PRs upload the archive to $UPLOAD_URL
         if [ -n "${PACKIT_SOURCE_URL}" ]; then
             # upload coverage.tar.gz
-            rlRun -s "curl --upload-file coverage.tar.gz https://transfer.sh"
+            rlRun -s "curl --upload-file coverage.tar.gz $UPLOAD_URL"
             URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
             # upload coverage.xml reports
             for REPORT in coverage.packit.xml coverage.testsuite.xml coverage.unittests.xml; do
                 ls coverage/$REPORT
                 if [ -f coverage/$REPORT ]; then
-                    rlRun -s "curl --upload-file coverage/$REPORT https://transfer.sh"
+                    rlRun -s "curl --upload-file coverage/$REPORT $UPLOAD_URL"
                     URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
                     rlLogInfo "$REPORT report is available at $URL"
                 fi
