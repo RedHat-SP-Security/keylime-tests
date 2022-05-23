@@ -2,7 +2,13 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-# the script expects these env variables to be set from the outside
+# to upload code coverage define UPLOAD_COVERAGE=1
+#UPLOAD_COVERAGE=0
+UPLOAD_URL=https://transfer.sh
+#UPLOAD_URL=https://free.keep.sh
+
+# for proper patch code coverage functioning this script
+# expects these env variables to be set from the outside
 # PACKIT_SOURCE_URL - repo URL from which PR comes from
 # PACKIT_SOURCE_BRANCH - branch from which PR comes from
 # PACKIT_TARGET_URL - repo URL which PR targets
@@ -11,14 +17,15 @@
 
 [ -n "${PATCH_COVERAGE_TRESHOLD}" ] || PATCH_COVERAGE_TRESHOLD=0
 
+# for Packit PRs we would be uploading code coverage files unless forbidden
+[ -n "${PACKIT_SOURCE_URL}" -a -z "${UPLOAD_COVERAGE}" ] && UPLOAD_COVERAGE=1
+
 #export PACKIT_TARGET_BRANCH=master
 #export PACKIT_SOURCE_BRANCH=quote_before_register
 #export PACKIT_TARGET_URL=https://github.com/keylime/keylime
 #export PACKIT_SOURCE_URL=https://github.com/ansasaki/keylime
 #export PACKIT_SOURCE_SHA=a79b05642bbe04af0ef0a356afd4f5af276898bb
 
-UPLOAD_URL=https://free.keep.sh
-#UPLOAD_URL=https://transfer.sh
 
 rlJournalStart
 
@@ -65,8 +72,8 @@ rlJournalStart
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
-        # for PRs upload the archive to $UPLOAD_URL
-        if [ -n "${PACKIT_SOURCE_URL}" ]; then
+        # upload the archive to $UPLOAD_URL
+        if [ "${UPLOAD_COVERAGE}" == "1" ]; then
             # upload coverage.tar.gz
             rlRun -s "curl --upload-file coverage.tar.gz $UPLOAD_URL"
             URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
