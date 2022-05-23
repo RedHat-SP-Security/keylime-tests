@@ -12,6 +12,8 @@ framework: beakerlib
 adjust:
     enabled: false
     when: distro = fedora
+tag:
+  - CI-Tier-1
 require:
   - yum
   - python3-PyMySQL

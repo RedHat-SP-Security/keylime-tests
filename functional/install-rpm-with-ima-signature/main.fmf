@@ -11,6 +11,8 @@ component:
   - keylime
 test: ./test.sh
 framework: beakerlib
+tag:
+  - CI-Tier-1-IMA
 require:
   - yum
   - attr

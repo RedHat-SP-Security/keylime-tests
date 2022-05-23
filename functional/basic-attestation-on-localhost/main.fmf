@@ -13,6 +13,8 @@ component:
 - keylime
 test: ./test.sh
 framework: beakerlib
+tag:
+- CI-Tier-1
 require:
 - library(openssl/certgen)
 - yum
