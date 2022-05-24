@@ -1,0 +1,32 @@
+summary: Tests configuration of a measured boot policy
+description: |
+ Running all services on localhost.
+ Requires TPM and Secure Boot enabled
+ Starts verifier, registrar, agent.
+ Uses accept-all measured boot policy for the verifier.
+ Registers agent providing --mb_refstate generated using create_mb_refstate.
+ Confirms that agent passes verification, we use accept-all policy anyway.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+- keylime
+test: ./test.sh
+framework: beakerlib
+require:
+- yum
+- efivar-libs
+- efivar-devel
+- tpm2-tools
+- mokutil
+recommend:
+- keylime
+- keylime-verifier
+- keylime-registrar
+- python3-keylime-agent
+- keylime-tenant
+- keylime-tools
+duration: 5m
+enabled: true
+adjust:
+  - when: swtpm == yes
+    enabled: false
+    because: This tests needs TPM device since kernel boot
