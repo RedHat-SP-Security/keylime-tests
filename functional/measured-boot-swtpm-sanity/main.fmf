@@ -33,3 +33,6 @@ adjust:
   - when: swtpm != yes
     enabled: false
     because: This tests works only with SWTPM emulator
+  - when: distro = rhel
+    enabled: false
+    because: RHEL has old tpm2-tools
