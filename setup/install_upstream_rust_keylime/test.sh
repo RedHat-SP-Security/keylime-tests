@@ -13,6 +13,11 @@ rlJournalStart
             rlRun "rm -rf rust-keylime && git clone https://github.com/keylime/rust-keylime.git"
             rlRun "pushd rust-keylime"
         fi
+        # when TPM_BINARY_MEASUREMENTS is defined, change filepath in sources
+        if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
+            rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/common.rs"
+            rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/main.rs"
+        fi
         rlRun "cargo build"
         rlAssertExists target/debug/keylime_agent
         [ -f /usr/local/bin/keylime_agent ] && rlRun "mv /usr/local/bin/keylime_agent /usr/local/bin/keylime_agent.backup"
