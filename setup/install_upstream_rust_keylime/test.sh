@@ -27,7 +27,7 @@ rlJournalStart
 
         # Add drop-in update to enable logging output
         if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
-            rlRun "mkdir -p /etc/systemd/system/keylime_agent_service.d"
+            rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
             rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-rust_log_trace.conf <<_EOF
 [Service]
 Environment=\"RUST_LOG=keylime_agent=trace\"
