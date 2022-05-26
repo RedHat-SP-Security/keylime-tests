@@ -1,5 +1,7 @@
 summary:
   Tests for keylime rust agent
+environment:
+  TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
 adjust:
   - when: distro == centos-stream-9
     prepare+:
@@ -16,6 +18,7 @@ discover:
    - /functional/basic-attestation-without-mtls
    - /functional/basic-attestation-with-unpriviledged-agent
    - /functional/keylime_tenant-commands-on-localhost
+   - /functional/measured-boot-swtpm-sanity
 
 execute:
     how: tmt
