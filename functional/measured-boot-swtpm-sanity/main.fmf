@@ -33,6 +33,6 @@ adjust:
   - when: swtpm != yes
     enabled: false
     because: This tests works only with SWTPM emulator
-  - when: distro = rhel
+  - when: distro == rhel or distro = centos-stream
     enabled: false
     because: RHEL has old tpm2-tools
