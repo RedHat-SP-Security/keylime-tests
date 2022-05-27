@@ -68,9 +68,14 @@ rlJournalStart
         rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
+        # FIXME: this option is deprecated; migrate to revocation_notifiers once
+        # https://github.com/keylime/keylime/pull/795 is merged
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_webhook yes"
         rlRun "limeUpdateConf cloud_verifier webhook_url https://localhost:${SSL_SERVER_PORT}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
+            # FIXME: this option is deprecated; remove it once
+            # https://github.com/keylime/keylime/pull/795 is merged
             rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         fi
         # tenant
