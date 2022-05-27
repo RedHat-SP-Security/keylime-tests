@@ -7,12 +7,12 @@ rlJournalStart
     rlPhaseStartSetup "Build and install rust-keylime bits"
         if [ -d /var/tmp/rust-keylime_sources ]; then
             rlLogInfo "Compiling rust-keylime bits from /var/tmp/rust-keylime_sources"
-            rlRun "pushd /var/tmp/rust-keylime_sources"
         else
             rlLogInfo "Compiling rust-keylime from cloned upstream repo"
-            rlRun "rm -rf rust-keylime && git clone https://github.com/keylime/rust-keylime.git"
-            rlRun "pushd rust-keylime"
+            rlRun "rm -rf rust-keylime && git clone https://github.com/keylime/rust-keylime.git /var/tmp/rust-keylime_sources"
         fi
+        rlRun "pushd /var/tmp/rust-keylime_sources"
+
         # when TPM_BINARY_MEASUREMENTS is defined, change filepath in sources
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
             rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/common.rs"
