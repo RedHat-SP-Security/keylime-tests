@@ -37,6 +37,7 @@ rlJournalStart
     rlPhaseStartTest "Generate overall coverage report"
         rlRun "pushd ${__INTERNAL_limeCoverageDir}"
         # first create combined report for Packit tests
+        rlRun "chmod a+x *"
         ls -l .coverage*
         rlRun "coverage combine"
         ls -l .coverage*
