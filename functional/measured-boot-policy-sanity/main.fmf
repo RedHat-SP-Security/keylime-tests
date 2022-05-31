@@ -14,7 +14,6 @@ framework: beakerlib
 require:
 - yum
 - efivar-libs
-- efivar-devel
 - tpm2-tools
 - mokutil
 recommend:
