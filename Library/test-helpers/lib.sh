@@ -177,7 +177,15 @@ Return success.
 
 
 function limeUpdateConf() {
-  sed -i "/^\[$1\]/,/^\[/ s|^$2 *=.*|$2 = $3|$4" /etc/keylime.conf
+
+  # if the option exists, modify it
+  if sed -n "/^\[$1\]/,/^\[/ p" /etc/keylime.conf | egrep -q "^$2 *="; then
+      sed -i "/^\[$1\]/,/^\[/ s|^$2 *=.*|$2 = $3|$4" /etc/keylime.conf
+  # else we will to add it at the top of the section
+  else
+      sed -i "s|^\[$1\]|\[$1\]\n$2 = $3|$4" /etc/keylime.conf
+  fi
+
 }
 
 
