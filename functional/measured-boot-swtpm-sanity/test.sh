@@ -17,14 +17,11 @@ rlJournalStart
         rlRun "limeStartTPMEmulator"
         rlRun "limeWaitForTPMEmulator"
         # make sure tpm2-abrmd is running
-
-        # apply measured boot policy update due to https://github.com/keylime/keylime/issues/1003
-        if [ -f /usr/local/lib/python3.10/site-packages/keylime-6.4.0-py3.10.egg/keylime/elchecking/example.py ]; then
-            rlLogInfo "Applying measured boot policy fix due to https://github.com/keylime/keylime/issues/1003"
-            rlRun "cat example.py > /usr/local/lib/python3.10/site-packages/keylime-6.4.0-py3.10.egg/keylime/elchecking/example.py"
-        fi
+        rlServiceStart tpm2-abrmd
+        sleep 5
 
         # update config.py to use our fake  binary_bios_measurements
+        # for the rust agent this is handled in the /setup/install_upstream_rust_keylime task
         CONFIG=$( ls /usr/local/lib/python*/site-packages/keylime*/keylime/config.py )
         if [ -n "${CONFIG}" ]; then
             rlFileBackup ${CONFIG}
@@ -33,8 +30,6 @@ rlJournalStart
         rlRun "cp binary_bios_measurements /var/tmp"
         rlFileBackup /etc/hosts  # always backup something just to make rlFileRestore succeed
 
-        rlServiceStart tpm2-abrmd
-        sleep 5
         # start ima emulator
         rlRun "limeInstallIMAConfig"
         rlRun "limeStartIMAEmulator"

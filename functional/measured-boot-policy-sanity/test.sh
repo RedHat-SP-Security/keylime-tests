@@ -11,13 +11,6 @@ rlJournalStart
         rlAssertRpm keylime
         rlRun -s "mokutil --sb-state"
         rlAssertGrep "SecureBoot enabled" $rlRun_LOG || rlDie "SecureBoot is not enabled"
-
-        # apply measured boot policy update due to https://github.com/keylime/keylime/issues/1003
-        if [ -f /usr/local/lib/python3.10/site-packages/keylime-6.4.0-py3.10.egg/keylime/elchecking/example.py ]; then
-            rlLogInfo "Applying measured boot policy fix due to https://github.com/keylime/keylime/issues/1003"
-            rlRun "cat example.py > /usr/local/lib/python3.10/site-packages/keylime-6.4.0-py3.10.egg/keylime/elchecking/example.py"
-        fi
-
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert False"
