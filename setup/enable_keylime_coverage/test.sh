@@ -6,12 +6,12 @@ rlJournalStart
 
     rlPhaseStartSetup "Install coverage script its dependencies"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun 'pip3 install coverage==5.5'
+        rlRun 'pip3 install coverage'
         rlRun "touch $__INTERNAL_limeCoverageDir/enabled"
     rlPhaseEnd
 
     rlPhaseStartTest "Check if the coverage script is installed"
-        rlRun "coverage --help"
+        rlRun "coverage --version"
     rlPhaseEnd
 
     rlPhaseStartSetup "Modify keylime systemd unit files"
