@@ -16,7 +16,6 @@ framework: beakerlib
 require:
 - yum
 - efivar-libs
-- efivar-devel
 - tpm2-tools
 - tss2
 - tpm2-tss
