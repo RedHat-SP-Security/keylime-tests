@@ -110,11 +110,14 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+        notifiers="$KEYLIME_TEST_REVOCATION_NOTIFIERS"
+        if [ -z "$notifiers" ]; then
+            notifiers=zeromq
+        fi
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifiers '$notifiers'"
+        else
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            # FIXME: this option is deprecated; remove it once
-            # https://github.com/keylime/keylime/pull/795 is merged
-            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         fi
 
         # change UUID just for sure so it is different from Agent

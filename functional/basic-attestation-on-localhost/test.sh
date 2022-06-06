@@ -14,17 +14,16 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         # verifier
-        # FIXME: this option is deprecated; migrate to revocation_notifiers once
-        # https://github.com/keylime/keylime/pull/795 is merged
-        rlRun "limeUpdateConf cloud_verifier revocation_notifier_webhook yes"
-        ###
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers zeromq,webhook"
         rlRun "limeUpdateConf cloud_verifier webhook_url http://localhost:${HTTP_SERVER_PORT}"
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+        notifiers="$KEYLIME_TEST_REVOCATION_NOTIFIERS"
+        if [ -z "$notifiers" ]; then
+            notifiers=zeromq
+        fi
+        notifiers="$notifiers,webhook"
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifiers '$notifiers'"
+        else
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            # FIXME: this option is deprecated; remove it once
-            # https://github.com/keylime/keylime/pull/795 is merged
-            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         fi
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"

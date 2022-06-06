@@ -15,11 +15,14 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+        notifiers="$KEYLIME_TEST_REVOCATION_NOTIFIERS"
+        if [ -z "$notifiers" ]; then
+            notifiers=zeromq
+        fi
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifiers '$notifiers'"
+        else
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            # FIXME: this option is deprecated; remove it once
-            # https://github.com/keylime/keylime/pull/795 is merged
-            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
             rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
         # if TPM emulator is present

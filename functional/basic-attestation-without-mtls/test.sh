@@ -15,7 +15,13 @@ rlJournalStart
         rlRun "limeUpdateConf cloud_agent mtls_cert_enabled False"
         rlRun "limeUpdateConf cloud_agent enable_insecure_payload False"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert_enabled False"
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+        notifiers="$KEYLIME_TEST_REVOCATION_NOTIFIERS"
+        if [ -z "$notifiers" ]; then
+            notifiers=zeromq
+        fi
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "limeUpdateConf cloud_verifier revocation_notifiers '$notifiers'"
+        else
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
             # FIXME: this option is deprecated; remove it once
             # https://github.com/keylime/keylime/pull/795 is merged
