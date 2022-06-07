@@ -40,9 +40,9 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 
@@ -62,9 +62,9 @@ rlJournalStart
         # prepare new policy with current PCR values
         SHA256=$( tpm2_pcrread sha256:23 | tail -1 | cut -d 'x' -f 2 )
         TPM_POLICY="{\"23\":[\"${SHA256}\"]}"
-        rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname --tpm_policy '${TPM_POLICY}' -c update"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname --tpm_policy '${TPM_POLICY}' -c update"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 

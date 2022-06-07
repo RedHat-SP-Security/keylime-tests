@@ -71,14 +71,14 @@ _EOF"
     rlPhaseStartTest "Add keylime agent"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
         rlAssertExists /var/tmp/test_payload_file

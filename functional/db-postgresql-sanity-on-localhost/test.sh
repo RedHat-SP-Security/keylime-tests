@@ -64,9 +64,9 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestLists
-        rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 

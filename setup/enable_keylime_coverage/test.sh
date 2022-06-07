@@ -16,16 +16,20 @@ rlJournalStart
 
     rlPhaseStartSetup "Modify keylime systemd unit files"
         id keylime && rlRun "chown -R keylime /var/tmp/limeLib && chmod -R g+w /var/tmp/limeLib"
+	LIBDIR=$( ls -d /usr/local/lib/python*/site-packages )
+	rlRun "cat > ${LIBDIR}/sitecustomize.py <<_EOF
+import coverage
+coverage.process_startup()
+_EOF"
+	grep -q COVERAGE_PROCESS_START /etc/bashrc || rlRun "echo 'export COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc' >> /etc/bashrc"
         for F in agent verifier registrar; do
             rlRun "mkdir -p /etc/systemd/system/keylime_${F}.service.d"
             rlRun "cat > /etc/systemd/system/keylime_${F}.service.d/10-coverage.conf <<_EOF
 [Service]
 # set variable containing name of the currently running test
-EnvironmentFile=/etc/systemd/limeLib.context
+Environment=\"COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc\"
 # we need to change WorkingDirectory since .coverage* files will be stored there
 WorkingDirectory=/var/tmp/limeLib/coverage
-ExecStart=
-ExecStart=/usr/local/bin/coverage run /usr/local/bin/keylime_${F}
 _EOF"
         done
 	rlRun "systemctl daemon-reload"
