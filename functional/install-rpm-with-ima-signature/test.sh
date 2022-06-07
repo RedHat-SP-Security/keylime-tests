@@ -94,9 +94,9 @@ EOF
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "lime_keylime_tenant -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key ${limeIMAPublicKey} -c add"
+        rlRun "keylime_tenant -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key ${limeIMAPublicKey} -c add"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd
 
@@ -114,7 +114,7 @@ EOF
         # verifier request new quote every 2 seconds so 10 seconds should be enough
         rlRun "sleep 10" 0 "Wait 10 seconds to give verifier some time to do a new attestation"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd
 

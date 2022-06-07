@@ -919,7 +919,7 @@ true <<'=cut'
 
 =head2 limeWaitForAgentStatus
 
-Run 'lime_keylime_tenant -c status' wrapper repeatedly up to TIMEOUT seconds
+Run 'keylime_tenant -c status' wrapper repeatedly up to TIMEOUT seconds
 until the expected agent status is returned.
 
     limeWaitForAgentStatus UUID STATUS [TIMEOUT]
@@ -954,7 +954,7 @@ limeWaitForAgentStatus() {
     [ -n "$3" ] && TIMEOUT=$3
 
     for I in `seq $TIMEOUT`; do
-        lime_keylime_tenant -c status -u $UUID &> $OUTPUT
+        keylime_tenant -c status -u $UUID &> $OUTPUT
 	if egrep -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
             cat $OUTPUT
 	    rm $OUTPUT
@@ -973,7 +973,7 @@ true <<'=cut'
 
 =head2 limeWaitForAgentRegistration
 
-Run 'lime_keylime_tenant -c regstatus' wrapper repeatedly up to TIMEOUT seconds
+Run 'keylime_tenant -c regstatus' wrapper repeatedly up to TIMEOUT seconds
 until the expected agent is registered.
 
     limeWaitForAgentRegistration UUID [TIMEOUT]
@@ -1002,7 +1002,7 @@ limeWaitForAgentRegistration() {
     [ -n "$2" ] && TIMEOUT=$2
 
     for I in `seq $TIMEOUT`; do
-        lime_keylime_tenant -c regstatus -u $UUID &> $OUTPUT
+        keylime_tenant -c regstatus -u $UUID &> $OUTPUT
 	if grep -q "Agent $UUID exists on registrar" $OUTPUT; then
             cat $OUTPUT
 	    rm $OUTPUT
@@ -1408,44 +1408,7 @@ _EOF
 __INTERNAL_limeCoverageContext=$( cat $__INTERNAL_limeLogCurrentTest | sed -e 's#.*keylime-tests[^/]*\(/.*\)#\1#' )
 sed -i "s#context =.*#context = ${__INTERNAL_limeCoverageContext}#" /var/tmp/limeLib/coverage/coveragerc
 # we need to save context to a place where systemd can access it without SELinux complaining
-echo "COVERAGE_RCFILE=/var/tmp/limeLib/coverage/coveragerc" > /etc/systemd/limeLib.context
-export COVERAGE_RCFILE=/var/tmp/limeLib/coverage/coveragerc
-
-true <<'=cut'
-=pod
-
-=head2 lime_keylime_tenant
-
-Wrapper around keylime_tenant command supporting execution via the coverage
-script to messasure code coverage.
-
-    lime_keylime_tenant ARGS
-
-=over
-
-=item
-
-    ARGS - Regular keylime_tenant command line arguments.
-
-=back
-
-Returns 0.
-
-=cut
-
-
-# create lime_keylime_tenant wrapper
-cat > /usr/local/bin/lime_keylime_tenant <<EOF
-#!/bin/bash
-
-if $__INTERNAL_limeCoverageEnabled; then
-    coverage run \$( which keylime_tenant ) "\$@"
-else
-    keylime_tenant "\$@"
-fi
-EOF
-# make it executable
-chmod a+x /usr/local/bin/lime_keylime_tenant
+export COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc
 
 # create limeTestUser if it does not exists
 if ! id ${limeTestUser}; then
@@ -1490,3 +1453,4 @@ Karel Srot <ksrot@redhat.com>
 =back
 
 =cut
+

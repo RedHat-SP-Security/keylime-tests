@@ -45,7 +45,7 @@ rlJournalStart
         # create expect script to add agent
         rlRun "cat > add.expect <<_EOF
 set timeout 20
-spawn lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -64,15 +64,15 @@ _EOF"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "expect add.expect"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlAssertGrep "mTLS disabled" $(limeAgentLogfile)
         rlAssertGrep "payloads cannot be deployed" $(limeAgentLogfile)
     rlPhaseEnd
 
     rlPhaseStartTest "Enable insecure payload and set script_payload"
-        rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c delete"
-        rlRun "lime_keylime_tenant -r 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c regdelete"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c delete"
+        rlRun "keylime_tenant -r 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c regdelete"
         rlRun "limeStopAgent"
         rlRun "limeUpdateConf cloud_agent enable_insecure_payload True"
         rlRun "limeUpdateConf cloud_agent payload_script 'autorun.sh'"
@@ -83,7 +83,7 @@ _EOF"
     rlPhaseStartTest "Add keylime agent and check that payload was executed"
         rlRun "expect add.expect"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
         rlAssertExists /var/tmp/test_payload_file

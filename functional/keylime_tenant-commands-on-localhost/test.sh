@@ -37,38 +37,38 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "-c add"
-        rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
     rlPhaseEnd
 
     rlPhaseStartTest "-c cvlist"
-        rlRun -s "lime_keylime_tenant -c cvlist"
+        rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "-c cvstatus"
-        rlRun -s "lime_keylime_tenant -c cvstatus"
+        rlRun -s "keylime_tenant -c cvstatus"
         rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "-c reglist"
-        rlRun -s "lime_keylime_tenant -c reglist"
+        rlRun -s "keylime_tenant -c reglist"
         rlAssertGrep "{\"code\": 200, \"status\": \"Success\", \"results\": {\"uuids\":.*\"$AGENT_ID\"" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "-c regstatus"
-        rlRun -s "lime_keylime_tenant -c regstatus"
+        rlRun -s "keylime_tenant -c regstatus"
         rlAssertGrep "{\"code\": 200, \"status\": \"Agent $AGENT_ID exists on registrar 127.0.0.1 port 8891.\"" $rlRun_LOG
     rlPhaseEnd
  
     rlPhaseStartTest "-c status"
-        rlRun -s "lime_keylime_tenant -c status"
+        rlRun -s "keylime_tenant -c status"
         rlAssertGrep "{\"code\": 200, \"status\": \"Agent $AGENT_ID exists on registrar 127.0.0.1 port 8891.\"" $rlRun_LOG
         rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
  
     rlPhaseStartTest "-c bulkinfo"
-        rlRun -s "lime_keylime_tenant -c bulkinfo"
+        rlRun -s "keylime_tenant -c bulkinfo"
         rlAssertGrep "INFO - Bulk Agent Info:" $rlRun_LOG
         rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
     rlPhaseEnd
@@ -86,26 +86,26 @@ rlJournalStart
     rlPhaseStartTest "-c update"
         # create new allowlist and excludelist
         limeCreateTestLists
-        rlRun "lime_keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c update"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c update"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
     rlPhaseEnd
 
     rlPhaseStartTest "-c reactivate"
-        rlRun -s "lime_keylime_tenant -c reactivate"
+        rlRun -s "keylime_tenant -c reactivate"
         rlAssertGrep "{\"$AGENT_ID\": {\"operational_state\": \"(Get Quote|Provide V)\"" $rlRun_LOG -E
         rlAssertGrep "INFO - Agent $AGENT_ID re-activated" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "-c regdelete"
-        rlRun -s "lime_keylime_tenant -c regdelete"
-        rlRun -s "lime_keylime_tenant -c regstatus"
+        rlRun -s "keylime_tenant -c regdelete"
+        rlRun -s "keylime_tenant -c regstatus"
         rlAssertGrep "{\"code\": 404, \"status\": \"Agent $AGENT_ID does not exist on registrar 127.0.0.1 port 8891.\"" $rlRun_LOG
     rlPhaseEnd
  
     rlPhaseStartTest "-c delete"
-        rlRun -s "lime_keylime_tenant -c delete"
+        rlRun -s "keylime_tenant -c delete"
         rlAssertGrep "(INFO - CV completed deletion of agent $AGENT_ID|INFO - Agent $AGENT_ID deleted from the CV)" $rlRun_LOG -E
-        rlRun -s "lime_keylime_tenant -c cvstatus"
+        rlRun -s "keylime_tenant -c cvstatus"
         rlAssertGrep "Verifier at 127.0.0.1 with Port 8881 does not have agent $AGENT_ID" $rlRun_LOG
     rlPhaseEnd
  
