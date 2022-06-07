@@ -22,7 +22,11 @@ rlJournalStart
 
         # update config.py to use our fake  binary_bios_measurements
         # for the rust agent this is handled in the /setup/install_upstream_rust_keylime task
-        CONFIG=$( ls /usr/local/lib/python*/site-packages/keylime*/keylime/config.py )
+        if rpm -q keylime-99 &> /dev/null; then
+            CONFIG=$( ls /usr/local/lib/python*/site-packages/keylime*/keylime/config.py )
+        else
+            CONFIG=$( ls /usr/lib/python*/site-packages/keylime/config.py )
+        fi
         if [ -n "${CONFIG}" ]; then
             rlFileBackup ${CONFIG}
             rlRun "sed -i 's%^MEASUREDBOOT_ML =.*%MEASUREDBOOT_ML = \"/var/tmp/binary_bios_measurements\"%' ${CONFIG}"
