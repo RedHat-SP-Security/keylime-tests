@@ -34,9 +34,6 @@ recommend:
   - keylime-tools
 duration: 5m
 adjust:
-  - when: swtpm == yes
-    enabled: false
-    because: This tests needs TPM device since kernel boot
   - when: distro <= fedora-36
     enabled: false
     because: rpm issue not fixed in F36 https://github.com/rpm-software-management/rpm/pull/1914

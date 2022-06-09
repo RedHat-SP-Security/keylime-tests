@@ -18,6 +18,7 @@ require:
   - attr
   - ima-evm-utils
 recommend:
+  - pinentry-tty
   - keylime
   - keylime-verifier
   - keylime-registrar
@@ -25,9 +26,5 @@ recommend:
   - keylime-tenant
   - keylime-tools
 duration: 5m
-adjust:
-  - when: swtpm == yes
-    enabled: false
-    because: "This tests needs TPM device since kernel boot"
 enabled: true
 extra-nitrate: TC#0613616

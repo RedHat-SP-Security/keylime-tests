@@ -13,14 +13,25 @@ rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        # if TPM emulator is present, stop
-        limeTPMEmulated && rlDie "This test requires TPM device to be present since kernel boot"
         rlAssertRpm keylime
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         rlRun "limeUpdateConf cloud_agent listen_notifications False"
+        # if TPM emulator is present
+        if limeTPMEmulated; then
+            # start tpm emulator
+            rlRun "limeStartTPMEmulator"
+            rlRun "limeWaitForTPMEmulator"
+            # make sure tpm2-abrmd is running
+            rlServiceStart tpm2-abrmd
+            sleep 5
+            # start ima emulator
+            rlRun "limeInstallIMAConfig"
+            rlRun "limeStartIMAEmulator"
+        fi
+        sleep 5
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
@@ -71,6 +82,12 @@ rlJournalStart
         limeLogfileSubmit $(limeVerifierLogfile)
         limeLogfileSubmit $(limeRegistrarLogfile)
         limeLogfileSubmit $(limeAgentLogfile)
+        if limeTPMEmulated; then
+            rlRun "limeStopIMAEmulator"
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
+            rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
+        fi
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist ${TESTDIR}

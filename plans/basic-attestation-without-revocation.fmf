@@ -14,6 +14,7 @@ discover:
   test: 
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
+   - /setup/configure_kernel_ima_module/ima_policy_signing
    - "/functional/basic-attestation-.*"
 
 execute:

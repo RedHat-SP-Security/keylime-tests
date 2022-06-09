@@ -1,5 +1,5 @@
 summary: Configures kernel ima module on a running system
-description: Enables kernel_ima on a tested system (requires TPM).
+description: Enables kernel_ima on a tested system
 contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
@@ -11,4 +11,3 @@ require:
 - openssl
 duration: 10m
 enabled: true
-extra-nitrate: TC#0611629
