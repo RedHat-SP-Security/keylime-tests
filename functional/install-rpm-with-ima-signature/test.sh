@@ -15,17 +15,29 @@ rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        # if TPM emulator is present, stop
-        limeTPMEmulated && rlDie "This test requires TPM device to be present since kernel boot"
         rlAssertExists ${limeIMAPublicKey} || rlDie "This test requires ${imeIMAPublicKey} to be present on a system"
         rlAssertRpm keylime
         limeBackupConfig
 
-	# update /etc/keylime.conf
+        # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         rlRun "limeUpdateConf cloud_verifier quote_interval 2"
         rlRun "limeUpdateConf cloud_agent listen_notifications False"
+
+        # if TPM emulator is present
+        if limeTPMEmulated; then
+            # start tpm emulator
+            rlRun "limeStartTPMEmulator"
+            rlRun "limeWaitForTPMEmulator"
+            # make sure tpm2-abrmd is running
+            rlServiceStart tpm2-abrmd
+            sleep 5
+            # start ima emulator
+            rlRun "limeInstallIMAConfig"
+            rlRun "limeStartIMAEmulator"
+        fi
+        sleep 5
 
         # start keylime_verifier
         rlRun "limeStartVerifier"
@@ -36,18 +48,18 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 
         # create TMPDIR
-	rlRun "TMPDIR=\$( mktemp -d )"
+        rlRun "TMPDIR=\$( mktemp -d )"
         rlRun "pushd ${TMPDIR}"
 
-	# create allowlist and excludelist
+        # create allowlist and excludelist
         limeCreateTestLists
 
-	# start rngd to provide more random data
-	pidof rngd && ENTROPY=false || ENTROPY=true
+        # start rngd to provide more random data
+        pidof rngd && ENTROPY=false || ENTROPY=true
         $ENTROPY && rlRun "rngd -r /dev/urandom -o /dev/random" 0 "Start rngd to generate random numbers"
         [ -d /root/.gnupg ] && rlFileBackup --clean /root/.gnupg /etc/hosts
 
-	# create gpg key for rpm signing
+        # create gpg key for rpm signing
         cat >gpg.conf <<EOF
 %echo Generating a basic OpenPGP key
 Key-Type: RSA
@@ -127,6 +139,12 @@ EOF
         limeLogfileSubmit $(limeVerifierLogfile)
         limeLogfileSubmit $(limeRegistrarLogfile)
         limeLogfileSubmit $(limeAgentLogfile)
+        if limeTPMEmulated; then
+            rlRun "limeStopIMAEmulator"
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
+            rlRun "limeStopTPMEmulator"
+            rlServiceRestore tpm2-abrmd
+        fi
         limeClearData
         limeRestoreConfig
         rlFileRestore

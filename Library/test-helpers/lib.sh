@@ -1028,13 +1028,18 @@ Install IMA policy configuration to /etc/ima/ima-policy
 from a given file.
 
     limeInstallIMAConfig [FILE]
+    limeInstallIMAConfig default
 
 =over
 
 =item FILE
 
 Path to a IMA configuration file that should be used.
-Library (keylime default) would be used if not passed.
+Library default (ima-policy-simple) would be used if
+not passed.
+
+Without arguments, it will install the default policy,
+unless IMA policy has been installed previously.
 
 =back
 
@@ -1045,26 +1050,51 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 limeInstallIMAConfig() {
 
     local FILE
+    local DEFAULT=ima-policy-simple
 
-    if [ -f "$1" ]; then
-        FILE="$1"
-    elif limeTPMEmulated; then
-        FILE=$limeLibraryDir/ima-policy-swtpm
+    #when no policy has been passed as an argument
+    if [ -z "$1" ]; then
+        # if IMA policy is already installed, do nothing
+        if [ -f "${__INTERNAL_limeTmpDir}/installed-ima-policy" ]; then
+            echo "IMA policy already installed, doing nothing."
+        # otherwise going to install the default policy
+        else
+            FILE="${limeLibraryDir}/${DEFAULT}"
+        fi
+    # when policy has been passed
     else
-        FILE=$limeLibraryDir/ima-policy-hwtpm
+        if [ "$1" == "default" ]; then
+           FILE="${limeLibraryDir}/${DEFAULT}"
+        elif [ -f "${limeLibraryDir}/$1" ]; then
+            FILE="${limeLibraryDir}/$1"
+        else
+            echo "Cannot find file ${limeLibraryDir}/$1"
+            exit 1
+        fi
     fi
 
-    mkdir -p /etc/ima/ && cat $FILE > /etc/ima/ima-policy && \
-    if [ $(cat /sys/kernel/security/ima/policy | wc -l) -eq 0 ]; then
-        cat $FILE > /sys/kernel/security/ima/policy
-    else
-        rlLogWarning "IMA policy already configured in /sys/kernel/security/ima/policy"
-        echo -e "Required policy\n~~~~~~~~~~~~~~~~~~~~"
-        cat $FILE
-        echo -e "~~~~~~~~~~~~~~~~~~~~\nInstalled policy\n~~~~~~~~~~~~~~~~~~~~"
-        cat /sys/kernel/security/ima/policy
-        echo -e "~~~~~~~~~~~~~~~~~~~~"
+    # Install required policy
+    if [ -n "${FILE}" ]; then
+        echo "Installing IMA policy from ${FILE}"
+        mkdir -p /etc/ima/
+        cat ${FILE} > /etc/ima/ima-policy && cat ${FILE} > ${__INTERNAL_limeTmpDir}/installed-ima-policy
+        if [ $(cat /sys/kernel/security/ima/policy | wc -l) -eq 0 ]; then
+            cat ${FILE} > /sys/kernel/security/ima/policy
+        else
+            echo "Warning: IMA policy already configured in /sys/kernel/security/ima/policy"
+        fi
     fi
+
+    # print details about the installed policy
+    if [ -n "$FILE" ]; then
+        echo -e "~~~~~~~~~~~~~~~~~~~~\nRequired policy\n~~~~~~~~~~~~~~~~~~~~"
+        cat ${FILE}
+    fi
+    echo -e "~~~~~~~~~~~~~~~~~~~~\nEffective policy\n~~~~~~~~~~~~~~~~~~~~"
+    cat /sys/kernel/security/ima/policy
+    echo -e "~~~~~~~~~~~~~~~~~~~~\nInstalled policy (will be used after next system reboot)\n~~~~~~~~~~~~~~~~~~~~"
+    cat /etc/ima/ima-policy
+    echo -e "~~~~~~~~~~~~~~~~~~~~"
 }
 
 true <<'=cut'

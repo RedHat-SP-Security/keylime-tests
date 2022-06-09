@@ -2,9 +2,10 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-[ -z "$IMA_APPRAISE" ] && IMA_APPRAISE="fix"
-[ -z "$IMA_POLICY" ] && IMA_POLICY="tcb"
-[ -z "$IMA_TEMPLATE" ] && IMA_TEMPLATE="ima-sig"
+[ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="fix"
+[ -z "${IMA_POLICY}" ] && IMA_POLICY="tcb"
+[ -z "${IMA_TEMPLATE}" ] && IMA_TEMPLATE="ima-ng"
+[ -z "${IMA_POLICY_FILE}" ] && IMA_POLICY_FILE="ima-policy-simple"
 
 COOKIE=/var/tmp/configure-kernel-ima-module-rebooted
 TESTFILE=/var/tmp/configure-kernel-ima-module-test$$
@@ -24,9 +25,13 @@ rlJournalStart
         # generate key and certificate for IMA
         rlRun "limeInstallIMAKeys"
         # install IMA policy
-        rlRun "limeInstallIMAConfig"
+        rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
         # clear TPM
-        rlRun "tpm2_clear"
+        if ! limeTPMEmulated; then
+            rlRun "tpm2_clear"
+        fi
+        # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
+        rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
 
     rhts-reboot
@@ -39,9 +44,9 @@ rlJournalStart
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
         rlRun "rm $COOKIE"
 
-        if [ "$IMA_STATE" == "on" -o "$IMA_STATE" == "1" ]; then
-            rlRun "touch $TESTFILE && cat $TESTFILE && rm $TESTFILE"
-            rlRun "grep $TESTFILE /sys/kernel/security/ima/ascii_runtime_measurements"
+        if [ "${IMA_STATE}" == "on" -o "${IMA_STATE}" == "1" ]; then
+            rlRun "touch ${TESTFILE} && cat ${TESTFILE} && rm ${TESTFILE}"
+            rlRun "grep ${TESTFILE} /sys/kernel/security/ima/ascii_runtime_measurements"
         fi
     rlPhaseEnd
   fi
