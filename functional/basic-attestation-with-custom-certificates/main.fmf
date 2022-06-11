@@ -1,0 +1,33 @@
+summary: Tests basic keylime attestation scenario with custom TLS certificates
+description: |
+ Running all services on localhost.
+ Uses custom generated TLS certificates.
+ Starts verifier, registrar, agent.
+ Registers agent providing a payload with autorun.sh and python revocation script.
+ Verifiers that system passed attestation and autorun.sh has been executed.
+ Does changes on a system and verifies that system has failed attestation.
+ Confirms that the revocation script has been executed unless revocation is disabled through the KEYLIME_TEST_DISABLE_REVOCATION environment variable.
+ Confirms that webhook_notifier connected to the configured URL over HTTPS.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+- keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+- CI-Tier-1
+require:
+- library(openssl/certgen)
+- yum
+- expect
+- openssl
+- nmap-ncat
+recommend:
+- keylime
+- keylime-verifier
+- keylime-registrar
+- python3-keylime-agent
+- keylime-tenant
+- keylime-tools
+duration: 15m
+enabled: true
+extra-nitrate: TC#0611725
