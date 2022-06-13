@@ -23,7 +23,10 @@ require:
   - expect
   - gnupg2
   - rng-tools
-  - rpm-plugin-ima
+# do not install rpm-plugin-ima so we won't install RHEL packages with signatures
+# bogus IMA signatures is old C9S image are breaking our tests
+# see https://github.com/keylime/keylime/issues/1030 for details
+#  - rpm-plugin-ima
   - pinentry
 recommend:
   - keylime

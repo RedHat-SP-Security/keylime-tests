@@ -103,6 +103,8 @@ EOF
         [ -f ~/.rpmmacros ] && rlFileBackup ~/.rpmmacros
         echo "%_gpg_name Lime Tester (with simple passphrase) <lime@foo.bar>" > ~/.rpmmacros
         rlRun "expect sign.exp"
+        # we are installing rpm plugin here so it won't be applied when installing ordinary RHEL packages (with signatures)
+        rlRun "yum -y install rpm-plugin-ima"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
@@ -131,6 +133,7 @@ EOF
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
+        rlRun "rpm -e rpm-plugin-ima"
         rlRun "popd"
         rlRun "rpm -e rpm-ima-sign-test"
         rlRun "limeStopAgent"
