@@ -20,3 +20,4 @@ recommend:
 - keylime-tools
 duration: 15m
 enabled: true
+extra-nitrate: TC#0613571
