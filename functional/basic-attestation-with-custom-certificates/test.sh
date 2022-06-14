@@ -158,7 +158,7 @@ _EOF"
         # alternatively, we can start ncat --ssl as server, though it didn't work reliably
         # we also need to feed it with sleep so that stdin won't be closed for s_server
         rlRun "sleep 500 | openssl s_server -cert ${CERT_DIR}/localhost-cert.crt -key ${CERT_DIR}/localhost-private.pem -port ${SSL_SERVER_PORT} &> ${SSL_SERVER_LOG} &"
-        #rlRun "ncat --ssl --ssl-cert ${CERT_DIR}/localhost-cert.crt --ssl-key ${CERT_DIR}/localhost-private.pem --no-shutdown -k -l ${SSL_SERVER_PORT} -e 'sleep 3 && echo HTTP/1.1 200 OK' -o ${SSL_SERVER_LOG} &"
+        #rlRun "ncat --ssl --ssl-cert ${CERT_DIR}/localhost-cert.crt --ssl-key ${CERT_DIR}/localhost-private.pem --no-shutdown -k -l ${SSL_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${SSL_SERVER_LOG} &"
         SSL_SERVER_PID=$!
     rlPhaseEnd
 
