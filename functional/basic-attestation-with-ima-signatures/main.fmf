@@ -27,4 +27,8 @@ recommend:
   - keylime-tools
 duration: 5m
 enabled: true
+adjust:
+  - when: distro == rhel-8 or distro = centos-stream-8
+    enabled: false
+    because: RHEL-8 has old kernel
 extra-nitrate: TC#0613616
