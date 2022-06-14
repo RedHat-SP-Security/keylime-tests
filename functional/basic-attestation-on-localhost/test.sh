@@ -56,7 +56,7 @@ rlJournalStart
         limeCreateTestLists
         HTTP_SERVER_LOG=$( mktemp )
         # start revocation notifier webhook server using ncat
-        rlRun "ncat --no-shutdown -k -l ${HTTP_SERVER_PORT} -e 'sleep 3 && echo HTTP/1.1 200 OK' -o ${HTTP_SERVER_LOG} &"
+        rlRun "ncat --no-shutdown -k -l ${HTTP_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${HTTP_SERVER_LOG} &"
         HTTP_SERVER_PID=$!
     rlPhaseEnd
 
