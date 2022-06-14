@@ -28,6 +28,7 @@ recommend:
 - keylime-tools
 duration: 5m
 enabled: true
+extra-nitrate: TC#0613892
 adjust:
   - when: swtpm != yes
     enabled: false
