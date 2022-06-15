@@ -315,12 +315,9 @@ __limeStartKeylimeService() {
 
     # if there is no unit file, execute the process directly
     else
-        if $__INTERNAL_limeCoverageEnabled && file $(which keylime_${NAME}) | grep -qi python; then
-            coverage run $(which keylime_${NAME}) ${ARGS} >> ${LOGFILE} 2>&1 &
-        else
-            # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
-            RUST_LOG=keylime_agent=trace keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &
-        fi
+        # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
+        RUST_LOG=keylime_agent=trace
+        keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &
     fi
 
 }
