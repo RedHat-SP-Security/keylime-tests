@@ -1284,6 +1284,110 @@ limeGetRevocationScriptType() {
 
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeCopyKeylimeFile
+
+Copy file to specified dir from specified path, download file from repository otherwise.
+
+    limeCopyKeylimeFile
+
+=over
+
+=item -s, --source
+
+Copy file from source files to specific dir.
+
+=item -i, --install
+
+Copy file from installed files to specific dir.
+
+=back
+
+Returns 0 when the copy or download of file to actual dir is succesfull.
+
+=cut
+
+limeCopyKeylimeFile(){
+
+    local OPTION=$1
+    local NAME=$2
+    local DEST=$3
+
+    if [ -z "${OPTION}" ] || [ -z "${NAME}" ]; then
+        echo "Parameters are empty."
+        return 1
+    fi
+
+    if [ -z "${DEST}" ]; then
+        DEST=.
+    fi
+
+    local FILEPATH=$(limeGetKeylimeFilepath ${OPTION} ${NAME})
+    # get filepath to the variable and if file exist, copy file to specified dir
+    if [ -n "${FILEPATH}" ]; then
+        echo "Copying ${FILEPATH} to ${DEST}"
+        cp ${FILEPATH} ${DEST}
+    else 
+        echo "Downloading https://raw.githubusercontent.com/keylime/keylime/master/${NAME} to ${DEST}"
+        pushd ${DEST}
+        curl -O https://raw.githubusercontent.com/keylime/keylime/master/${NAME}
+        popd
+    fi
+}
+
+true <<'=cut'
+=pod
+
+=head2  limeGetKeylimeFilepath
+
+Prints to STDOUT a filepath for specified, print empty string otherwise.
+
+    limeGetKeylimeFilepath
+
+=over
+
+=item -s. --source
+
+Find the path to the specified filename in the location of the keylime source files.
+
+=item -i, --install
+
+Find the path to the specified filename in the location of the keylime installed files.
+
+=back
+
+Return path of file as STDOUT.
+
+=cut
+
+limeGetKeylimeFilepath(){
+
+    local OPTION=$1
+    local FILENAME=$2
+
+    if [ -z "${OPTION}" ] || [ -z "${FILENAME}" ]; then
+        echo "Parameters are empty."
+        return 1
+    fi
+
+    case $OPTION in
+
+        --source | -s)
+            WHERE="/var/tmp/keylime_sources /var/tmp/rust-keylime_sources"
+            ;;
+            
+        --install | -i)
+            WHERE="/usr/lib/python*/site-packages/keylime /usr/local/lib/python*/site-packages/keylime*/keylime"
+            ;;
+    
+    esac
+
+    find ${WHERE} -print 2> /dev/null | grep ${FILENAME} | head -1
+
+}
+
 # ~~~~~~~~~~~~~~~~~~~~
 #   Logging
 # ~~~~~~~~~~~~~~~~~~~~
