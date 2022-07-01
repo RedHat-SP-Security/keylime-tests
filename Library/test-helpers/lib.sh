@@ -87,6 +87,8 @@ export limeIMAPrivateKey=${__INTERNAL_limeIMAKeysDir}/privkey_evm.pem
 export limeIMAPublicKey=${__INTERNAL_limeIMAKeysDir}/x509_evm.pem
 export limeIMACertificateDER=${__INTERNAL_limeIMAKeysDir}/x509_evm.der
 
+[ -n "$limeTIMEOUT" ] || limeTIMEOUT=30
+export limeTIMEOUT
 
 export limeTestUser=limetester
 export limeTestUserUID=11235
@@ -804,7 +806,7 @@ limeWaitForVerifier() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=8881
-    if ! rlWaitForSocket $PORT -d 0.5 -t 30; then
+    if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
         cat $( limeVerifierLogfile )
         return 1
     else
@@ -838,7 +840,7 @@ limeWaitForRegistrar() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=8891
-    if ! rlWaitForSocket $PORT -d 0.5 -t 30; then
+    if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
         cat $( limeRegistrarLogfile )
         return 1
     else
@@ -872,7 +874,7 @@ limeWaitForAgent() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=9002
-    if ! rlWaitForSocket $PORT -d 0.5 -t 30; then
+    if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
         cat $( limeAgentLogfile )
         return 1
     else
@@ -906,7 +908,7 @@ limeWaitForTPMEmulator() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=2322
-    rlWaitForSocket $PORT -d 0.5 -t 30
+    rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}
 
 }
 
@@ -942,7 +944,7 @@ Returns 0 when the start was successful, 1 otherwise.
 =cut
 
 limeWaitForAgentStatus() {
-    local TIMEOUT=30
+    local TIMEOUT=${limeTIMEOUT}
     local UUID="$1"
     local STATUS="$2"
     local OUTPUT=`mktemp`
@@ -983,7 +985,7 @@ until the expected agent is registered.
 
 =item
 
-    TIMEOUT - Maximum time in seconds to wait (default 30).
+    TIMEOUT - Maximum time in seconds to wait (default 30)
 
 =back
 
@@ -992,7 +994,7 @@ Returns 0 when the start was successful, 1 otherwise.
 =cut
 
 limeWaitForAgentRegistration() {
-    local TIMEOUT=30
+    local TIMEOUT=${limeTIMEOUT}
     local UUID="$1"
     local OUTPUT=`mktemp`
     [ -z "$1" ] && return 3
