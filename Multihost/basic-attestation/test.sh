@@ -34,6 +34,10 @@
 # to make user that sync events have unique names and there are not
 # collisions with former test runs
 
+# set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
+[ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
+
+
 function get_IP() {
     if echo $1 | egrep -q '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
         echo $1
@@ -110,11 +114,9 @@ Verifier() {
         rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
+        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            # FIXME: this option is deprecated; remove it once
-            # https://github.com/keylime/keylime/pull/795 is merged
-            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
         fi
 
         # change UUID just for sure so it is different from Agent
