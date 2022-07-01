@@ -2,6 +2,8 @@
 
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
+[ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 AGENT_USER=kagent
 AGENT_GROUP=tss
@@ -15,11 +17,9 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            # FIXME: this option is deprecated; remove it once
-            # https://github.com/keylime/keylime/pull/795 is merged
-            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
             rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
         # if TPM emulator is present

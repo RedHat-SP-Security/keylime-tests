@@ -2,6 +2,9 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
+[ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
+
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
@@ -18,6 +21,7 @@ rlJournalStart
         limeBackupConfig
         # update keylime configuration
         rlRun "limeUpdateConf cloud_agent run_as root:root"
+        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
         # need to adjust file permissions since we are running keylime as root (for now)
         rlRun "rm -f /var/log/keylime/*"
         rlRun "chown -R root.root /var/lib/keylime"

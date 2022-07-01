@@ -2,6 +2,8 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
+[ -n "${REVOCATION_NOTIFIER}" ] || REVOCATION_NOTIFIER=agent
 SSL_SERVER_PORT=8980
 CERT_DIR="/var/lib/keylime/ca"
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -68,17 +70,12 @@ rlJournalStart
         rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
-        # FIXME: this option is deprecated; migrate to revocation_notifiers once
-        # https://github.com/keylime/keylime/pull/795 is merged
-        rlRun "limeUpdateConf cloud_verifier revocation_notifier_webhook yes"
-        ###
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers zeromq,webhook"
+        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER},webhook"
+        rlRun "limeUpdateConf cloud_agent listen_notifications True"
         rlRun "limeUpdateConf cloud_verifier webhook_url https://localhost:${SSL_SERVER_PORT}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            # FIXME: this option is deprecated; remove it once
-            # https://github.com/keylime/keylime/pull/795 is merged
-            rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
+            rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
@@ -190,10 +187,10 @@ _EOF"
             rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
             rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
             rlAssertNotExists /var/tmp/test_payload_file
+            cat ${SSL_SERVER_LOG}
+            rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${SSL_SERVER_LOG} -i
+            rlAssertNotGrep ERROR ${SSL_SERVER_LOG} -i
         fi
-        cat ${SSL_SERVER_LOG}
-        rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${SSL_SERVER_LOG} -i
-        rlAssertNotGrep ERROR ${SSL_SERVER_LOG} -i
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
