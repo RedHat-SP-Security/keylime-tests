@@ -68,9 +68,6 @@ _EOF'
         rlRun "python3 setup.py install"
         # copy keylime.conf to /etc
         rlRun "cp keylime.conf /etc"
-        # FIXME: change default revocation notifier to agent
-        # can be removed if zeromq won't be used by default
-        rlRun "sed -i 's/revocation_notifiers =.*/revocation_notifiers = agent/' /etc/keylime.conf"
         # need to update default hash algorithm to sha256, sha1 is obsolete
         rlRun "sed -i 's/tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime.conf"
         if $INSTALL_SERVICE_FILES; then

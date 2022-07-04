@@ -1,0 +1,4 @@
+summary: Configures zeromq as a default revocation notifier in keylime.conf
+description: Configures zeromq as a default revocation notifier in keylime.conf
+environment:
+    REVOCATION_NOTIFIER: zeromq
