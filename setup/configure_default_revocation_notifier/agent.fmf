@@ -2,3 +2,4 @@ summary: Configures agent as a default revocation notifier in keylime.conf
 description: Configures agent as a default revocation notifier in keylime.conf
 environment:
     REVOCATION_NOTIFIER: agent
+extra-nitrate: TC#0614039
