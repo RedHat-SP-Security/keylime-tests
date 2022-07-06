@@ -2,6 +2,8 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# define RUST_IMA_EMULATOR variable to install also rust IMA emulator
+
 rlJournalStart
 
     rlPhaseStartSetup "Build and install rust-keylime bits"
@@ -22,6 +24,9 @@ rlJournalStart
         rlAssertExists target/debug/keylime_agent
         [ -f /usr/local/bin/keylime_agent ] && rlRun "mv /usr/local/bin/keylime_agent /usr/local/bin/keylime_agent.backup"
         rlRun "cp target/debug/keylime_agent /usr/local/bin/keylime_agent"
+        if [ -n "${RUST_IMA_EMULATOR}" ]; then
+            rlRun "cp target/debug/keylime_ima_emulator /usr/local/bin/keylime_ima_emulator"
+        fi
 
         # Install shim.py to allow running python actions
         # This should be removed once https://github.com/keylime/rust-keylime/issues/325 is fixed
