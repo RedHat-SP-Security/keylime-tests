@@ -1290,6 +1290,7 @@ Returns 0.
 
 limeVerifierLogfile() {
 
+    sleep 5
     __limeServiceLogfile verifier
 
 }
