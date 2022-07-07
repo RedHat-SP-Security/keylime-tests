@@ -308,7 +308,7 @@ __limeStartKeylimeService() {
 
     # set sha256 as default hash for ima emulator
     if [ "$1" == "ima_emulator" ]; then
-        ARGS="--hash_algs sha256 --ima-hash-alg sha256"
+        ARGS="--hash_algs sha256 --ima-hash-alg sha1"
     fi
 
     # execute service using sytemd unit file
