@@ -30,6 +30,8 @@ discover:
    - /functional/basic-attestation-without-mtls
    - /functional/basic-attestation-with-unpriviledged-agent
    - /functional/basic-attestation-with-ima-signatures
+   - /functional/ek-cert-use-ek_check_script
+   - /functional/ek-cert-use-ek_handle-custom-ca_certs   
    - /functional/keylime_tenant-commands-on-localhost
    - /functional/measured-boot-swtpm-sanity
 
