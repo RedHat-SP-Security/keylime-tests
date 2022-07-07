@@ -1,0 +1,34 @@
+summary:  Test of keylime checking of endorsement key by manually generate ek and verify against CA certs
+description: |
+    Running all services on localhost.
+    Manually generate endorsement key and add 
+    address of key to keylime.conf.
+    Starts verifier, registrar, agent.
+    Add incorrect CA certs for EK cert validation, expect agent addition to fail.
+    Add correct CA certs for EK cert validation, expect agent addition to pass.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - tpm2-tools 
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 5m
+enabled: true
+adjust:
+  - when: distro == rhel-8 or distro = centos-stream-8
+    enabled: false
+    because: swtpm is not rhel-8 and CentOS-Stream-8
+
+
+
