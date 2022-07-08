@@ -1251,6 +1251,38 @@ limeCreateTestDir() {
 
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeGetRevocationScriptType
+
+Prints to STDOUT a type of revocation scripts, either "module" or "script" (default).
+Can be controlled globally by setting environment variable limeREVOCATION_SCRIPT_TYPE.
+
+=over
+
+=back
+
+Returns 0, prints revocation script type to STDOUT.
+
+=cut
+
+limeGetRevocationScriptType() {
+
+    local AGENT=$( which keylime_agent )
+
+    # follow limeREVOCATION_SCRIPT_TYPE variable if set
+    if [ "${limeREVOCATION_SCRIPT_TYPE}" == "module" -o "${limeREVOCATION_SCRIPT_TYPE}" == "script" ]; then
+        echo ${limeREVOCATION_SCRIPT_TYPE}
+    # for Python agent we use python modules
+    elif file ${AGENT} | grep -qi python; then
+        echo "module"
+    # default is "script"
+    else
+        echo "script"
+    fi
+
+}
 
 # ~~~~~~~~~~~~~~~~~~~~
 #   Logging
