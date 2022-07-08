@@ -1,0 +1,9 @@
+summary: Disables buffering for Python keylime services
+description: Adds unit file snippet setting PYTHONUNBUFFERED=1 for Python keylime services
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+duration: 1m
+enabled: true

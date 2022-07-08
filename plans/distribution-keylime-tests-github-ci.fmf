@@ -15,6 +15,7 @@ prepare:
 discover:
   how: fmf
   test: 
+   - /setup/configure_python_unbuffered_for_keylime
    - /setup/configure_tpm_emulator
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser

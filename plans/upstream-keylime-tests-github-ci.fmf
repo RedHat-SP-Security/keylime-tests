@@ -9,6 +9,7 @@ prepare:
 discover:
   how: fmf
   test: 
+   - /setup/configure_python_unbuffered_for_keylime
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
    - /setup/enable_keylime_coverage
