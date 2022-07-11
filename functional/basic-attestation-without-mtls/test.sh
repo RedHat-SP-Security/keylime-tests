@@ -87,6 +87,7 @@ _EOF"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
+        ls -l /var/tmp/test_payload_file
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
@@ -106,6 +107,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
+        rlRun "rm -f /var/tmp/test_payload_file"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"

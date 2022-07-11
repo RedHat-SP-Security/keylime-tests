@@ -22,6 +22,8 @@ rlJournalStart
             rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
             rlRun "limeUpdateConf cloud_agent listen_notifications False"
         fi
+        # change /etc/keylime.conf permissions so that agent running as ${AGENT_USER} can access it
+        rlRun "chmod 644 /etc/keylime.conf"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -61,7 +63,7 @@ _EOF"
             rlRun "KEYLIME_DIR=${AGENT_WORKDIR} limeStartAgent"
         fi
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        ps -ef | grep keylime_agent
+        ps -eo "%p %U %G %x %c" | grep keylime_agent
         rlRun "pgrep -f keylime_agent -u root" 1 "keylime_agent should not be running as root"
         rlRun "pgrep -f keylime_agent -u kagent" 0 "keylime_agent shouldbe running as kagent"
         # create allowlist and excludelist
@@ -82,6 +84,7 @@ _EOF"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
+        ls -l /var/tmp/test_payload_file
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
@@ -101,6 +104,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
+        rlRun "rm -f /var/tmp/test_payload_file"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
