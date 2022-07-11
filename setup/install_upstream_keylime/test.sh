@@ -67,7 +67,8 @@ _EOF'
         [ -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations ] && rlRun "rm -rf /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations"
         rlRun "python3 setup.py install"
         # copy keylime.conf to /etc
-        rlRun "cp keylime.conf /etc"
+        rlRun "cp keylime.conf /etc && chmod 600 keylime.conf"
+        ls -l /etc/keylime.conf
         # need to update default hash algorithm to sha256, sha1 is obsolete
         rlRun "sed -i 's/tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime.conf"
         if $INSTALL_SERVICE_FILES; then
