@@ -282,7 +282,7 @@ if [ -n "${AGENT2}" ]; then
         # register
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --allowlist allowlist2.txt --exclude excludelist2.txt --include payload --cert default -c add
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --allowlist allowlist2.txt --exclude excludelist2.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -301,7 +301,7 @@ fi
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt --include payload --cert default -c add
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -482,6 +482,8 @@ rlJournalStart
         rlAssertRpm keylime
         # backup files
         limeBackupConfig
+        # load REVOCATION_SCRIPT_TYPE
+        REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
 
         rlRun "pushd $TmpDir"
     rlPhaseEnd
