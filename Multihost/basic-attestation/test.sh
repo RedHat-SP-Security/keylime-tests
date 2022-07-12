@@ -469,7 +469,6 @@ rlJournalStart
         rlLog "AGENT: ${AGENT} ${AGENT_IP}"
         rlLog "AGENT2: ${AGENT2} ${AGENT2_IP}"
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        rlRun "cp -rf payload-${REVOCATION_SCRIPT_TYPE} $TmpDir"
 
         ###############
         # common setup
@@ -484,6 +483,7 @@ rlJournalStart
         limeBackupConfig
         # load REVOCATION_SCRIPT_TYPE
         REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
+        rlRun "cp -rf payload-${REVOCATION_SCRIPT_TYPE} $TmpDir"
 
         rlRun "pushd $TmpDir"
     rlPhaseEnd
