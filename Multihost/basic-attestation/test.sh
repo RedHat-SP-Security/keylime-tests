@@ -469,7 +469,7 @@ rlJournalStart
         rlLog "AGENT: ${AGENT} ${AGENT_IP}"
         rlLog "AGENT2: ${AGENT2} ${AGENT2_IP}"
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        rlRun "cp -rf payload $TmpDir"
+        rlRun "cp -rf payload-${REVOCATION_SCRIPT_TYPE} $TmpDir"
 
         ###############
         # common setup
