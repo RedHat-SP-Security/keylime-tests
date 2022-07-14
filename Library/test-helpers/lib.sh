@@ -1289,19 +1289,31 @@ true <<'=cut'
 
 =head2 limeCopyKeylimeFile
 
-Copy file to specified dir from specified path, download file from repository otherwise.
+Copy keylime file identified by NAME to the specified DEST location. Eventually, downloads file from keylime Git repository.
 
-    limeCopyKeylimeFile
+    limeCopyKeylimeFile {--source|--install} NAME [DEST]
+
+    E.g.
+
+    limeCopyKeylimeFile --install scripts/create_mb_refstate .
 
 =over
 
 =item -s, --source
 
-Copy file from source files to specific dir.
+Locate file amongst keylime sources present on a system or copy from a Git repo.
 
 =item -i, --install
 
-Copy file from installed files to specific dir.
+Locate file amongst keylime files installed on a system (/var/tmp/keylime_sources or /var/tmp/rust-keylime_sources).
+
+=item NAME
+
+Name of a file to locate and copy. Can contain a directory prefix in order to better specify the required file.
+
+=item DEST
+
+Destination directory where to copy a file (current working directory by default)
 
 =back
 
@@ -1321,7 +1333,7 @@ limeCopyKeylimeFile(){
     fi
 
     if [ -z "${DEST}" ]; then
-        DEST=.
+        DEST=$PWD
     fi
 
     local FILEPATH=$(limeGetKeylimeFilepath ${OPTION} ${NAME})
@@ -1329,11 +1341,15 @@ limeCopyKeylimeFile(){
     if [ -n "${FILEPATH}" ]; then
         echo "Copying ${FILEPATH} to ${DEST}"
         cp ${FILEPATH} ${DEST}
-    else 
+    # source file that was not found on a system will be downloaded
+    elif [ "${OPTION}" == "-s" -o "${OPTION}" == "--source" ]; then
         echo "Downloading https://raw.githubusercontent.com/keylime/keylime/master/${NAME} to ${DEST}"
         pushd ${DEST}
         curl -O https://raw.githubusercontent.com/keylime/keylime/master/${NAME}
         popd
+    else
+        echo "Could not find file matching ${NAME} on a local system"
+        return 1
     fi
 }
 
@@ -1342,23 +1358,31 @@ true <<'=cut'
 
 =head2  limeGetKeylimeFilepath
 
-Prints to STDOUT a filepath for specified, print empty string otherwise.
+Locates the specified keylime file identified by NAME on a system and prints its path on STDOUT.
 
-    limeGetKeylimeFilepath
+    limeGetKeylimeFilepath {--source|--install} NAME
+
+    E.g.
+
+    limeGetKeylimeFilepath --install keylime/config.py
 
 =over
 
 =item -s. --source
 
-Find the path to the specified filename in the location of the keylime source files.
+Locate file amongst keylime sources present on a system (/var/tmp/keylime_sources or /var/tmp/rust-keylime_sources).
 
 =item -i, --install
 
-Find the path to the specified filename in the location of the keylime installed files.
+Locate file amongst keylime files installed on a system.
+
+=item NAME
+
+Name of a file to locate and copy. Can contain a directory prefix in order to better specify the required file.
 
 =back
 
-Return path of file as STDOUT.
+Write path of a located file to STDOUT or an empty string
 
 =cut
 
