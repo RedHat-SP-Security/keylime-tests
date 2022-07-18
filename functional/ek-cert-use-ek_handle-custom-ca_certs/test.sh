@@ -14,7 +14,7 @@ rlJournalStart
         rlAssertRpm keylime
         # update /etc/keylime.conf
         limeBackupConfig       
-        # if TPM emulator is presentzz
+        # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
             rlRun "limeStartTPMEmulator"
