@@ -4,6 +4,8 @@ contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
 test: ./test.sh
+tag:
+- setup
 framework: beakerlib
 require:
 - yum
