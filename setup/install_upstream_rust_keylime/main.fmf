@@ -4,6 +4,8 @@ contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
 test: ./test.sh
+tag:
+ - setup
 framework: beakerlib
 require:
  - git
@@ -17,3 +19,4 @@ require:
  - libarchive-devel
 duration: 20m
 enabled: true
+extra-nitrate: TC#0613570
