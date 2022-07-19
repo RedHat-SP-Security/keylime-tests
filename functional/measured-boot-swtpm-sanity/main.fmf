@@ -30,7 +30,7 @@ duration: 5m
 enabled: true
 extra-nitrate: TC#0613892
 adjust:
-  - when: swtpm != yes
+  - when: swtpm is not defined or swtpm != yes
     enabled: false
     because: This tests works only with SWTPM emulator
   - when: distro == rhel-8 or distro = centos-stream-8
