@@ -10,8 +10,6 @@ contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
 test: ./test.sh
-tag:
-- secureboot
 framework: beakerlib
 require:
 - yum
@@ -29,6 +27,9 @@ duration: 5m
 enabled: true
 extra-nitrate: TC#0613891
 adjust:
+  - when: secureboot is not defined or secureboot != yes
+    enabled: false
+    because: This tests works only with SecureBoot enabled or modified keylime agent
   - when: swtpm == yes
     enabled: false
     because: This tests needs TPM device since kernel boot
