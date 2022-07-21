@@ -180,14 +180,23 @@ Return success.
 
 function limeUpdateConf() {
 
-  # if the option exists, modify it
-  if sed -n "/^\[$1\]/,/^\[/ p" /etc/keylime.conf | egrep -q "^$2 *="; then
-      sed -i "/^\[$1\]/,/^\[/ s|^$2 *=.*|$2 = $3|$4" /etc/keylime.conf
-  # else we will to add it at the top of the section
-  else
-      sed -i "s|^\[$1\]|\[$1\]\n$2 = $3|$4" /etc/keylime.conf
-  fi
+  local SECTION=$1
+  local KEY=$2
+  local VALUE=$3
+  local SED_OPTIONS=$4
+  local FILES="/etc/keylime.conf /etc/keylime-agent.conf"
 
+  for FILE in ${FILES}; do
+    if [ -f ${FILE} ]; then
+      # if the option exists, modify it
+      if sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep -q "^${KEY} *="; then
+        sed -i "/^\[${SECTION}\]/,/^\[/ s|^${KEY} *=.*|${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+      # else we will to add it at the top of the section if the section exists
+      elif grep -q "\[${SECTION}\]" $FILE; then
+        sed -i "s|^\[${SECTION}\]|\[${SECTION}\]\n${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+      fi
+    fi
+  done
 }
 
 
