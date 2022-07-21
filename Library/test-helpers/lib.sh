@@ -222,7 +222,7 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 
 limeBackupConfig() {
 
-    rlFileBackup --clean --namespace limeConf --missing-ok /etc/keylime.conf /etc/ima/ima-policy
+    rlFileBackup --clean --namespace limeConf --missing-ok /etc/keylime.conf /etc/keylime-agent.conf /etc/ima/ima-policy
 
 }
 
