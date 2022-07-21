@@ -21,6 +21,8 @@ rlJournalStart
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
+        # on s390x run zipl to make change done through grubby effective
+        [ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
         rlRun "touch $COOKIE"
         # generate key and certificate for IMA
         rlRun "limeInstallIMAKeys"
