@@ -1,0 +1,36 @@
+summary: Test of keylime tenant signature verification options
+description: |
+    Running all services on localhost.
+    Starts verifier, registrar and agent. 
+    Runs keylime_tenant signature verification options to confirm they are work properly.
+    Scenario test this tenant options:
+    --signature-verification-key ,
+    --signature-verification-key-sig ,
+    --signature-verification-key-sig-key ,
+    --signature-verification-key-url ,
+    --signature-verification-key-sig-url ,
+    --signature-verification-key-sig-url-key .
+    Signature verification options can validate that IMA file signature verification key sign by gpg key is genuine.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - tpm2-tools 
+recommend:
+  - pinentry-tty
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 10m
+enabled: true
+adjust:
+  - when: distro == rhel-8 or distro = centos-stream-8
+    enabled: false
+    because: IMA is not available on rhel-8 and CentOS-Stream-8
+
