@@ -33,6 +33,9 @@ adjust:
   - when: swtpm is not defined or swtpm != yes
     enabled: false
     because: This tests works only with SWTPM emulator
+  - when: arch == s390x
+    enabled: false
+    because: Measured boot not functioning on s390x
   - when: distro == rhel-8 or distro = centos-stream-8
     enabled: false
     because: RHEL-8 has old tpm2-tools
