@@ -9,6 +9,8 @@ rlJournalStart
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
+        rlFileBackup --clean --missing-ok ~/.gnupg /etc/hosts
+        rlRun "rm -rf /root/.gnupg/" 
         rlRun "TmpDir=\$(mktemp -d)"
         rlRun "pushd ${TmpDir}"
         limeBackupConfig
@@ -209,6 +211,7 @@ EOF"
         rlRun "popd"
         rlRun "rm -rf ${TmpDir}"
         rlRun "gpgconf --kill gpg-agent"
+        rlFileRestore
     rlPhaseEnd
 
 rlJournalEnd
