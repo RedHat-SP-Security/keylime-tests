@@ -10,7 +10,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
         rlFileBackup --clean --missing-ok ~/.gnupg /etc/hosts
-        rlRun "rm -rf /root/.gnupg/" 
+        rlRun "rm -rf /root/.gnupg/"
         rlRun "TmpDir=\$(mktemp -d)"
         rlRun "pushd ${TmpDir}"
         limeBackupConfig
@@ -78,7 +78,7 @@ EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist providing --allowlist-checksum"
-        rlRun -s "keylime_tenant -c addallowlist --allowlist allowlist.txt --allowlist-name list2 --allowlist-checksum ${CHECKSUM}"
+        rlRun -s "keylime_tenant -c addallowlist --allowlist allowlist.txt  --exclude excludelist.txt --allowlist-name list2 --allowlist-checksum ${CHECKSUM}"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
@@ -117,7 +117,7 @@ EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent using the named allowlist"
-        rlRun "keylime_tenant -t 127.0.0.1 -u $AGENT_ID --allowlist-name list2 --exclude excludelist.txt -f allowlist.txt -c add"
+        rlRun "keylime_tenant -t 127.0.0.1 -u $AGENT_ID --allowlist-name list2 -f allowlist.txt -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
