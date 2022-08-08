@@ -123,6 +123,15 @@ EOF"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 
+    rlPhaseStartTest "Update keylime agent while adding new named allowlist"
+        rlRun "keylime_tenant -t 127.0.0.1 -u $AGENT_ID --allowlist-name list8 --allowlist allowlist.txt --exclude excludelist.txt -f allowlist.txt -c update"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun -s "keylime_tenant -c cvlist"
+        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun -s "keylime_tenant -c showallowlist --allowlist-name list8"
+        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'name': 'list8'" $rlRun_LOG
+    rlPhaseEnd
+
     rlPhaseStartTest "Try to add allowlist without specifying --allowlist-name"
         rlRun -s "keylime_tenant -c addallowlist --allowlist allowlist.txt" 1
         rlAssertGrep "allowlist_name is required to add an allowlist" $rlRun_LOG
