@@ -4,6 +4,9 @@
 
 [ "$INSTALL_SERVICE_FILES" == "0" -o "$INSTALL_SERVICE_FILES" == "false" ] && INSTALL_SERVICE_FILES=false || INSTALL_SERVICE_FILES=true
 
+[ -n "${KEYLIME_UPSTREAM_URL}" ] || KEYLIME_UPSTREAM_URL="https://github.com/keylime/keylime.git"
+[ -n "${KEYLIME_UPSTREAM_BRANCH}" ] || KEYLIME_UPSTREAM_BRANCH="master"
+
 rlJournalStart
 
     rlPhaseStartSetup "Install keylime and its dependencies"
@@ -49,7 +52,7 @@ _EOF'
             rlLogInfo "Installing keylime from /var/tmp/keylime_sources"
         else
             rlLogInfo "Installing keylime from cloned upstream repo"
-            rlRun "git clone https://github.com/keylime/keylime.git /var/tmp/keylime_sources"
+            rlRun "git clone -b ${KEYLIME_UPSTREAM_BRANCH} ${KEYLIME_UPSTREAM_URL} /var/tmp/keylime_sources"
         fi
         rlRun "pushd /var/tmp/keylime_sources"
         # print more details about the code we are going to use
