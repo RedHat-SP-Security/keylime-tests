@@ -1,0 +1,137 @@
+policy_module(keylime, 1.0.0)
+
+########################################
+#
+# Declarations
+#
+
+attribute keylime_domain;
+
+type keylime_agent_t;
+keylime_use_keylime_domain(keylime_agent_t)
+type keylime_agent_exec_t;
+init_daemon_domain(keylime_agent_t, keylime_agent_exec_t)
+
+type keylime_server_t;
+keylime_use_keylime_domain(keylime_server_t)
+type keylime_server_exec_t;
+init_daemon_domain(keylime_server_t, keylime_server_exec_t)
+
+type keylime_log_t;
+logging_log_file(keylime_log_t)
+
+type keylime_var_lib_t;
+files_type(keylime_var_lib_t)
+
+type keylime_tmp_t;
+files_tmp_file(keylime_tmp_t)
+
+########################################
+#
+# keylime domain policy
+#
+
+allow keylime_domain self:tcp_socket create_stream_socket_perms;
+
+manage_dirs_pattern(keylime_domain, keylime_tmp_t, keylime_tmp_t)
+manage_files_pattern(keylime_domain, keylime_tmp_t, keylime_tmp_t)
+files_tmp_filetrans(keylime_domain, keylime_tmp_t, { dir file })
+
+manage_dirs_pattern(keylime_domain, keylime_var_lib_t, keylime_var_lib_t)
+manage_files_pattern(keylime_domain, keylime_var_lib_t, keylime_var_lib_t)
+files_var_lib_filetrans(keylime_domain, keylime_var_lib_t, { dir file lnk_file })
+
+corecmd_exec_bin(keylime_domain)
+
+corenet_tcp_bind_generic_node(keylime_domain)
+corenet_tcp_bind_all_ports(keylime_domain)
+corenet_tcp_connect_all_unreserved_ports(keylime_domain)
+
+dev_read_sysfs(keylime_domain)
+
+fs_tmpfs_filetrans(keylime_domain, keylime_var_lib_t, { dir file })
+
+init_named_socket_activation(keylime_domain, keylime_var_lib_t, "keylime")
+
+miscfiles_read_generic_certs(keylime_domain)
+
+sysnet_read_config(keylime_domain)
+
+
+########################################
+#
+# keylime server policy
+#
+
+allow keylime_server_t self:netlink_route_socket { create_stream_socket_perms nlmsg_read };
+allow keylime_server_t self:udp_socket create_stream_socket_perms;
+
+manage_dirs_pattern(keylime_server_t, keylime_log_t, keylime_log_t)
+manage_files_pattern(keylime_server_t, keylime_log_t, keylime_log_t)
+
+fs_rw_inherited_tmpfs_files(keylime_server_t)
+
+optional_policy(`
+        gpg_exec(keylime_server_t)
+')
+
+optional_policy(`
+        kerberos_read_config(keylime_server_t)
+        kerberos_read_keytab(keylime_server_t)
+')
+
+optional_policy(`
+        sssd_run_stream_connect(keylime_server_t)
+')
+
+
+########################################
+#
+# keylime agent policy
+#
+#work with /var/lib/keylime/secure
+allow keylime_agent_t self:capability { chown dac_read_search dac_override setgid setuid sys_nice sys_ptrace };
+allow keylime_agent_t self:chr_file getattr;
+
+#FIX ME, add to tabrmd policy interface related with this
+allow keylime_agent_t domain:unix_stream_socket rw_stream_socket_perms; #selint-disable:W-001
+
+dev_rw_tpm(keylime_agent_t)
+
+exec_files_pattern(keylime_agent_t, keylime_var_lib_t, keylime_var_lib_t)
+files_read_var_lib_files(keylime_agent_t)
+
+fs_dontaudit_search_cgroup_dirs(keylime_agent_t)
+fs_getattr_cgroup(keylime_agent_t)
+fs_mount_tmpfs(keylime_agent_t)
+fs_setattr_tmpfs_dirs(keylime_agent_t)
+
+init_dontaudit_stream_connect(keylime_agent_t)
+
+kernel_read_all_proc(keylime_agent_t)
+
+userdom_dontaudit_search_user_home_dirs(keylime_agent_t)
+userdom_read_user_tmp_files(keylime_agent_t)
+
+auth_read_passwd(keylime_agent_t)
+
+keylime_mounton_var_lib(keylime_agent_t)
+
+mount_domtrans(keylime_agent_t)
+
+selinux_read_policy(keylime_agent_t)
+
+optional_policy(`
+        #FIX ME, add to tabrmd policy interface related with this
+        #https://github.com/tpm2-software/tpm2-abrmd/blob/master/selinux
+        dbus_chat_system_bus(keylime_agent_t)
+')
+
+optional_policy(`
+        dbus_stream_connect_system_dbusd(keylime_agent_t)
+        dbus_system_bus_client(keylime_agent_t)
+')
+
+optional_policy(`
+        systemd_userdbd_stream_connect(keylime_agent_t)
+')

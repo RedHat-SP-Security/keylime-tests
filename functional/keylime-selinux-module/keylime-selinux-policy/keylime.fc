@@ -1,0 +1,24 @@
+/usr/bin/keylime_agent		--	gen_context(system_u:object_r:keylime_agent_exec_t,s0)
+/usr/bin/keylime_ima_emulator		--	gen_context(system_u:object_r:keylime_agent_exec_t,s0)
+/usr/bin/keylime_userdata_encrypt		--	gen_context(system_u:object_r:keylime_agent_exec_t,s0)
+
+/usr/bin/keylime_ca		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/bin/keylime_migrations_apply		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/bin/keylime_registrar		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/bin/keylime_verifier		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/bin/keylime_tenant		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+
+/usr/local/bin/keylime_agent		--	gen_context(system_u:object_r:keylime_agent_exec_t,s0)
+/usr/local/bin/keylime_ima_emulator		--	gen_context(system_u:object_r:keylime_agent_exec_t,s0)
+/usr/local/bin/keylime_userdata_encrypt		--	gen_context(system_u:object_r:keylime_agent_exec_t,s0)
+
+/usr/local/bin/keylime_ca		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/local/bin/keylime_migrations_apply		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/local/bin/keylime_registrar		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/local/bin/keylime_verifier		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+/usr/local/bin/keylime_tenant		--	gen_context(system_u:object_r:keylime_server_exec_t,s0)
+
+/var/lib/keylime(/.*)?		gen_context(system_u:object_r:keylime_var_lib_t,s0)
+/var/lib/keylime-agent(/.*)?		gen_context(system_u:object_r:keylime_var_lib_t,s0)
+
+/var/log/keylime(/.*)?		gen_context(system_u:object_r:keylime_log_t,s0)

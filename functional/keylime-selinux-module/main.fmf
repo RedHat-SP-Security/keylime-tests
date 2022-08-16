@@ -1,0 +1,28 @@
+summary: Tests keylime with keylime selinux policy.
+description: |
+    This test check if is keylime
+    selinux policy applied on system.
+    Then provide basic attestation on
+    localhost if keylime work with
+    selinux properly.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - setools-console
+  - selinux-policy-devel
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 5m
+enabled: true
+adjust:
+  - when: distro == rhel-8 or distro = centos-stream-8
+    enabled: false
+    because: in selinux policy missing rules is not rhel-8 and CentOS-Stream-8
