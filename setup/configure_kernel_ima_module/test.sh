@@ -29,10 +29,6 @@ rlJournalStart
         rlRun "limeInstallIMAKeys"
         # install IMA policy
         rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
-        # clear TPM
-        if ! limeTPMEmulated; then
-            rlRun "tpm2_clear"
-        fi
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
         rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
