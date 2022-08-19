@@ -26,6 +26,7 @@ UPLOAD_URL=https://transfer.sh
 #export PACKIT_SOURCE_URL=https://github.com/ansasaki/keylime
 #export PACKIT_SOURCE_SHA=a79b05642bbe04af0ef0a356afd4f5af276898bb
 
+OMIT_FILES="--omit=/var/lib/keylime/secure/unzipped/*,*/keylime/backport_dataclasses.py"
 
 rlJournalStart
 
@@ -44,21 +45,21 @@ rlJournalStart
         rlAssertExists .coverage
         # packit summary report
         rlLogInfo "keylime-tests code coverage summary report"
-        rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
-        rlRun "coverage xml --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        rlRun "coverage report --include '*keylime*' $OMIT_FILES"
+        rlRun "coverage xml --include '*keylime*' $OMIT_FILES"
         rlRun "mv coverage.xml coverage.packit.xml"
         rlRun "mv .coverage .coverage.packit"
         # testsuite summary report
         if [ -f coverage.testsuite ]; then
             rlLogInfo "keylime testsuite code coverage summary report"
             rlRun "cp coverage.testsuite .coverage"
-            rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+            rlRun "coverage report --include '*keylime*' $OMIT_FILES"
         fi
         # unittests summary report
         if [ -f coverage.unittests ]; then
             rlLogInfo "keylime unittests code coverage summary report"
             rlRun "cp coverage.unittests .coverage"
-            rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+            rlRun "coverage report --include '*keylime*' $OMIT_FILES"
         fi
         # now create overall report including upstream tests
         [ -f coverage.testsuite ] && rlRun "cp coverage.testsuite .coverage.testsuite"
@@ -68,8 +69,8 @@ rlJournalStart
         rlRun "coverage combine"
         ls -l .coverage*
         rlLogInfo "combined code coverage summary report"
-        rlRun "coverage html --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*' --show-contexts"
-        rlRun "coverage report --include '*keylime*' --omit '/var/lib/keylime/secure/unzipped/*'"
+        rlRun "coverage html --include '*keylime*' $OMIT_FILES --show-contexts"
+        rlRun "coverage report --include '*keylime*' $OMIT_FILES"
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
