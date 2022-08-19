@@ -14,6 +14,12 @@ Dummy package that prevents replacing installed keylime bits with keylime RPM
 
 %install
 
+%preun
+rm -f /etc/systemd/system/{keylime_*.service,keylime_agent_secure.mount}
+rm -f /usr/local/bin/keylime_*
+rm -rf /usr/local/lib/python*/site-packages/keylime-*.egg
+systemctl daemon-reload
+
 %files
 
 %changelog
