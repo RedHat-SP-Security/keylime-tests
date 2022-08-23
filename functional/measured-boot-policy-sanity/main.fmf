@@ -13,10 +13,10 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
-- efivar-libs
 - tpm2-tools
 - mokutil
 recommend:
+- efivar-libs
 - keylime
 - keylime-verifier
 - keylime-registrar
