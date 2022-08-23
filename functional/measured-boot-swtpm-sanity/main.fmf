@@ -15,11 +15,11 @@ test: ./test.sh
 framework: beakerlib
 require:
 - yum
-- efivar-libs
 - tpm2-tools
 - tss2
 - tpm2-tss
 recommend:
+- efivar-libs
 - keylime
 - keylime-verifier
 - keylime-registrar
