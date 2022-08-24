@@ -17,13 +17,15 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
         # change /etc/keylime.conf permissions so that agent running as ${AGENT_USER} can access it
-        rlRun "chmod 644 /etc/keylime.conf"
+        rlRun "find /etc/keylime -type f -exec chmod 444 {} \;"
+        rlRun "find /etc/keylime -type d -exec chmod 555 {} \;"
+        [ -f /etc/keylime-agent.conf ] && rlRun "chmod 444 /etc/keylime-agent.conf"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -43,12 +45,13 @@ rlJournalStart
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         # do special configuration for the agent
-        rlRun "limeUpdateConf cloud_agent run_as ${AGENT_USER}:${AGENT_GROUP}"
+        rlRun "limeUpdateConf agent run_as ${AGENT_USER}:${AGENT_GROUP}"
         rlRun "useradd -s /sbin/nologin -g ${AGENT_GROUP} ${AGENT_USER}"
         rlRun "mkdir -p ${AGENT_WORKDIR}/cv_ca"
         #rlRun "mkdir -p ${AGENT_WORKDIR}/secure"
         rlRun "cp /var/lib/keylime/cv_ca/{cacert.crt,client*} ${AGENT_WORKDIR}/cv_ca"
         rlRun "chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_WORKDIR}"
+        rlRun "limeUpdateConf agent trusted_client_ca '[\"/var/lib/keylime-agent/cv_ca/cacert.crt\"]'"
         # when using unit files we need to adjust them
         if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
             rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d/"

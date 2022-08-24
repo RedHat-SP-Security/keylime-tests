@@ -98,29 +98,22 @@ Verifier() {
         rlRun "popd"
 
         # Verifier configuration
-        rlRun "limeUpdateConf cloud_verifier cloudverifier_ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf cloud_verifier registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf cloud_verifier check_client_cert True"
-        rlRun "limeUpdateConf cloud_verifier tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf cloud_verifier ca_cert cacert.pem"
-        rlRun "limeUpdateConf cloud_verifier my_cert verifier-cert.pem"
-        rlRun "limeUpdateConf cloud_verifier private_key verifier-key.pem"
-        rlRun "limeUpdateConf cloud_verifier private_key_pw ''"
-        rlRun "limeUpdateConf cloud_verifier registrar_tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf cloud_verifier registrar_ca_cert cacert.pem"
-        rlRun "limeUpdateConf cloud_verifier registrar_my_cert verifier-client-cert.pem"
-        rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
-        rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifier_ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
-        rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
+        rlRun "limeUpdateConf verifier ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf verifier registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf verifier check_client_cert True"
+        rlRun "limeUpdateConf verifier tls_dir ${CERTDIR}"
+        rlRun "limeUpdateConf verifier trusted_client_ca cacert.pem"
+        rlRun "limeUpdateConf verifier server_cert verifier-cert.pem"
+        rlRun "limeUpdateConf verifier server_key verifier-key.pem"
+        rlRun "limeUpdateConf revocations zmq_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf verifier client_key ${CERTDIR}/verifier-client-key.pem"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
+            rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         fi
 
         # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
+        rlRun "limeUpdateConf agent uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
 
         # start keylime_verifier
         rlRun "limeStartVerifier"
@@ -161,23 +154,17 @@ Registrar() {
         rlRun "limeUpdateConf general receive_revocation_ip ${REGISTRAR_IP}"
 
         # configure registrar
-        rlRun "limeUpdateConf registrar registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf registrar ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf registrar check_client_cert True"
         rlRun "limeUpdateConf registrar tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf registrar ca_cert cacert.pem"
-        rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
-        rlRun "limeUpdateConf registrar private_key registrar-key.pem"
-        rlRun "limeUpdateConf registrar private_key_pw ''"
+        rlRun "limeUpdateConf registrar trusted_client_ca cacert.pem"
+        rlRun "limeUpdateConf registrar server_cert registrar-cert.pem"
+        rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # registrar_* TLS options below seems not necessary
         # we can preserve default values
-        #rlRun "limeUpdateConf registrar registrar_tls_dir /no-such-dir"
-        #rlRun "limeUpdateConf registrar registrar_ca_cert no-such-cert.pem"
-        #rlRun "limeUpdateConf registrar registrar_my_cert no-such-cert.pem"
-        #rlRun "limeUpdateConf registrar registrar_private_key no-such-key.pem"
-        #rlRun "limeUpdateConf registrar registrar_private_key_pw 'no-such-password'"
 
         # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf cloud_agent agent_uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
+        rlRun "limeUpdateConf agent uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
 
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
@@ -222,31 +209,27 @@ Agent() {
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        rlRun "limeUpdateConf tenant cloudverifier_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf tenant verifier_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf tenant tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf tenant ca_cert cacert.pem"
-        rlRun "limeUpdateConf tenant my_cert tenant-cert.pem"
-        rlRun "limeUpdateConf tenant private_key tenant-key.pem"
-        rlRun "limeUpdateConf tenant private_key_pw ''"
+        rlRun "limeUpdateConf tenant trusted_server_ca cacert.pem"
+        rlRun "limeUpdateConf tenant client_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant client_key tenant-key.pem"
         # for registrar_* TLS options we can use save values as above
-        rlRun "limeUpdateConf tenant registrar_tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf tenant registrar_ca_cert cacert.pem"
-        rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
-        rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
-        rlRun "limeUpdateConf tenant registrar_private_key_pw ''"
-        rlRun "limeUpdateConf tenant agent_mtls_cert ${CERTDIR}/tenant-cert.pem"
-        rlRun "limeUpdateConf tenant agent_mtls_private_key ${CERTDIR}/tenant-key.pem"
+        rlRun "limeUpdateConf tenant trusted_server_ca cacert.pem"
+        rlRun "limeUpdateConf tenant client_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant client_key tenant-key.pem"
+        rlRun "limeUpdateConf tenant client_key ${CERTDIR}/tenant-key.pem"
 
         # configure agent
-        rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT_IP}"
-        rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT_IP}"
-        rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
-        rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
-        rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
+        rlRun "limeUpdateConf agent ip ${AGENT_IP}"
+        rlRun "limeUpdateConf agent contact_ip ${AGENT_IP}"
+        rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf agent trusted_client_ca ${CERTDIR}/cacert.pem"
+        rlRun "limeUpdateConf agent server_key agent-key.pem"
+        rlRun "limeUpdateConf agent server_cert agent-cert.pem"
 
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
 
         # if TPM emulator is present
@@ -370,18 +353,18 @@ Agent2() {
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
 
         # configure agent
-        rlRun "limeUpdateConf cloud_agent cloudagent_ip ${AGENT2_IP}"
-        rlRun "limeUpdateConf cloud_agent agent_contact_ip ${AGENT2_IP}"
-        rlRun "limeUpdateConf cloud_agent registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
+        rlRun "limeUpdateConf agent ip ${AGENT2_IP}"
+        rlRun "limeUpdateConf agent contact_ip ${AGENT2_IP}"
+        rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf agent trusted_client_ca ${CERTDIR}/cacert.pem"
 
         # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf cloud_agent agent_uuid ${AGENT2_ID}"
-        rlRun "limeUpdateConf cloud_agent rsa_keyname agent2-key.pem"
-        rlRun "limeUpdateConf cloud_agent mtls_cert agent2-cert.pem"
+        rlRun "limeUpdateConf agent uuid ${AGENT2_ID}"
+        rlRun "limeUpdateConf agent server_key agent2-key.pem"
+        rlRun "limeUpdateConf agent server_cert agent2-cert.pem"
  
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
 
         # if TPM emulator is present

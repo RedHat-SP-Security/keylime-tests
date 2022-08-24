@@ -28,9 +28,13 @@ rlJournalStart
             rlRun "cp target/debug/keylime_ima_emulator /usr/local/bin/keylime_ima_emulator"
         fi
         if [ -f keylime-agent.conf ]; then
-            rlRun "cp keylime-agent.conf /etc"
-            rlRun "sed -i 's/tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime-agent.conf"
+            [ -f /etc/keylime-agent.conf ] && rlRun "mv /etc/keylime-agent.conf /etc/keylime-agent.conf.backup$$"
+            rlRun "cp keylime-agent.conf /etc/keylime-agent.conf"
+            rlRun "chown keylime.keylime /etc/keylime-agent.conf && chmod 400 /etc/keylime-agent.conf"
         fi
+
+        # configure TPM to use sha256
+        rlRun "sed -i 's/^tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime-agent.conf"
 
         # Install shim.py to allow running python actions
         # This should be removed once https://github.com/keylime/rust-keylime/issues/325 is fixed

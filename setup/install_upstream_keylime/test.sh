@@ -68,16 +68,33 @@ _EOF'
         # in particular db migration files
         rlRun "rm -rf build/lib/keylime/migrations"
         [ -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations ] && rlRun "rm -rf /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations"
+        [ -d /etc/keylime ] && rlRun "mv /etc/keylime /etc/keylime.backup$$" && "rm -rf /etc/keylime"
+        rlRun "mkdir -p /etc/keylime && chmod 700 /etc/keylime"
         rlRun "python3 setup.py install"
-        # copy keylime.conf to /etc
-        rlRun "cp keylime.conf /etc && chmod 600 keylime.conf"
-        ls -l /etc/keylime.conf
-        # need to update default hash algorithm to sha256, sha1 is obsolete
-        rlRun "sed -i 's/tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime.conf"
+
+        # create directory structure in /etc/keylime and copy config files there
+        for comp in "agent" "verifier" "tenant" "registrar" "ca" "logging"; do
+            rlRun "mkdir -p /etc/keylime/$comp.conf.d"
+            rlRun "cp -n config/$comp.conf /etc/keylime/"
+        done
+
+        # configure TPM to use sha256
+        rlRun 'cat > /etc/keylime/agent.conf.d/tpm_hash_alg.conf <<_EOF
+[agent]
+tpm_hash_alg = sha256
+_EOF'
+
         if $INSTALL_SERVICE_FILES; then
             rlRun "cd services; bash installer.sh"
             rlRun "systemctl daemon-reload"
         fi
+
+        # fix conf file ownership
+        rlRun "chown -R keylime.keylime /etc/keylime"
+        rlRun "find /etc/keylime -type f -exec chmod 400 {} \;"
+        rlRun "find /etc/keylime -type d -exec chmod 500 {} \;"
+        ls -lR /etc/keylime
+
         rlRun "popd"
     rlPhaseEnd
 

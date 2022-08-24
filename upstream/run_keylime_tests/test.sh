@@ -20,8 +20,8 @@ rlJournalStart
         rlRun "rlFileBackup --missing-ok /var/lib/keylime"
         limeBackupConfig
         # update keylime configuration
-        rlRun "limeUpdateConf cloud_agent run_as root:root"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
+        rlRun "limeUpdateConf agent run_as root:root"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         # need to adjust file permissions since we are running keylime as root (for now)
         rlRun "rm -f /var/log/keylime/*"
         rlRun "chown -R root.root /var/lib/keylime"
