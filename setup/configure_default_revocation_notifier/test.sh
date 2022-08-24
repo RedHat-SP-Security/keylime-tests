@@ -9,7 +9,7 @@ rlJournalStart
         if [ "${REVOCATION_NOTIFIER}" == "zeromq" ]; then
             rlRun "yum -y install python3-zmq"
         fi
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         rlRun "cat > /etc/profile.d/export_REVOCATION_NOTIFIER.sh <<_EOF
 export REVOCATION_NOTIFIER=${REVOCATION_NOTIFIER}
 _EOF"

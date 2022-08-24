@@ -38,11 +38,11 @@ rlJournalStart
         #manually create endorsement key from cryptographic primitives on TPM
         rlRun "tpm2_createek -P $PASSWORD_TPM -w $PASSWORD_TPM -c 0x81010001 -G rsa"
         # set address to which ek use
-        rlRun "limeUpdateConf cloud_agent ek_handle 0x81010001"
+        rlRun "limeUpdateConf agent ek_handle 0x81010001"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert true" 
         #configure tpm_ownerpassword    
-        rlRun "limeUpdateConf cloud_agent tpm_ownerpassword $PASSWORD_TPM"
+        rlRun "limeUpdateConf agent tpm_ownerpassword $PASSWORD_TPM"
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
