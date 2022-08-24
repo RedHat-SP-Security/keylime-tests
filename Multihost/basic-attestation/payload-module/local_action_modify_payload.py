@@ -13,7 +13,7 @@ async def execute(event):
 
     # load up my own cert
     event_uuid = event.get("agent_id", "my")
-    my_uuid = config.get('cloud_agent', 'agent_uuid')
+    my_uuid = config.get('agent', 'uuid')
     logger.info("A node in the network has been compromised: %s", event["ip"])
     logger.info("my UUID: %s, event UUID: %s" % (my_uuid, event_uuid))
     # is this revocation meant for me?

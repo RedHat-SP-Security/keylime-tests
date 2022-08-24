@@ -37,14 +37,9 @@ rlJournalStart
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
         # configure db for verifier using database_url
-        rlRun "limeUpdateConf cloud_verifier database_url postgresql://verifier:fire@127.0.0.1/verifierdb"
+        rlRun "limeUpdateConf verifier database_url postgresql://verifier:fire@127.0.0.1/verifierdb"
         # configure db for registrar using other database_* options
-        rlRun "limeUpdateConf registrar database_url ''"  # this must be empty so other options take effect
-        rlRun "limeUpdateConf registrar database_drivername postgresql"
-        rlRun "limeUpdateConf registrar database_username registrar"
-        rlRun "limeUpdateConf registrar database_password regi"
-        rlRun "limeUpdateConf registrar database_host 127.0.0.1"
-        rlRun "limeUpdateConf registrar database_name registrardb"
+        rlRun "limeUpdateConf registrar database_url postgresql://registrar:regi@127.0.0.1/registrardb"
     rlPhaseEnd
 
     rlPhaseStartTest "Test service start with updated configuration"

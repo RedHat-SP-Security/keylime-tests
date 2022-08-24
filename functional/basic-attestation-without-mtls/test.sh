@@ -14,13 +14,14 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        rlRun "limeUpdateConf cloud_agent mtls_cert_enabled False"
-        rlRun "limeUpdateConf cloud_agent enable_insecure_payload False"
-        rlRun "limeUpdateConf cloud_verifier agent_mtls_cert_enabled False"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER}"
+        rlRun "limeUpdateConf verifier enable_agent_mtls False"
+        rlRun "limeUpdateConf tenant enable_agent_mtls False"
+        rlRun "limeUpdateConf agent enable_agent_mtls False"
+        rlRun "limeUpdateConf agent enable_insecure_payload False"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -60,7 +61,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Check that empty script_payload allows the agent to start"
-        rlRun "limeUpdateConf cloud_agent payload_script ''"
+        rlRun "limeUpdateConf agent payload_script ''"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "expect add.expect"
@@ -75,8 +76,8 @@ _EOF"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c delete"
         rlRun "keylime_tenant -r 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c regdelete"
         rlRun "limeStopAgent"
-        rlRun "limeUpdateConf cloud_agent enable_insecure_payload True"
-        rlRun "limeUpdateConf cloud_agent payload_script 'autorun.sh'"
+        rlRun "limeUpdateConf agent enable_insecure_payload True"
+        rlRun "limeUpdateConf agent payload_script 'autorun.sh'"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd

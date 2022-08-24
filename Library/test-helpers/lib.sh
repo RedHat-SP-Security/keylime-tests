@@ -164,7 +164,7 @@ true <<'=cut'
 
 =head2 limeUpdateConf
 
-Updates respective [SECTION] in /etc/keylime.conf file,
+Updates respective [SECTION] in keylime config files,
 replacing OPTION = .* with OPTION = VALUE.
 
     limeUpdateConf SECTION OPTION VALUE
@@ -184,18 +184,18 @@ function limeUpdateConf() {
   local KEY=$2
   local VALUE=$3
   local SED_OPTIONS=$4
-  local FILES="/etc/keylime.conf /etc/keylime-agent.conf"
+  local FILES="/etc/keylime-agent.conf $( find /etc/keylime -name '*.conf' )"
 
   for FILE in ${FILES}; do
-    if [ -f ${FILE} ]; then
-      # if the option exists, modify it
-      if sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep -q "^${KEY} *="; then
-        sed -i "/^\[${SECTION}\]/,/^\[/ s|^${KEY} *=.*|${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
-      # else we will to add it at the top of the section if the section exists
-      elif grep -q "\[${SECTION}\]" $FILE; then
-        sed -i "s|^\[${SECTION}\]|\[${SECTION}\]\n${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+      if [ -f ${FILE} ]; then
+          # if the option exists, modify it
+          if sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep -q "^${KEY} *="; then
+              sed -i "/^\[${SECTION}\]/,/^\[/ s|^${KEY} *=.*|${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+          # else we will to add it at the top of the section if the section exists and it is not in *.conf.d/
+          elif grep -q "\[${SECTION}\]" $FILE && [[ ! "${FILE}" =~ ".conf.d/" ]]; then
+              sed -i "s|^\[${SECTION}\]|\[${SECTION}\]\n${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+          fi
       fi
-    fi
   done
 }
 
@@ -222,7 +222,7 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 
 limeBackupConfig() {
 
-    rlFileBackup --clean --namespace limeConf --missing-ok /etc/keylime.conf /etc/keylime-agent.conf /etc/ima/ima-policy
+    rlFileBackup --clean --namespace limeConf --missing-ok /etc/keylime-agent.conf /etc/keylime /etc/ima/ima-policy
 
 }
 

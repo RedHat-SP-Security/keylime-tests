@@ -16,16 +16,16 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         # verifier
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER},webhook"
-        rlRun "limeUpdateConf cloud_verifier webhook_url http://localhost:${HTTP_SERVER_PORT}"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
+        rlRun "limeUpdateConf revocations webhook_url http://localhost:${HTTP_SERVER_PORT}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
+            rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         fi
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         # agent
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then

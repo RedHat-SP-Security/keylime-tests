@@ -16,7 +16,6 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        rlRun "limeUpdateConf tenant ima_allowlist nosuchfile.txt"  # to avoid conflicts, we will be specifying it on cmdline
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
