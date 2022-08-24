@@ -29,13 +29,13 @@ rlJournalStart
         rlRun "x509KeyGen verifier-client" 0 "Preparing RSA verifier-client certificate"
         rlRun "x509KeyGen registrar" 0 "Preparing RSA registrar certificate"
         rlRun "x509KeyGen tenant" 0 "Preparing RSA tenant certificate"
-        rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
+        #rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
         rlRun "x509SelfSign ca" 0 "Selfsigning CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with our CA"
-        rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
+        #rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
@@ -49,62 +49,45 @@ rlJournalStart
         rlRun "cp $(x509Key registrar) $CERTDIR/registrar-key.pem"
         rlRun "cp $(x509Cert tenant) $CERTDIR/tenant-cert.pem"
         rlRun "cp $(x509Key tenant) $CERTDIR/tenant-key.pem"
-        rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
-        rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
+        #rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
+        #rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
         # assign cert ownership to keylime user if it exists
         id keylime && rlRun "chown -R keylime.keylime $CERTDIR"
 
         # update /etc/keylime.conf
         limeBackupConfig
         # verifier
-        rlRun "limeUpdateConf cloud_verifier check_client_cert True"
-        rlRun "limeUpdateConf cloud_verifier tls_dir $CERTDIR"
-        rlRun "limeUpdateConf cloud_verifier ca_cert cacert.pem"
-        rlRun "limeUpdateConf cloud_verifier my_cert verifier-cert.pem"
-        rlRun "limeUpdateConf cloud_verifier private_key verifier-key.pem"
-        rlRun "limeUpdateConf cloud_verifier private_key_pw ''"
-        rlRun "limeUpdateConf cloud_verifier registrar_tls_dir $CERTDIR"
-        rlRun "limeUpdateConf cloud_verifier registrar_ca_cert cacert.pem"
-        rlRun "limeUpdateConf cloud_verifier registrar_my_cert verifier-client-cert.pem"
-        rlRun "limeUpdateConf cloud_verifier registrar_private_key verifier-client-key.pem"
-        rlRun "limeUpdateConf cloud_verifier registrar_private_key_pw ''"
-        rlRun "limeUpdateConf cloud_verifier agent_mtls_cert ${CERTDIR}/verifier-client-cert.pem"
-        rlRun "limeUpdateConf cloud_verifier agent_mtls_private_key ${CERTDIR}/verifier-client-key.pem"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER},webhook"
-        rlRun "limeUpdateConf cloud_agent listen_notifications True"
-        rlRun "limeUpdateConf cloud_verifier webhook_url https://localhost:${SSL_SERVER_PORT}"
+        rlRun "limeUpdateConf verifier check_client_cert True"
+        rlRun "limeUpdateConf verifier tls_dir $CERTDIR"
+        rlRun "limeUpdateConf verifier trusted_server_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf verifier trusted_client_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf verifier server_cert verifier-cert.pem"
+        rlRun "limeUpdateConf verifier server_key verifier-key.pem"
+        rlRun "limeUpdateConf verifier client_cert ${CERTDIR}/verifier-client-cert.pem"
+        rlRun "limeUpdateConf verifier client_key ${CERTDIR}/verifier-client-key.pem"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
+        rlRun "limeUpdateConf agent enable_revocation_notifications True"
+        rlRun "limeUpdateConf revocations webhook_url https://localhost:${SSL_SERVER_PORT}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_verifier revocation_notifiers ''"
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
-        rlRun "limeUpdateConf tenant ca_cert cacert.pem"
-        rlRun "limeUpdateConf tenant my_cert tenant-cert.pem"
-        rlRun "limeUpdateConf tenant private_key tenant-key.pem"
-        rlRun "limeUpdateConf tenant private_key_pw ''"
-        rlRun "limeUpdateConf tenant registrar_tls_dir $CERTDIR"
-        # for tenant registrar_* TLS options we can use save values as above
-        rlRun "limeUpdateConf tenant registrar_ca_cert cacert.pem"
-        rlRun "limeUpdateConf tenant registrar_my_cert tenant-cert.pem"
-        rlRun "limeUpdateConf tenant registrar_private_key tenant-key.pem"
-        rlRun "limeUpdateConf tenant registrar_private_key_pw ''"
-        rlRun "limeUpdateConf tenant agent_mtls_cert ${CERTDIR}/tenant-cert.pem"
-        rlRun "limeUpdateConf tenant agent_mtls_private_key ${CERTDIR}/tenant-key.pem"
+        rlRun "limeUpdateConf tenant trusted_server_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf tenant client_cert tenant-cert.pem"
+        rlRun "limeUpdateConf tenant client_key tenant-key.pem"
         # registrar
         rlRun "limeUpdateConf registrar check_client_cert True"
         rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
-        rlRun "limeUpdateConf registrar ca_cert cacert.pem"
-        rlRun "limeUpdateConf registrar my_cert registrar-cert.pem"
-        rlRun "limeUpdateConf registrar private_key registrar-key.pem"
-        rlRun "limeUpdateConf registrar private_key_pw ''"
+        rlRun "limeUpdateConf registrar trusted_client_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf registrar server_cert registrar-cert.pem"
+        rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # agent
-        rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
-        rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
-        rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
+        rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf cloud_agent listen_notifications False"
+            rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then

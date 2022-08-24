@@ -21,9 +21,9 @@ rlJournalStart
 
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
-        rlRun "limeUpdateConf cloud_verifier quote_interval 2"
-        rlRun "limeUpdateConf cloud_agent listen_notifications False"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
+        rlRun "limeUpdateConf verifier quote_interval 2"
+        rlRun "limeUpdateConf agent enable_revocation_notifications False"
 
         # if TPM emulator is present
         if limeTPMEmulated; then

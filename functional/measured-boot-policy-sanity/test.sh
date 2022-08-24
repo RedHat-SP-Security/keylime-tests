@@ -14,9 +14,9 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert False"
-        rlRun "limeUpdateConf cloud_verifier measured_boot_policy_name accept-all"
-        rlRun "limeUpdateConf cloud_verifier revocation_notifier False"
-        rlRun "limeUpdateConf cloud_agent listen_notifications False"
+        rlRun "limeUpdateConf verifier measured_boot_policy_name accept-all"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
+        rlRun "limeUpdateConf agent enable_revocation_notifications False"
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
@@ -29,14 +29,14 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Try adding agent with PRC15 configured in tpm_policy"
+        TPM_POLICY='{"15":["0000000000000000000000000000000000000000","0000000000000000000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"]}'
         rlRun "echo '{}' > mb_refstate.txt"
-        rlRun -s "keylime_tenant -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate.txt" 1
+        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '${TPM_POLICY}' --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate.txt" 1
         rlAssertGrep 'ERROR - WARNING: PCR 15 is specified in "tpm_policy", but will in fact be used by measured boot. Please remove it from policy' $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Add agent with tpm_policy unset"
-        rlRun "limeUpdateConf tenant tpm_policy {}"
-        rlRun -s "keylime_tenant -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate.txt"
+    rlPhaseStartTest "Add agent with empty tpm_policy"
+        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate.txt"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
@@ -48,7 +48,7 @@ rlJournalStart
         rlRun "limeStopAgent"
         rlRun "limeStopVerifier"
         sleep 5
-        rlRun "limeUpdateConf cloud_verifier measured_boot_policy_name example"
+        rlRun "limeUpdateConf verifier measured_boot_policy_name example"
 	rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartAgent"
@@ -59,7 +59,7 @@ rlJournalStart
         # use create_mb_refstate from keylime_sources or download it from upstream master branch
         rlRun "limeCopyKeylimeFile --source scripts/create_mb_refstate && chmod a+x create_mb_refstate"
         rlRun "./create_mb_refstate /sys/kernel/security/tpm0/binary_bios_measurements mb_refstate2.txt"
-        rlRun -s "keylime_tenant -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate2.txt"
+        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate2.txt"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
@@ -76,7 +76,7 @@ rlJournalStart
 
     rlPhaseStartTest "Add agent with incorrect tpm_policy"
         rlRun "sed 's/0x[1-9a-f]/0x0/g' mb_refstate2.txt > mb_refstate3.txt"
-        rlRun -s "keylime_tenant -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate3.txt"
+        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate3.txt"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Tenant Quote Failed'"
     rlPhaseEnd
 
