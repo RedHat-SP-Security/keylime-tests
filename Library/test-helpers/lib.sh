@@ -87,7 +87,7 @@ export limeIMAPrivateKey=${__INTERNAL_limeIMAKeysDir}/privkey_evm.pem
 export limeIMAPublicKey=${__INTERNAL_limeIMAKeysDir}/x509_evm.pem
 export limeIMACertificateDER=${__INTERNAL_limeIMAKeysDir}/x509_evm.der
 
-[ -n "$limeTIMEOUT" ] || limeTIMEOUT=30
+[ -n "$limeTIMEOUT" ] || limeTIMEOUT=20
 export limeTIMEOUT
 
 export limeTestUser=limetester
@@ -335,7 +335,7 @@ __limeStartKeylimeService() {
 
 __limeWaitForProcessEnd() {
     local NAME=$1
-    local TIMEOUT=15
+    local TIMEOUT=10
     local RET=1
 
     [ -n "$2" ] && TIMEOUT=$2
