@@ -15,7 +15,8 @@ rlJournalStart
   if [ ! -e $COOKIE ]; then
     rlPhaseStartSetup "pre-reboot phase"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun "grubby --info DEFAULT | grep '^args'"
+        rlRun "grubby --info ALL"
+        rlRun "grubby --default-index"
         rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
         rlRun -s "grubby --info DEFAULT | grep '^args'"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
@@ -46,6 +47,8 @@ rlJournalStart
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
         rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
+        rlRun "grubby --info ALL"
+        rlRun "grubby --default-index"
         rlRun "rm $COOKIE"
 
         if [ "${IMA_STATE}" == "on" -o "${IMA_STATE}" == "1" ]; then
