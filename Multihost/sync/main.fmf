@@ -7,6 +7,7 @@ test: ./test.sh
 framework: beakerlib
 tag:
 - multihost
+- CI-Tier-1-Multi
 duration: 5m
 enabled: true
 extra-nitrate: TC#0611992
