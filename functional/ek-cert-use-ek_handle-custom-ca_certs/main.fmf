@@ -26,9 +26,10 @@ recommend:
 duration: 5m
 enabled: true
 adjust:
+  - when: swtpm is not defined or swtpm != yes
+    enabled: false
+    because: This tests works only with SWTPM emulator
   - when: distro == rhel-8 or distro = centos-stream-8
     enabled: false
     because: swtpm is not rhel-8 and CentOS-Stream-8
 extra-nitrate: TC#0614116
-
-
