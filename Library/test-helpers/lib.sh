@@ -185,15 +185,24 @@ function limeUpdateConf() {
   local VALUE=$3
   local SED_OPTIONS=$4
   local FILES="/etc/keylime-agent.conf $( find /etc/keylime -name '*.conf' )"
+  local MODIFIED
 
   for FILE in ${FILES}; do
+      MODIFIED=false
       if [ -f ${FILE} ]; then
           # if the option exists, modify it
           if sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep -q "^${KEY} *="; then
               sed -i "/^\[${SECTION}\]/,/^\[/ s|^${KEY} *=.*|${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+              MODIFIED=true
           # else we will to add it at the top of the section if the section exists and it is not in *.conf.d/
           elif grep -q "\[${SECTION}\]" $FILE && [[ ! "${FILE}" =~ ".conf.d/" ]]; then
               sed -i "s|^\[${SECTION}\]|\[${SECTION}\]\n${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
+              MODIFIED=true
+          fi
+          # print the modified configuration line
+          if $MODIFIED; then
+              echo -e "${FILE}:\n[${SECTION}]"
+              sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep "^${KEY} *="
           fi
       fi
   done
