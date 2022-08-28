@@ -1,6 +1,7 @@
-context:
-  swtpm: yes
+adjust:
+  - context:
+      swtpm: yes
 
-environment:
-  KEYLIME_UPSTREAM_URL: "https://github.com/ansasaki/keylime.git"
-  KEYLIME_UPSTREAM_BRANCH: "conf_refactor"
+  - environment:
+      KEYLIME_UPSTREAM_URL: "https://github.com/ansasaki/keylime.git"
+      KEYLIME_UPSTREAM_BRANCH: "conf_refactor"
