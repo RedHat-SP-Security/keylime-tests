@@ -1,7 +1,7 @@
 summary:
   Tests upstream keylime without revocation actions
 
-environment:
+environment+:
   KEYLIME_TEST_DISABLE_REVOCATION: 1
 
 prepare:
