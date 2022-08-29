@@ -19,11 +19,16 @@ rlJournalStart
         rlAssertRpm keylime
         limeBackupConfig
 
-        # update /etc/keylime.conf
+        # update keylime conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         rlRun "limeUpdateConf verifier quote_interval 2"
-        rlRun "limeUpdateConf agent enable_revocation_notifications False"
+        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
+        if limeIsPythonAgent; then
+            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications False"
+        else
+            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications False"
+        fi
 
         # if TPM emulator is present
         if limeTPMEmulated; then
