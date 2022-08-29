@@ -12,16 +12,25 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
         limeBackupConfig
-        # update /etc/keylime.conf
+        # update keylime conf
+        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf verifier enable_agent_mtls False"
         rlRun "limeUpdateConf tenant enable_agent_mtls False"
-        rlRun "limeUpdateConf agent enable_agent_mtls False"
-        rlRun "limeUpdateConf agent enable_insecure_payload False"
+        if limeIsPythonAgent; then
+            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_agent_mtls False"
+        else
+            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} mtls_cert_enabled False"
+        fi
+        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_insecure_payload False"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
-            rlRun "limeUpdateConf agent enable_revocation_notifications False"
+            if limeIsPythonAgent; then
+                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications False"
+            else
+                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications False"
+            fi
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -61,7 +70,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Check that empty script_payload allows the agent to start"
-        rlRun "limeUpdateConf agent payload_script ''"
+        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} payload_script ''"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "expect add.expect"
@@ -76,8 +85,8 @@ _EOF"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c delete"
         rlRun "keylime_tenant -r 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c regdelete"
         rlRun "limeStopAgent"
-        rlRun "limeUpdateConf agent enable_insecure_payload True"
-        rlRun "limeUpdateConf agent payload_script 'autorun.sh'"
+        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_insecure_payload True"
+        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} payload_script 'autorun.sh'"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd

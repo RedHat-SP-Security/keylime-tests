@@ -211,12 +211,19 @@ function limeUpdateConf() {
 
 true <<'=cut'
 =pod
+
 =head2 limeIsPythonAgent
+
 Checks if Python keylime_agent is present.
+
     limeIsPythonAgent
+
 =over
+
 =back
+
 Return success if Python keylime_agent is present.
+
 =cut
 
 function limeIsPythonAgent() {
