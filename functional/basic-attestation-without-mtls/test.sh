@@ -14,6 +14,7 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf tenant agent_mtls_cert_enabled False"
         rlRun "limeUpdateConf cloud_agent mtls_cert_enabled False"
         rlRun "limeUpdateConf cloud_agent enable_insecure_payload False"
         rlRun "limeUpdateConf cloud_verifier agent_mtls_cert_enabled False"
