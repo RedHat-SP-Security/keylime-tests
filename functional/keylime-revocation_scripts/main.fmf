@@ -1,0 +1,29 @@
+summary: Tests keylime revocations scripts
+description: |
+    Running all services on localhost.
+    Starts verifier, registrar, agent.
+    Registers agent providing a payload with autorun.sh and python revocation script.
+    Verifiers that system passed attestation and autorun.sh has been executed.
+    Does changes on a system and verifies that system has failed attestation.
+    Confirms that the revocation scripts has been executed and keylime run properly.
+    Check both ways how to specify revocation scripts and use more than one script in option.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - expect
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 5m
+enabled: true
+
