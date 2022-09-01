@@ -1591,7 +1591,7 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
 fi
 
 # prepare coveragerc file
-KEYLIMESRC=$( ls -d /usr/local/lib/python*/site-packages/keylime-*/keylime )
+KEYLIMESRC=$( ls -d /usr/local/lib/python*/site-packages/keylime-*/keylime 2> /dev/null )
 cat > /var/tmp/limeLib/coverage/coveragerc <<_EOF
 [run]
 source = /usr/local/bin,$KEYLIMESRC
@@ -1626,6 +1626,8 @@ fi
 limeLibraryLoaded() {
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
+        # print keylime package versions
+        rpm -qa \*keylime\*
         return 0
     else
         rlLogError "Failed loading library keylime/test-helpers."
