@@ -39,3 +39,9 @@ adjust:
   - when: distro == rhel-8 or distro = centos-stream-8
     enabled: false
     because: RHEL-8 has old tpm2-tools
+  - when: agent == rust and faked_measured_boot_log is not defined
+    enabled: false
+    because: For Rust agent we are not able to fake measuredboot log during runtime
+  - when: agent == rust and faked_measured_boot_log == false
+    enabled: false
+    because: For Rust agent we are not able to fake measuredboot log during runtime
