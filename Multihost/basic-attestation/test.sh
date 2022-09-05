@@ -106,7 +106,7 @@ Verifier() {
         rlRun "limeUpdateConf verifier trusted_client_ca '[\"cacert.pem\"]'"
         rlRun "limeUpdateConf verifier server_cert verifier-cert.pem"
         rlRun "limeUpdateConf verifier server_key verifier-key.pem"
-	rlRun "limeUpdateConf verifier client_cert verifier-client-cert.pem"
+        rlRun "limeUpdateConf verifier client_cert verifier-client-cert.pem"
         rlRun "limeUpdateConf verifier client_key verifier-client-key.pem"
         rlRun "limeUpdateConf revocations zmq_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf verifier client_key ${CERTDIR}/verifier-client-key.pem"
@@ -117,6 +117,11 @@ Verifier() {
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf agent uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
+
+        # Delete other components configuration files
+        for comp in agent registrar tenant; do
+            rlRun "rm -rf /etc/keylime/$comp.conf*"
+        done
 
         # start keylime_verifier
         rlRun "limeStartVerifier"
@@ -168,6 +173,11 @@ Registrar() {
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf agent uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
+
+        # Delete other components configuration files
+        for comp in agent verifier tenant; do
+            rlRun "rm -rf /etc/keylime/$comp.conf*"
+        done
 
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
@@ -224,16 +234,22 @@ Agent() {
         rlRun "limeUpdateConf tenant client_key ${CERTDIR}/tenant-key.pem"
 
         # configure agent
+        rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf agent ip ${AGENT_IP}"
         rlRun "limeUpdateConf agent contact_ip ${AGENT_IP}"
         rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
+        rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
         rlRun "limeUpdateConf agent server_key agent-key.pem"
         rlRun "limeUpdateConf agent server_cert agent-cert.pem"
 
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
+
+        # Delete other components configuration files
+        for comp in verifier registrar; do
+            rlRun "rm -rf /etc/keylime/$comp.conf*"
+        done
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -356,10 +372,11 @@ Agent2() {
         rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
 
         # configure agent
+        rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf agent ip ${AGENT2_IP}"
         rlRun "limeUpdateConf agent contact_ip ${AGENT2_IP}"
         rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
+        rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf agent uuid ${AGENT2_ID}"
@@ -369,6 +386,11 @@ Agent2() {
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
+
+        # Delete other components configuration files
+        for comp in verifier tenant registrar; do
+            rlRun "rm -rf /etc/keylime/$comp.conf*"
+        done
 
         # if TPM emulator is present
         if limeTPMEmulated; then
