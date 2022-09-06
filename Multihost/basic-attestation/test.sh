@@ -159,7 +159,7 @@ Registrar() {
         id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
 
         # common configuration goes here
-        rlRun "limeUpdateConf general receive_revocation_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
         # configure registrar
         rlRun "limeUpdateConf registrar ip ${REGISTRAR_IP}"
@@ -216,9 +216,6 @@ Agent() {
         rlRun "cp ${CERTDIR}/{agent-key.pem,agent-cert.pem} ${SECUREDIR}"
         id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
-        # common configuration goes here
-        rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
-
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf tenant require_ek_cert False"
@@ -241,6 +238,7 @@ Agent() {
         rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
         rlRun "limeUpdateConf agent server_key agent-key.pem"
         rlRun "limeUpdateConf agent server_cert agent-cert.pem"
+        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications False"
@@ -368,15 +366,13 @@ Agent2() {
         rlRun "cp ${CERTDIR}/{agent2-key.pem,agent2-cert.pem} ${SECUREDIR}"
         id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
-        # common configuration goes here
-        rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
-
         # configure agent
         rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf agent ip ${AGENT2_IP}"
         rlRun "limeUpdateConf agent contact_ip ${AGENT2_IP}"
         rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
         # change UUID just for sure so it is different from Agent
         rlRun "limeUpdateConf agent uuid ${AGENT2_ID}"
