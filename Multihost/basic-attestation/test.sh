@@ -159,7 +159,7 @@ Registrar() {
         id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
 
         # common configuration goes here
-        rlRun "limeUpdateConf general receive_revocation_ip ${REGISTRAR_IP}"
+        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
         # configure registrar
         rlRun "limeUpdateConf registrar ip ${REGISTRAR_IP}"
@@ -217,7 +217,7 @@ Agent() {
         id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
         # common configuration goes here
-        rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
@@ -369,7 +369,7 @@ Agent2() {
         id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
         # common configuration goes here
-        rlRun "limeUpdateConf general receive_revocation_ip ${VERIFIER_IP}"
+        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
         # configure agent
         rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
