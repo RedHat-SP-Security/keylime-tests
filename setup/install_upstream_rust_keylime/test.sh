@@ -10,6 +10,7 @@
 rlJournalStart
 
     rlPhaseStartSetup "Build and install rust-keylime bits"
+        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         if [ -d /var/tmp/rust-keylime_sources ]; then
             rlLogInfo "Compiling rust-keylime bits from /var/tmp/rust-keylime_sources"
         else
@@ -25,11 +26,25 @@ rlJournalStart
                 [ -f ${FILE} ] && rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' $FILE"
             done
         fi
+
+        if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
+            rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y"
+            rlRun "source \"$HOME/.cargo/env\""
+            rlRun "rustup default nightly"
+            rlRun "rustup component add llvm-tools-preview"
+            sleep 3
+            #install parser for code coverage files
+            rlRun "cargo install grcov"
+            # -Z is deprecated, use -C
+            rlRun "export RUSTFLAGS='-Cinstrument-coverage'"
+        fi
+        #build
         rlRun "cargo build"
+
         rlAssertExists target/debug/keylime_agent
         [ -f /usr/local/bin/keylime_agent ] && rlRun "mv /usr/local/bin/keylime_agent /usr/local/bin/keylime_agent.backup"
         rlRun "cp target/debug/keylime_agent /usr/local/bin/keylime_agent"
-        if [ -n "${RUST_IMA_EMULATOR}" ]; then
+        if [ -n "${RUST_IMA_EMULATOR}" ] || [ -n "${KEYLIME_RUST_CODE_COVERAGE}" ]; then
             rlRun "cp target/debug/keylime_ima_emulator /usr/local/bin/keylime_ima_emulator"
         fi
         if [ -f keylime-agent.conf ]; then
@@ -59,6 +74,29 @@ _EOF'
 [Service]
 Environment=\"RUST_LOG=keylime_agent=trace\"
 _EOF"
+            if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
+                rlRun "touch ${__INTERNAL_limeCoverageDir}/rust_keylime_codecoverage.profraw"
+                id keylime && rlRun "chown -R keylime /var/tmp/limeLib && chmod -R g+w /var/tmp/limeLib"
+
+                rlRun 'cat > ${__INTERNAL_limeCoverageDir}/coverage-script-stop.sh <<_EOF
+#!/bin/sh
+pushd ${__INTERNAL_limeCoverageDir}
+COV_FILE=\$(mktemp rust_keylime_codecoverage-XXXXX  --suffix=.profraw)
+cp rust_keylime_codecoverage.profraw \${COV_FILE}
+popd
+_EOF'
+                rlRun "cat > /etc/systemd/system/keylime_agent.service.d/15-coverage.conf <<_EOF
+[Service]
+# set variable containing name of the currently running test
+Environment=\"LLVM_PROFILE_FILE=${__INTERNAL_limeCoverageDir}/rust_keylime_codecoverage.profraw\"
+# we need to change WorkingDirectory since .profraw* files will be stored there
+WorkingDirectory=${__INTERNAL_limeCoverageDir}/
+ExecStopPost=sh ${__INTERNAL_limeCoverageDir}/coverage-script-stop.sh
+_EOF"
+
+            #IMA emulator coverage, graceful shutdown of IMA emulator, allow SIGINT kill
+            rlRun "touch $__INTERNAL_limeCoverageDir/enabled"
+            fi
             rlRun "systemctl daemon-reload"
         fi
     rlPhaseEnd

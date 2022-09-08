@@ -628,6 +628,10 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeStartIMAEmulator() {
 
     limeStopIMAEmulator
+    if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
+        #create IMA emulator measurement file
+        export LLVM_PROFILE_FILE="${__INTERNAL_limeCoverageDir}/ima_emulator_coverage-%p-%m.profraw"
+    fi
     __limeStartKeylimeService ima_emulator IMAEmulator
 
 }
