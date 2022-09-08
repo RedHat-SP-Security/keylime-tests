@@ -1,0 +1,14 @@
+summary: Run tests from keylime rust upstream testsuite and eventually gather code coverage
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - upstream
+require:
+  - yum
+recommend:
+  - keylime
+duration: 20m
+enabled: true
