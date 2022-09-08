@@ -1,0 +1,27 @@
+summary:  Test of keylime which using non default ports
+description: |
+    Change ports used by keylime services to non default ports.
+    Running all services on localhost.
+    Starts verifier, registrar, agent.
+    Add keylime agent.
+    Fail keylime agent and run revocation actions.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - tpm2-tools
+recommend:
+  - keylime
+  - keylime-verifier
+  - keylime-registrar
+  - python3-keylime-agent
+  - keylime-tenant
+  - keylime-tools
+duration: 5m
+
+
