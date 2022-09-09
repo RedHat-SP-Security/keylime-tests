@@ -1147,9 +1147,21 @@ true <<'=cut'
 
 =head2 limeInstallIMAKeys
 
-Generate and install IMA/EVM keys to /etc/keys/
+Generate and install IMA/EVM keys to /etc/keys/ or to the specified destination. 
+The file name consists of a prefix and a suffix. The prefix depends on the key type 
+and the suffix is specified by the SUFFIX parameter.
 
     limeInstallIMAKeys
+
+=over
+
+=item SUFFIX
+
+Name of a keys and certificate file.
+
+=item DEST
+
+Destination directory where to copy a files (/etc/keys directory by default).
 
 =back
 
@@ -1159,7 +1171,23 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 
 limeInstallIMAKeys() {
 
-    if ! [ -f ${limeIMAPrivateKey} ]; then
+    local SUFFIX=$1
+    local DEST=$2
+    local IMAPrivateKey=${limeIMAPrivateKey}
+    local IMAPublicKey=${limeIMAPublicKey}
+    local IMACertificateDER=${limeIMACertificateDER}
+
+    if [ -n "${SUFFIX}" ] && [ -z "${DEST}" ]; then
+            IMAPrivateKey=/etc/keys/privkey_${SUFFIX}.pem
+            IMAPublicKey=/etc/keys/x509_${SUFFIX}.pem
+            IMACertificateDER=/etc/keys/x509_${SUFFIX}.der
+    elif [ -n "${SUFFIX}" ] && [ -n "${DEST}" ]; then
+            IMAPrivateKey=${DEST}/privkey_${SUFFIX}.pem
+            IMAPublicKey=${DEST}/x509_${SUFFIX}.pem
+            IMACertificateDER=${DEST}/x509_${SUFFIX}.der
+    fi
+
+    if ! [ -f ${IMAPrivateKey} ]; then
         local CONFIG=$( mktemp )
         cat <<END >${CONFIG}
 [ req ]
@@ -1181,8 +1209,8 @@ keyUsage=digitalSignature
 subjectKeyIdentifier=hash
 authorityKeyIdentifier=keyid
 END
-        openssl req -x509 -new -nodes -utf8 -days 90 -batch -x509 -config ${CONFIG} -outform DER -out ${limeIMACertificateDER} -keyout ${limeIMAPrivateKey} && \
-        openssl rsa -pubout -in ${limeIMAPrivateKey} -out ${limeIMAPublicKey} && \
+        openssl req -x509 -new -nodes -utf8 -days 90 -batch -x509 -config ${CONFIG} -outform DER -out ${IMACertificateDER} -keyout ${IMAPrivateKey} && \
+        openssl rsa -pubout -in ${IMAPrivateKey} -out ${IMAPublicKey} && \
         ls -l ${__INTERNAL_limeIMAKeysDir}
     fi
 }
