@@ -57,7 +57,7 @@ debug "MESSAGE='$MESSAGE'"
 
 # when SYNC_PROVIDER is not set or I am the SYNC_PROVIDER
 # and will store the message locally
-if [ -z "$SYNC_PROVIDER" ] || echo " $MY_IDENTIFIERS " | egrep -q " $SYNC_PROVIDER "; then
+if [ -z "$SYNC_PROVIDER" ] || echo " $MY_IDENTIFIERS " | grep -E -q " $SYNC_PROVIDER "; then
 
     # check if the message hasn't been saved already
     if grep -q "^$MESSAGE\$" $STATUS_FILE 2> /dev/null; then

@@ -191,7 +191,7 @@ function limeUpdateConf() {
       MODIFIED=false
       if [ -f ${FILE} ]; then
           # if the option exists, modify it
-          if sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep -q "^${KEY} *="; then
+          if sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | grep -E -q "^${KEY} *="; then
               sed -i "/^\[${SECTION}\]/,/^\[/ s|^${KEY} *=.*|${KEY} = ${VALUE}|${SED_OPTIONS}" ${FILE}
               MODIFIED=true
           # else we will to add it at the top of the section if the section exists and it is not in *.conf.d/
@@ -202,7 +202,7 @@ function limeUpdateConf() {
           # print the modified configuration line
           if $MODIFIED; then
               echo -e "${FILE}:\n[${SECTION}]"
-              sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | egrep "^${KEY} *="
+              sed -n "/^\[${SECTION}\]/,/^\[/ p" ${FILE} | grep -E "^${KEY} *="
           fi
       fi
   done
@@ -1000,7 +1000,7 @@ limeWaitForAgentStatus() {
 
     for I in `seq $TIMEOUT`; do
         keylime_tenant -c status -u $UUID &> $OUTPUT
-	if egrep -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
+	if grep -E -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
             cat $OUTPUT
 	    rm $OUTPUT
 	    return 0

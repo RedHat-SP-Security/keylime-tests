@@ -39,7 +39,7 @@
 
 
 function get_IP() {
-    if echo $1 | egrep -q '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
+    if echo $1 | grep -E -q '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
         echo $1
     else
         host $1 | sed -n -e 's/.*has address //p' | head -n 1
