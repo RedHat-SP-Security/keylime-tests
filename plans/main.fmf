@@ -2,7 +2,3 @@ context:
   swtpm: yes
   agent: python
   faked_measured_boot_log: true
-
-environment:
-  KEYLIME_UPSTREAM_URL: "https://github.com/ansasaki/keylime.git"
-  KEYLIME_UPSTREAM_BRANCH: "conf_refactor"
