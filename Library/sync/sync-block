@@ -56,7 +56,7 @@ function is_blocked() {
         MY_IDENTIFIERS="$MY_FQDNS $MY_IPS"
 
         # when I am the SYNC_PROVIDER read statuses locally
-        if echo " $MY_IDENTIFIERS " | egrep -q " $PROVIDER "; then
+        if echo " $MY_IDENTIFIERS " | grep -E -q " $PROVIDER "; then
             debug "reading statuses from local $STATUS_FILE"
             cat $STATUS_FILE > $TMPFILE
         else
@@ -69,8 +69,8 @@ function is_blocked() {
 
             $SYNC_DEBUG && echo "--- response ---" && cat $TMPFILE && echo "----------------"
             # I am blocked if there is not a line with STATE for the given IDENTIFIER
-            egrep -q "^$STATE:" $TMPFILE || BLOCKED=true
-            egrep -q "^$STATE:.* $IDENTIFIER " $TMPFILE || BLOCKED=true
+            grep -E -q "^$STATE:" $TMPFILE || BLOCKED=true
+            grep -E -q "^$STATE:.* $IDENTIFIER " $TMPFILE || BLOCKED=true
             $BLOCKED && debug "$IDENTIFIER is blocked" || debug "$IDENTIFIER is not blocked"
 
         else
