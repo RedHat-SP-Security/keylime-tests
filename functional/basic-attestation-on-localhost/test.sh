@@ -26,13 +26,8 @@ rlJournalStart
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         # agent
-        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            if limeIsPythonAgent; then
-                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications False"
-            else
-                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications False"
-            fi
+            rlRun "limeUpdateConf agent enable_revocation_notifications false"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then
