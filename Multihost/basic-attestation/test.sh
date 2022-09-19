@@ -115,9 +115,6 @@ Verifier() {
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         fi
 
-        # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf agent uuid d432fbb3-d2f1-4a97-9ef7-75bd81c22222"
-
         # Delete other components configuration files
         for comp in agent registrar tenant; do
             rlRun "rm -rf /etc/keylime/$comp.conf*"
@@ -158,9 +155,6 @@ Registrar() {
         done
         id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
 
-        # common configuration goes here
-        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
-
         # configure registrar
         rlRun "limeUpdateConf registrar ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf registrar check_client_cert True"
@@ -170,9 +164,6 @@ Registrar() {
         rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # registrar_* TLS options below seems not necessary
         # we can preserve default values
-
-        # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf agent uuid d432fbb3-d2f1-4a97-9ef7-75bd81c11111"
 
         # Delete other components configuration files
         for comp in agent verifier tenant; do
