@@ -11,7 +11,7 @@ rlJournalStart
             rlLogInfo "Compiling rust-keylime bits from /var/tmp/rust-keylime_sources"
         else
             rlLogInfo "Compiling rust-keylime from cloned upstream repo"
-            rlRun "rm -rf rust-keylime && git clone https://github.com/keylime/rust-keylime.git /var/tmp/rust-keylime_sources"
+            rlRun "git clone https://github.com/keylime/rust-keylime.git /var/tmp/rust-keylime_sources"
         fi
         rlRun "pushd /var/tmp/rust-keylime_sources"
 
@@ -34,7 +34,7 @@ rlJournalStart
         fi
 
         # configure TPM to use sha256
-        rlRun "sed -i 's/^tpm_hash_alg =.*/tpm_hash_alg = sha256/' /etc/keylime-agent.conf"
+        rlRun "sed -i 's/^tpm_hash_alg =.*/tpm_hash_alg = \"sha256\"/' /etc/keylime-agent.conf"
 
         # Install shim.py to allow running python actions
         # This should be removed once https://github.com/keylime/rust-keylime/issues/325 is fixed
