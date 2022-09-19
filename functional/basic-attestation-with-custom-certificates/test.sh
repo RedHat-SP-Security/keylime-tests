@@ -56,7 +56,6 @@ rlJournalStart
 
         # update /etc/keylime.conf
         limeBackupConfig
-        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
         # verifier
         rlRun "limeUpdateConf verifier check_client_cert True"
         rlRun "limeUpdateConf verifier tls_dir $CERTDIR"
@@ -67,11 +66,7 @@ rlJournalStart
         rlRun "limeUpdateConf verifier client_cert ${CERTDIR}/verifier-client-cert.pem"
         rlRun "limeUpdateConf verifier client_key ${CERTDIR}/verifier-client-key.pem"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
-        if limeIsPythonAgent; then
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications True"
-        else
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications True"
-        fi
+        rlRun "limeUpdateConf agent enable_revocation_notifications true"
         rlRun "limeUpdateConf revocations webhook_url https://localhost:${SSL_SERVER_PORT}"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
@@ -87,19 +82,15 @@ rlJournalStart
         rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # agent
         if limeIsPythonAgent; then
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
+            rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
         else
-            rlRun "limeUpdateConf cloud_agent keylime_ca ${CERTDIR}/cacert.pem"
-            rlRun "limeUpdateConf cloud_agent rsa_keyname agent-key.pem"
-            rlRun "limeUpdateConf cloud_agent mtls_cert agent-cert.pem"
+            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
+            rlRun "limeUpdateConf agent server_key '\"agent-key.pem\"'"
+            rlRun "limeUpdateConf agent server_cert '\"agent-cert.pem\"'"
         fi
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
-            if limeIsPythonAgent; then
-                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications False"
-            else
-                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications False"
-            fi
+            rlRun "limeUpdateConf agent enable_revocation_notifications false"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then
