@@ -14,7 +14,7 @@ if input_json.get("type", "") != "revocation":
 
 event_uuid = input_json.get("agent_id", "event_uuid")
 event_ip = input_json.get("ip", "event_ip")
-my_uuid = config.get('agent', 'uuid')
+my_uuid = config.get('agent', 'uuid').strip('\"')
 
 print("A node in the network has been compromised:", event_ip)
 print("my UUID: %s, event UUID: %s" % (my_uuid, event_uuid))
