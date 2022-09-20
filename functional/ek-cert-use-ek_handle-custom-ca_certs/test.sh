@@ -13,7 +13,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
         # update /etc/keylime.conf
-        limeBackupConfig       
+        limeBackupConfig
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -39,11 +39,15 @@ rlJournalStart
         rlRun "tpm2_createek -P $PASSWORD_TPM -w $PASSWORD_TPM -c 0x81010001 -G rsa"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert true" 
-        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
         # set address to which ek use
-        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} ek_handle 0x81010001"
-        #configure tpm_ownerpassword    
-        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} tpm_ownerpassword $PASSWORD_TPM"
+        if limeIsPythonAgent; then
+            rlRun "limeUpdateConf agent ek_handle 0x81010001"
+            rlRun "limeUpdateConf agent tpm_ownerpassword $PASSWORD_TPM"
+        else
+            rlRun "limeUpdateConf agent ek_handle '\"0x81010001\"'"
+            rlRun "limeUpdateConf agent tpm_ownerpassword '\"$PASSWORD_TPM\"'"
+        fi
+        #configure tpm_ownerpassword
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
