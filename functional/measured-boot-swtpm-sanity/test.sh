@@ -39,12 +39,7 @@ rlJournalStart
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf verifier measured_boot_policy_name accept-all"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
-        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
-        if limeIsPythonAgent; then
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications False"
-        else
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications False"
-        fi
+        rlRun "limeUpdateConf agent enable_revocation_notifications false"
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
