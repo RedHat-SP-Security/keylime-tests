@@ -16,16 +16,11 @@ rlJournalStart
         rlAssertRpm keylime
         limeBackupConfig
         # update keylime conf
-        limeIsPythonAgent && AGENT_CONFIG_SECTION=agent || AGENT_CONFIG_SECTION=cloud_agent
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
-            if limeIsPythonAgent; then
-                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} enable_revocation_notifications False"
-            else
-                rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} listen_notifications False"
-            fi
+            rlRun "limeUpdateConf agent enable_revocation_notifications false"
         fi
         # change /etc/keylime.conf permissions so that agent running as ${AGENT_USER} can access it
         rlRun "find /etc/keylime -type f -exec chmod 444 {} \;"
@@ -50,16 +45,20 @@ rlJournalStart
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         # do special configuration for the agent
-        rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} run_as ${AGENT_USER}:${AGENT_GROUP}"
+        if limeIsPythonAgent; then
+            rlRun "limeUpdateConf agent run_as ${AGENT_USER}:${AGENT_GROUP}"
+        else
+            rlRun "limeUpdateConf agent run_as '\"${AGENT_USER}:${AGENT_GROUP}\"'"
+        fi
         rlRun "useradd -s /sbin/nologin -g ${AGENT_GROUP} ${AGENT_USER}"
         rlRun "mkdir -p ${AGENT_WORKDIR}/cv_ca"
         #rlRun "mkdir -p ${AGENT_WORKDIR}/secure"
         rlRun "cp /var/lib/keylime/cv_ca/{cacert.crt,client*} ${AGENT_WORKDIR}/cv_ca"
         rlRun "chown -R ${AGENT_USER}:${AGENT_GROUP} ${AGENT_WORKDIR}"
         if limeIsPythonAgent; then
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} trusted_client_ca '[\"/var/lib/keylime-agent/cv_ca/cacert.crt\"]'"
+            rlRun "limeUpdateConf agent trusted_client_ca '[\"/var/lib/keylime-agent/cv_ca/cacert.crt\"]'"
         else
-            rlRun "limeUpdateConf ${AGENT_CONFIG_SECTION} keylime_ca default"
+            rlRun "limeUpdateConf agent trusted_client_ca '\"default\"'"
         fi
         # when using unit files we need to adjust them
         if [ -f /usr/lib/systemd/system/keylime_agent.service -o -f /etc/systemd/system/keylime_agent.service ]; then
