@@ -4,6 +4,9 @@
 
 # define RUST_IMA_EMULATOR variable to install also rust IMA emulator
 
+[ -n "${RUST_KEYLIME_UPSTREAM_URL}" ] || RUST_KEYLIME_UPSTREAM_URL="https://github.com/keylime/rust-keylime.git"
+[ -n "${RUST_KEYLIME_UPSTREAM_BRANCH}" ] || RUST_KEYLIME_UPSTREAM_BRANCH="master"
+
 rlJournalStart
 
     rlPhaseStartSetup "Build and install rust-keylime bits"
@@ -11,7 +14,7 @@ rlJournalStart
             rlLogInfo "Compiling rust-keylime bits from /var/tmp/rust-keylime_sources"
         else
             rlLogInfo "Compiling rust-keylime from cloned upstream repo"
-            rlRun "git clone https://github.com/keylime/rust-keylime.git /var/tmp/rust-keylime_sources"
+            rlRun "git clone -b ${RUST_KEYLIME_UPSTREAM_BRANCH} ${RUST_KEYLIME_UPSTREAM_URL} /var/tmp/rust-keylime_sources"
         fi
         rlRun "pushd /var/tmp/rust-keylime_sources"
 
