@@ -83,6 +83,8 @@ rlJournalStart
         # agent
         if limeIsPythonAgent; then
             rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
+            rlRun "limeUpdateConf agent server_key agent-key.pem"
+            rlRun "limeUpdateConf agent server_cert agent-cert.pem"
         else
             rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
             rlRun "limeUpdateConf agent server_key '\"agent-key.pem\"'"
