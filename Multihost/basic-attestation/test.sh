@@ -222,14 +222,26 @@ Agent() {
         rlRun "limeUpdateConf tenant client_key ${CERTDIR}/tenant-key.pem"
 
         # configure agent
-        rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf agent ip ${AGENT_IP}"
-        rlRun "limeUpdateConf agent contact_ip ${AGENT_IP}"
-        rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
-        rlRun "limeUpdateConf agent server_key agent-key.pem"
-        rlRun "limeUpdateConf agent server_cert agent-cert.pem"
-        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
+        if limeIsPythonAgent; then
+            rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
+            rlRun "limeUpdateConf agent ip ${AGENT_IP}"
+            rlRun "limeUpdateConf agent contact_ip ${AGENT_IP}"
+            rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
+            rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
+            rlRun "limeUpdateConf agent server_key agent-key.pem"
+            rlRun "limeUpdateConf agent server_cert agent-cert.pem"
+            rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
+        else
+            # tls_dir not supported by the Rust agent, using /var/lib/keylime by default
+            #rlRun "limeUpdateConf agent tls_dir '\"${CERTDIR}\"'"
+            rlRun "limeUpdateConf agent ip '\"${AGENT_IP}\"'"
+            rlRun "limeUpdateConf agent contact_ip '\"${AGENT_IP}\"'"
+            rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
+            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
+            rlRun "limeUpdateConf agent server_key '\"${CERTDIR}/agent-key.pem\"'"
+            rlRun "limeUpdateConf agent server_cert '\"${CERTDIR}/agent-cert.pem\"'"
+            rlRun "limeUpdateConf agent revocation_notification_ip '\"${VERIFIER_IP}\"'"
+        fi
 
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications False"
@@ -358,18 +370,30 @@ Agent2() {
         id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
 
         # configure agent
-        rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
-        rlRun "limeUpdateConf agent ip ${AGENT2_IP}"
-        rlRun "limeUpdateConf agent contact_ip ${AGENT2_IP}"
-        rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
-        rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
-        rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
+        if limeIsPythonAgent; then
+            rlRun "limeUpdateConf agent uuid ${AGENT2_ID}"
+            rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
+            rlRun "limeUpdateConf agent ip ${AGENT2_IP}"
+            rlRun "limeUpdateConf agent contact_ip ${AGENT2_IP}"
+            rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
+            rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
+            rlRun "limeUpdateConf agent server_key agent2-key.pem"
+            rlRun "limeUpdateConf agent server_cert agent2-cert.pem"
+            rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
 
-        # change UUID just for sure so it is different from Agent
-        rlRun "limeUpdateConf agent uuid ${AGENT2_ID}"
-        rlRun "limeUpdateConf agent server_key agent2-key.pem"
-        rlRun "limeUpdateConf agent server_cert agent2-cert.pem"
- 
+        else
+            rlRun "limeUpdateConf agent uuid '\"${AGENT2_ID}\"'"
+            # tls_dir is not supported in the rust agent
+            #rlRun "limeUpdateConf agent tls_dir '\"${CERTDIR}\"'"
+            rlRun "limeUpdateConf agent ip '\"${AGENT2_IP}\"'"
+            rlRun "limeUpdateConf agent contact_ip '\"${AGENT2_IP}\"'"
+            rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
+            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
+            rlRun "limeUpdateConf agent server_key '\"${CERTDIR}/agent2-key.pem\"'"
+            rlRun "limeUpdateConf agent server_cert '\"${CERTDIR}/agent2-cert.pem\"'"
+            rlRun "limeUpdateConf agent revocation_notification_ip '\"${VERIFIER_IP}\"'"
+        fi
+
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications False"
         fi
