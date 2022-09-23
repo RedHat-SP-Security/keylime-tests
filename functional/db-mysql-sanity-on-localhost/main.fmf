@@ -1,4 +1,4 @@
-summary: Basic test of mariadb usage on localhost
+summary: Basic test of mysql usage on localhost
 description: |
  Running all services and DB on localhost.
  Configure verifier and registrar to use mysql DB.
