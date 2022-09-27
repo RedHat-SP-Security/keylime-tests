@@ -17,6 +17,7 @@ require:
  - tpm2-tss-devel
  - zeromq-devel
  - libarchive-devel
+ - clang-devel
 duration: 20m
 enabled: true
 extra-nitrate: TC#0613570
