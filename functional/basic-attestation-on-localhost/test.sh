@@ -15,8 +15,6 @@ rlJournalStart
 
         # update /etc/keylime.conf
         limeBackupConfig
-        rlFileBackup --clean --missing-ok /etc/sudoers
-        rlRun "echo 'keylime ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
         # verifier
         rlRun "limeUpdateConf cloud_verifier revocation_notifiers ${REVOCATION_NOTIFIER},webhook"
         rlRun "limeUpdateConf cloud_verifier webhook_url http://localhost:${HTTP_SERVER_PORT}"
@@ -91,7 +89,6 @@ _EOF"
             cat ${HTTP_SERVER_LOG}
             rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${HTTP_SERVER_LOG} -i
             rlAssertNotGrep ERROR ${HTTP_SERVER_LOG} -i
-            rlAssertGrep 'root' /var/lib/keylime/sudo_script_output.txt -i
         fi
     rlPhaseEnd
 
@@ -99,7 +96,6 @@ _EOF"
         rlRun "kill ${HTTP_SERVER_PID}"
         rlRun "rm ${HTTP_SERVER_LOG}"
         rlRun "rm -f /var/tmp/test_payload_file"
-        rlRun "rm -f /var/lib/keylime/sudo_script_output.txt"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
@@ -115,7 +111,6 @@ _EOF"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
-        rlFileRestore
         #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
     rlPhaseEnd
 
