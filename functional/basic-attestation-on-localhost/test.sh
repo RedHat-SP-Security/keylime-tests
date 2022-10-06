@@ -13,10 +13,13 @@ rlJournalStart
         rlRun "id -Z"
         rlRun "> /var/log/audit/audit.log"
         rlRun "passwd --help > /root/file.txt" 
+        rlRun "sleep 10 && sync"
         rlRun "cat /root/file.txt"
         rlRun "ausearch -m avc"
         rlRun "cat /var/log/audit/audit.log"
-        rlRun "dmesg"
+
+        rlRun "sed -i 's/flush =.*/flush = SYNC/' /etc/audit/auditd.conf"
+        rlRun "grep flush /etc/audit/auditd.conf"
 
     rlPhaseEnd
 
