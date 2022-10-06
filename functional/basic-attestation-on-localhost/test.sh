@@ -16,7 +16,7 @@ rlJournalStart
         rlRun "cat /root/file.txt"
         rlRun "sleep 3 && sync"
         rlRun "cat /var/log/audit/audit.log"
-        rlRun "ausearch -m avc"
+        rlRun "ausearch -m avc --input-logs"
     rlPhaseEnd
 
 rlJournalEnd
