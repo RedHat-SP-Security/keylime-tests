@@ -4,6 +4,7 @@ summary:
 discover:
   how: fmf
   test: 
+   - /functional/basic-attestation-on-localhost
    - /setup/configure_tpm_emulator
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
