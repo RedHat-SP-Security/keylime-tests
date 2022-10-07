@@ -4,6 +4,8 @@ type swtpm_t;
 type swtpm_exec_t;
 type tcsd_var_lib_t;
 type unreserved_port_t;
+type var_lib_t;
+type init_t;
 }
 permissive swtpm_t;
 
@@ -13,3 +15,7 @@ dontaudit swtpm_t self:tcp_socket { accept listen };
 dontaudit swtpm_t tcsd_var_lib_t:dir { add_name remove_name write };
 dontaudit swtpm_t tcsd_var_lib_t:file { create getattr lock open read rename setattr unlink write };
 dontaudit swtpm_t unreserved_port_t:tcp_socket name_bind;
+dontaudit swtpm_t var_lib_t:dir { add_name remove_name write };
+dontaudit swtpm_t var_lib_t:file { create getattr lock open read rename setattr unlink write };
+
+dontaudit init_t swtpm_exec_t:file { execute execute_no_trans map open read };
