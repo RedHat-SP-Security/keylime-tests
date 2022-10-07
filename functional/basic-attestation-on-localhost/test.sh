@@ -14,7 +14,7 @@ rlJournalStart
         rlRun "> /var/log/audit/audit.log"
         rlRun "passwd --help > /root/file.txt" 
         rlRun "cat /root/file.txt"
-        rlRun "sync"
+
         rlRun "cat /var/log/audit/audit.log"
         rlRun "ausearch -m avc --input-logs"
     rlPhaseEnd
