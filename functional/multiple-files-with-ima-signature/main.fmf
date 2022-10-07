@@ -1,4 +1,5 @@
-summary: Sign executable files with multiple IMA keys and verifies that a system passes attestation.
+summary: Sign executable files with multiple IMA keys and verifies that a system passes
+    attestation.
 description: |
     Sign multiple files with multiple IMA keys.
     Registers an agent on the verifier with multiple IMA signature
@@ -30,4 +31,4 @@ adjust:
     enabled: false
     because: RHEL-8 has old kernel
 enabled: true
-
+extra-nitrate: TC#0614339
