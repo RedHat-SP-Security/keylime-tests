@@ -12,6 +12,7 @@ tag:
 framework: beakerlib
 require:
  - audit
+ - policycoreutils
 duration: 5m
 enabled: true
 
