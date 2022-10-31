@@ -1,9 +1,10 @@
-summary: Sign executable files with multiple IMA keys and verifies that a system passes
+summary: Sign executable files with distinct IMA keys and verifies that a system passes
     attestation.
 description: |
-    Sign multiple files with multiple IMA keys.
-    Registers an agent on the verifier with multiple IMA signature
-    verification keys for files and confirm is passes attestation.
+    Generate two IMA signature verification keys and use them to sign two scrips.
+    Register a system with keylime_tenant, passing two IMA signature verification
+    keys by using two --sign_verification_key options.
+    Confirm that a system passes attestation.
     Execute files and confirm that they have been measured by kernel IMA 
     and verify that a system still passes attestation. 
     Later, modify executable files and verify that a system fails attestation.
