@@ -137,7 +137,7 @@ Verifier() {
     rlPhaseStartCleanup "Verifier cleanup"
         rlRun "kill $HTTP_PID"
         rlRun "limeStopVerifier"
-        limeLogfileSubmit $(limeVerifierLogfile)
+        limeSubmitCommonLogs
     rlPhaseEnd
 }
 
@@ -179,7 +179,7 @@ Registrar() {
 
     rlPhaseStartCleanup "Registrar cleanup"
         rlRun "limeStopRegistrar"
-        limeLogfileSubmit $(limeRegistrarLogfile)
+        limeSubmitCommonLogs
     rlPhaseEnd
 }
 
@@ -336,13 +336,12 @@ _EOF"
     rlPhaseStartCleanup "Agent cleanup"
         rlRun "sync-set AGENT_ALL_TESTS_DONE"
         rlRun "limeStopAgent"
-        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
             rlServiceRestore tpm2-abrmd
         fi
+        limeSubmitCommonLogs
         rlRun "rm -f /var/tmp/test_payload_file"
     rlPhaseEnd
 }
@@ -453,13 +452,12 @@ Agent2() {
         rlRun "kill $HTTP_PID"
         rlRun "rm -f /var/tmp/test_payload_file"
         limeStopAgent
-        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             limeStopIMAEmulator
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             limeStopTPMEmulator
             rlServiceRestore tpm2-abrmd
         fi
+        limeSubmitCommonLogs
     rlPhaseEnd
 }
 

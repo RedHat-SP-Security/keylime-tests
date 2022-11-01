@@ -79,16 +79,12 @@ rlJournalStart
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlServiceStop mysqld
-        # submit log files
-        limeLogfileSubmit $(limeVerifierLogfile)
-        limeLogfileSubmit $(limeRegistrarLogfile)
-        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
             rlServiceRestore tpm2-abrmd
         fi
+        limeSubmitCommonLogs
 
         # check if mariadb was installed and reinstall it
         if [ -n "$PKGS" ]; then

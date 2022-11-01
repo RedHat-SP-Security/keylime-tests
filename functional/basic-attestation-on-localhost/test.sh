@@ -99,15 +99,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        limeLogfileSubmit $(limeVerifierLogfile)
-        limeLogfileSubmit $(limeRegistrarLogfile)
-        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
             rlServiceRestore tpm2-abrmd
         fi
+        limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR

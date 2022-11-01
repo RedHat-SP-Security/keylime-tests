@@ -84,9 +84,7 @@ rlJournalStart
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        limeLogfileSubmit $(limeVerifierLogfile)
-        limeLogfileSubmit $(limeRegistrarLogfile)
-        limeLogfileSubmit $(limeAgentLogfile)
+        limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
     rlPhaseEnd

@@ -120,15 +120,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        limeLogfileSubmit $(limeVerifierLogfile)
-        limeLogfileSubmit $(limeRegistrarLogfile)
-        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
             rlServiceRestore tpm2-abrmd
         fi
+        limeSubmitCommonLogs
         if [ -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf ]; then
             rlRun "rm -f /etc/systemd/system/keylime_agent.service.d/20-keylime_dir.conf"
             rlRun "systemctl daemon-reload"
