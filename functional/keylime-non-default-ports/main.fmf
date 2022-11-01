@@ -1,4 +1,4 @@
-summary:  Test of keylime which using non default ports
+summary: Test of keylime which using non default ports
 description: |
     Change ports used by keylime services to non default ports.
     Running all services on localhost.
@@ -23,5 +23,5 @@ recommend:
   - keylime-tenant
   - keylime-tools
 duration: 5m
-
-
+extra-nitrate: TC#0614415
+id: 9f0f853d-9b93-45e9-8057-339b2315d1bc

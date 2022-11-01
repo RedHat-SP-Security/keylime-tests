@@ -1,18 +1,19 @@
 summary: Inject AVC SELinux checking into beakerlib phases
 description: |
-        Inject into beakerlib functions rlPhaseStartTest, rlPhaseStartSetup setting timestamp, 
-        and to rlPhaseEnd checking AVC based on timestamp set before. Unset timestamp variable 
-        in rlPhaseStartCleanup due to unecessary checking of AVC's in clean up phase.
+    Inject into beakerlib functions rlPhaseStartTest, rlPhaseStartSetup setting timestamp, 
+    and to rlPhaseEnd checking AVC based on timestamp set before. Unset timestamp variable 
+    in rlPhaseStartCleanup due to unecessary checking of AVC's in clean up phase.
 contact: Patrik Koncity <pkoncity@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
- - setup
+  - setup
 framework: beakerlib
 require:
- - audit
- - policycoreutils
+  - audit
+  - policycoreutils
 duration: 5m
 enabled: true
-
+extra-nitrate: TC#0614416
+id: 07807942-b37e-40fa-8bcb-74a5cafbf44d
