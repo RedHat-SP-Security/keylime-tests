@@ -17,11 +17,6 @@ require:
   - tpm2-tools
 recommend:
   - keylime
-  - keylime-verifier
-  - keylime-registrar
-  - python3-keylime-agent
-  - keylime-tenant
-  - keylime-tools
 duration: 5m
 
 

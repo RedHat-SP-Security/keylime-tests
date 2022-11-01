@@ -18,13 +18,8 @@ require:
   - attr
   - ima-evm-utils
 recommend:
-  - pinentry-tty
   - keylime
-  - keylime-verifier
-  - keylime-registrar
-  - python3-keylime-agent
-  - keylime-tenant
-  - keylime-tools
+  - pinentry-tty
 duration: 5m
 enabled: true
 adjust:

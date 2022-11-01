@@ -16,13 +16,8 @@ require:
 - tpm2-tools
 - mokutil
 recommend:
-- efivar-libs
 - keylime
-- keylime-verifier
-- keylime-registrar
-- python3-keylime-agent
-- keylime-tenant
-- keylime-tools
+- efivar-libs
 duration: 5m
 enabled: true
 extra-nitrate: TC#0613891

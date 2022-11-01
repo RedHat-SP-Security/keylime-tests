@@ -19,13 +19,8 @@ require:
 - tss2
 - tpm2-tss
 recommend:
-- efivar-libs
 - keylime
-- keylime-verifier
-- keylime-registrar
-- python3-keylime-agent
-- keylime-tenant
-- keylime-tools
+- efivar-libs
 duration: 5m
 enabled: true
 extra-nitrate: TC#0613892

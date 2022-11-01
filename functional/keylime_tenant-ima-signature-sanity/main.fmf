@@ -20,13 +20,8 @@ require:
   - yum
   - tpm2-tools
 recommend:
-  - pinentry-tty
   - keylime
-  - keylime-verifier
-  - keylime-registrar
-  - python3-keylime-agent
-  - keylime-tenant
-  - keylime-tools
+  - pinentry-tty
 duration: 10m
 enabled: true
 adjust:
