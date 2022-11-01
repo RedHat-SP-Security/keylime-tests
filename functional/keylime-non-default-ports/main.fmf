@@ -17,11 +17,6 @@ require:
   - tpm2-tools
 recommend:
   - keylime
-  - keylime-verifier
-  - keylime-registrar
-  - python3-keylime-agent
-  - keylime-tenant
-  - keylime-tools
 duration: 5m
 extra-nitrate: TC#0614415
 id: 9f0f853d-9b93-45e9-8057-339b2315d1bc

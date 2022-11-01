@@ -5,7 +5,6 @@ Summary:	Dummy package preventing keylime RPM installation
 License:	GPLv2+	
 BuildArch:  noarch
 Provides: keylime-base
-Provides: keylime-tools
 Provides: keylime-verifier
 Provides: keylime-registrar
 Provides: keylime-tenant
