@@ -1606,9 +1606,13 @@ true <<'=cut'
 Wrapper around Beakerlib function rlFileSubmit that prints the provided file
 to STDOUT if the test failed, i.e. $__INTERNAL_TEST_STATE > 0.
 
-    limeLogfileSubmit FILE
+    limeLogfileSubmit [-s|--silent] FILE
 
 =over
+
+=item -s. --silent
+
+Do not print log to STDOUT
 
 =back
 
@@ -1620,11 +1624,55 @@ Returns 0.
 limeLogfileSubmit() {
 
     local STATE=${__INTERNAL_TEST_STATE:-0}
+    local SILENT=""
 
-    if [ ${STATE} -gt 0 -a -n "$1" ]; then
+
+    if [ "$1" == "-s" -o "$1" == "--silent" ]; then
+        SILENT="1"
+        shift
+    fi
+
+    if [ ${STATE} -gt 0 -a -n "$1" -a -z "${SILENT}" ]; then
         cat $1
     fi
     rlFileSubmit $1
+
+}
+
+
+true <<'=cut'
+=pod
+
+=head2 limeSubmitCommonLogs
+
+Uses rlFileSubmit to submit common logs. Currently these are:
+  $limeVerifierLogfile
+  $limeRegistrarLogfile
+  $limeAgentLogfile
+  $limeIMAEmulatorLogfile (if limeTPMEmulated)
+  /sys/kernel/security/ima/ascii_runtime_measurements
+
+    limeSubmitCommonLogs
+
+=over
+
+=back
+
+Returns 0.
+
+=cut
+
+
+limeSubmitCommonLogs() {
+
+    [ -f $(limeVerifierLogfile) ] && limeLogfileSubmit $(limeVerifierLogfile)
+    [ -f $(limeRegistrarLogfile) ] && limeLogfileSubmit $(limeRegistrarLogfile)
+    [ -f $(limeAgentLogfile) ] && limeLogfileSubmit $(limeAgentLogfile)
+    if limeTPMEmulated && [ -f $(limeIMAEmulatorLogfile) ]; then
+            limeLogfileSubmit $(limeIMAEmulatorLogfile)
+    fi
+    cat /sys/kernel/security/ima/ascii_runtime_measurements > $__INTERNAL_limeTmpDir/ascii_runtime_measurements
+    limeLogfileSubmit --silent $__INTERNAL_limeTmpDir/ascii_runtime_measurements
 
 }
 
