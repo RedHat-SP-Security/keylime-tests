@@ -191,15 +191,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        limeLogfileSubmit $(limeVerifierLogfile)
-        limeLogfileSubmit $(limeRegistrarLogfile)
-        limeLogfileSubmit $(limeAgentLogfile)
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
             rlRun "limeStopTPMEmulator"
             rlServiceRestore tpm2-abrmd
         fi
+        limeSubmitCommonLogs
         rlRun "rm /etc/pki/ca-trust/source/anchors/keylime-ca.crt"
         rlRun "update-ca-trust"
         limeClearData

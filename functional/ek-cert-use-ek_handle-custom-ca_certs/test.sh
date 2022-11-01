@@ -86,12 +86,9 @@ rlJournalStart
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
-        limeLogfileSubmit $(limeVerifierLogfile)
-        limeLogfileSubmit $(limeRegistrarLogfile)
-        limeLogfileSubmit $(limeAgentLogfile)
         rlRun "limeStopIMAEmulator"
-        limeLogfileSubmit $(limeIMAEmulatorLogfile)
         rlRun "limeStopTPMEmulator"
+        limeSubmitCommonLogs
         rlServiceRestore tpm2-abrmd
         limeClearData
         limeRestoreConfig
