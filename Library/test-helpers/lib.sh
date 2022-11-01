@@ -558,6 +558,11 @@ Returns 0 when the start was successful, non-zero otherwise.
 
 limeStartAgent() {
 
+    # print TPM details
+    echo -e "--- TPM details ---"
+    tpm2_getcap properties-fixed | grep -Pzo '(MANUFACTURER|VENDOR_STRING|FIRMWARE_VERSION).*?\n.*?raw.*?\n(.*?value.*?\n)?'
+    echo -e "-------------------"
+
     limeStopAgent
     __limeStartKeylimeService agent
 
@@ -1740,6 +1745,7 @@ limeLibraryLoaded() {
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
         # print keylime package versions
+        echo -e "\nInstalled keylime RPMs"
         rpm -qa \*keylime\*
         return 0
     else
