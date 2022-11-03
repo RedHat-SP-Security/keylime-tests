@@ -55,20 +55,19 @@ _EOF"
         rlRun "evmctl ima_sign -k privkey_first_key.pem script_first.sh"
         rlRun "getfattr -m ^security.ima --dump script_first.sh"
         rlRun "chmod a+rx script_second.sh"
-        rlRun "evmctl ima_sign -k privkey_second_key.pem script_second.sh"
+        rlRun "evmctl ima_sign -k privkey_first_key.pem script_second.sh"
         rlRun "getfattr -m ^security.ima --dump script_second.sh"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent with keys"
-        rlRun "keylime_tenant -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key  x509_first_key.pem --sign_verification_key x509_second_key.pem  -c add"
+        rlRun "keylime_tenant -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key  x509_first_key.pem -c add"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "Run script and check if scripts are in ascii_runtime_measurements"
-        rlRun "./script_first.sh"
-        rlRun "./script_second.sh"
+        rlRun "./script_first.sh; ./script_second.sh"
         rlAssertGrep "script_first.sh" /sys/kernel/security/ima/ascii_runtime_measurements
         rlAssertGrep "script_second.sh" /sys/kernel/security/ima/ascii_runtime_measurements
     rlPhaseEnd
@@ -78,6 +77,7 @@ _EOF"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+	rlRun "evmctl ima_measurement --ignore-violations /sys/kernel/security/ima/binary_runtime_measurements"
     rlPhaseEnd
 
     rlPhaseStartTest "Confirm that system fail due to changing measured file"

@@ -11,20 +11,8 @@ discover:
   test: 
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
-   - /setup/enable_keylime_coverage
-   # change IMA policy to simple and run one attestation scenario
-   # this is to utilize also a different parser
-   - /setup/configure_kernel_ima_module/ima_policy_simple
-   - /functional/basic-attestation-on-localhost
-   # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
-   - "/functional/.*"
-   # now set zeromq as a default revocation notifier and test it
-   - /setup/configure_default_revocation_notifier/zeromq
-   - /functional/basic-attestation-on-localhost
-   # run upstream test suite
-   - /upstream/run_keylime_tests
-   - /setup/generate_coverage_report
+   - /functional/use-multiple-ima-sign-verification-keys
 
 execute:
     how: tmt
@@ -41,10 +29,3 @@ adjust:
          - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 #         - yum config-manager --set-enabled powertools
 
-  # discover step adjustments
-  # disable code coverage measurement everywhere except F35 and CS9
-  - when: distro != centos-stream-9 and distro != fedora-35
-    discover+:
-       test-:
-         - /setup/enable_keylime_coverage
-         - /setup/generate_coverage_report
