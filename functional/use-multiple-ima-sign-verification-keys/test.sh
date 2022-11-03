@@ -67,9 +67,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Run script and check if scripts are in ascii_runtime_measurements"
-        rlRun "./script_first.sh"
         rlRun "./script_second.sh"
-        rlAssertGrep "script_first.sh" /sys/kernel/security/ima/ascii_runtime_measurements
         rlAssertGrep "script_second.sh" /sys/kernel/security/ima/ascii_runtime_measurements
     rlPhaseEnd
 
@@ -78,12 +76,6 @@ _EOF"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
-    rlPhaseEnd
-
-    rlPhaseStartTest "Confirm that system fail due to changing measured file"
-        rlRun "echo 'echo \"boom\"' >> script_first.sh"
-        rlRun "./script_first.sh"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Invalid Quote'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
