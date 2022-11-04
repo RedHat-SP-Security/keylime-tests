@@ -77,6 +77,7 @@ _EOF"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+	rlRun "evmctl ima_measurement --ignore-violations /sys/kernel/security/ima/binary_runtime_measurements"
     rlPhaseEnd
 
     rlPhaseStartTest "Confirm that system fail due to changing measured file"
