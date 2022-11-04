@@ -67,8 +67,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Run script and check if scripts are in ascii_runtime_measurements"
-        rlRun "./script_first.sh"
-        rlRun "./script_second.sh"
+        rlRun "./script_first.sh; sleep 1; ./script_second.sh"
         rlAssertGrep "script_first.sh" /sys/kernel/security/ima/ascii_runtime_measurements
         rlAssertGrep "script_second.sh" /sys/kernel/security/ima/ascii_runtime_measurements
     rlPhaseEnd
