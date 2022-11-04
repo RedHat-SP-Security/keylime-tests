@@ -1,6 +1,10 @@
 summary:
   Tests used by Packit/TFT CI on Github to test upstream keylime
 
+environment:
+  KEYLIME_UPSTREAM_URL: "https://github.com/stefanberger/keylime.git"
+  KEYLIME_UPSTREAM_BRANCH: "fix_quick_succession_execution_log_validation_failure"
+
 prepare:
   how: shell
   script:
