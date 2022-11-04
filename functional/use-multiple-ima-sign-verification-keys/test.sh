@@ -9,6 +9,13 @@ rlJournalStart
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
+        if ls -d /usr/local/lib/python3*/site-packages/keylime-*.egg; then
+            # patch keylime
+            PATCH=${PWD}/t.patch
+            pushd /usr/local/lib/python3*/site-packages/keylime-*.egg
+            rlRun "patch -p1 < ${PATCH}"
+	    popd
+        fi
         limeBackupConfig
         # update keylime conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
@@ -102,6 +109,9 @@ _EOF"
             rlServiceRestore tpm2-abrmd
         fi
         limeSubmitCommonLogs
+cat /sys/kernel/security/ima/binary_runtime_measurements > binary_runtime_measurements
+gzip binary_runtime_measurements
+limeLogfileSubmit --silent binary_runtime_measurements.gz
         limeClearData
         limeRestoreConfig
         rlFileRestore

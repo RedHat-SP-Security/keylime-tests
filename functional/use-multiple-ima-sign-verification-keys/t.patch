@@ -1,0 +1,19 @@
+diff --git a/keylime/ima/ima.py b/keylime/ima/ima.py
+index b88b1af..98b193e 100644
+--- a/keylime/ima/ima.py
++++ b/keylime/ima/ima.py
+@@ -236,6 +236,7 @@ def _process_measurement_list(
+ ):
+     failure = Failure(Component.IMA)
+     running_hash = agentAttestState.get_pcr_state(config.IMA_PCR, hash_alg)
++    logger.debug("Resuming with running_hash %s", running_hash.hex())
+     found_pcr = pcrval is None
+     errors = {}
+     pcrval_bytes = b""
+@@ -317,6 +318,7 @@ def _process_measurement_list(
+
+             # update hash
+             running_hash = hash_alg.hash(running_hash + entry.pcr_template_hash)
++            logger.debug("running_hash after update with %s: %s", entry.pcr_template_hash.hex(), running_hash.hex())
+
+             validation_failure = entry.invalid()
