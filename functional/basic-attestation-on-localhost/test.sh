@@ -15,6 +15,9 @@ rlJournalStart
 
         # update /etc/keylime.conf
         limeBackupConfig
+        rlRun "limeUpdateConf logger_root level DEBUG"
+        rlRun "limeUpdateConf logger_keylime level DEBUG"
+        rlRun "limeUpdateConf handler_consoleHandler level DEBUG"
         # verifier
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
         rlRun "limeUpdateConf revocations webhook_url http://localhost:${HTTP_SERVER_PORT}"
@@ -47,8 +50,12 @@ rlJournalStart
         rlRun "limeWaitForRegistrar"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+        # create some scripts
+        TESTDIR=`limeCreateTestDir`
+        rlRun "echo -e '#!/bin/bash\necho This is good-script1' > $TESTDIR/good-script1.sh && chmod a+x $TESTDIR/good-script1.sh"
+        rlRun "echo -e '#!/bin/bash\necho This is good-script2' > $TESTDIR/good-script2.sh && chmod a+x $TESTDIR/good-script2.sh"
         # create allowlist and excludelist
-        limeCreateTestLists
+        rlRun "limeCreateTestLists ${TESTDIR}/*"
         HTTP_SERVER_LOG=$( mktemp )
         # start revocation notifier webhook server using ncat
         rlRun "ncat --no-shutdown -k -l ${HTTP_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${HTTP_SERVER_LOG} &"
@@ -73,13 +80,21 @@ _EOF"
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
+    rlPhaseStartTest "Running allowed scripts should not affect attestation"
+        rlRun "${TESTDIR}/good-script1.sh"
+        rlRun "${TESTDIR}/good-script2.sh"
+        rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script1.sh"
+        rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script2.sh"
+	rlRun "sleep 5"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+    rlPhaseEnd
+
     rlPhaseStartTest "Fail keylime agent"
-        TESTDIR=`limeCreateTestDir`
-        rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
-        rlRun "$TESTDIR/keylime-bad-script.sh"
+        rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/bad-script.sh && chmod a+x $TESTDIR/bad-script.sh"
+        rlRun "$TESTDIR/bad-script.sh"
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
+        rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
@@ -108,7 +123,7 @@ _EOF"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
-        #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
+        #rlRun "rm -f $TESTDIR/*"  # possible but not really necessary
     rlPhaseEnd
 
 rlJournalEnd
