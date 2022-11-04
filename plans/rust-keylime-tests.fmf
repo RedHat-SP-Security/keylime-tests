@@ -27,6 +27,7 @@ discover:
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
    - /setup/install_upstream_rust_keylime
+   - /setup/enable_keylime_debug_messages
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "/functional/.*"
 
