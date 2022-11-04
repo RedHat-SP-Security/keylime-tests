@@ -90,7 +90,7 @@ _EOF'
         fi
 
         # fix conf file ownership
-        rlRun "chown -R keylime.keylime /etc/keylime"
+        rlRun "chown -R keylime:keylime /etc/keylime"
         rlRun "find /etc/keylime -type f -exec chmod 400 {} \;"
         rlRun "find /etc/keylime -type d -exec chmod 500 {} \;"
         ls -lR /etc/keylime
