@@ -1677,7 +1677,11 @@ limeSubmitCommonLogs() {
             limeLogfileSubmit $(limeIMAEmulatorLogfile)
     fi
     cat /sys/kernel/security/ima/ascii_runtime_measurements > $__INTERNAL_limeTmpDir/ascii_runtime_measurements
-    limeLogfileSubmit --silent $__INTERNAL_limeTmpDir/ascii_runtime_measurements
+    gzip $__INTERNAL_limeTmpDir/ascii_runtime_measurements
+    limeLogfileSubmit --silent $__INTERNAL_limeTmpDir/ascii_runtime_measurements.gz
+    cat /sys/kernel/security/ima/binary_runtime_measurements > $__INTERNAL_limeTmpDir/binary_runtime_measurements
+    gzip $__INTERNAL_limeTmpDir/binary_runtime_measurements
+    limeLogfileSubmit --silent $__INTERNAL_limeTmpDir/binary_runtime_measurements.gz
 
 }
 
