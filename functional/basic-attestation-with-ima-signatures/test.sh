@@ -45,7 +45,7 @@ rlJournalStart
         TESTDIR=`limeCreateTestDir`
         rlRun "chmod a+rx ${TESTDIR}"
         SCRIPT="${TESTDIR}/echo"
-        rlRun "echo -e '#!/bin/bash\necho boom' > ${SCRIPT} && chmod a+x ${SCRIPT} && chown ${limeTestUser}.${limeTestUser} ${SCRIPT}"
+        rlRun "echo -e '#!/bin/bash\necho boom' > ${SCRIPT} && chmod a+x ${SCRIPT} && chown ${limeTestUser}:${limeTestUser} ${SCRIPT}"
         ls -l ${SCRIPT}
         ALG_ARG="-a sha256"
         rlRun "evmctl ima_sign ${ALG_ARG} ${SCRIPT}"

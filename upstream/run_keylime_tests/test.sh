@@ -24,7 +24,7 @@ rlJournalStart
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
         # need to adjust file permissions since we are running keylime as root (for now)
         rlRun "rm -f /var/log/keylime/*"
-        rlRun "chown -R root.root /var/lib/keylime"
+        rlRun "chown -R root:root /var/lib/keylime"
         # install required python modules
         rlRun "pip3 install pytest-asyncio pyaml"
         # download the test suite

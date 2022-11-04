@@ -52,7 +52,7 @@ rlJournalStart
         #rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
         #rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
         # assign cert ownership to keylime user if it exists
-        id keylime && rlRun "chown -R keylime.keylime $CERTDIR"
+        id keylime && rlRun "chown -R keylime:keylime $CERTDIR"
 
         # update /etc/keylime.conf
         limeBackupConfig

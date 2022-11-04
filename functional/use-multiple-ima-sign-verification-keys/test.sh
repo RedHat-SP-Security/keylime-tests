@@ -101,7 +101,6 @@ _EOF"
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
-        rlFileRestore
         limeExtendNextExcludelist ${TESTDIR}
     rlPhaseEnd
 

@@ -79,7 +79,7 @@ Verifier() {
         rlRun "cp $(x509Key verifier) ${CERTDIR}/verifier-key.pem"
         rlRun "cp $(x509Cert verifier-client) ${CERTDIR}/verifier-client-cert.pem"
         rlRun "cp $(x509Key verifier-client) ${CERTDIR}/verifier-client-key.pem"
-        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
+        id keylime && rlRun "chown -R keylime:keylime ${CERTDIR}"
 
         # expose necessary certificates to clients
         rlRun "mkdir http"
@@ -153,7 +153,7 @@ Registrar() {
         for F in cacert.pem registrar-cert.pem registrar-key.pem; do
             rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
-        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
+        id keylime && rlRun "chown -R keylime:keylime ${CERTDIR}"
 
         # configure registrar
         rlRun "limeUpdateConf registrar ip ${REGISTRAR_IP}"
@@ -201,11 +201,11 @@ Agent() {
         for F in cacert.pem tenant-cert.pem tenant-key.pem agent-key.pem agent-cert.pem; do
             rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
-        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
+        id keylime && rlRun "chown -R keylime:keylime ${CERTDIR}"
         # agent mTLS certs are supposed to be in the SECUREDIR
         rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
         rlRun "cp ${CERTDIR}/{agent-key.pem,agent-cert.pem} ${SECUREDIR}"
-        id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
+        id keylime && rlRun "chown -R keylime:keylime ${SECUREDIR}"
 
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
@@ -362,11 +362,11 @@ Agent2() {
         for F in cacert.pem agent2-key.pem agent2-cert.pem; do
             rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
-        id keylime && rlRun "chown -R keylime.keylime ${CERTDIR}"
+        id keylime && rlRun "chown -R keylime:keylime ${CERTDIR}"
         # agent mTLS certs are supposed to be in the SECUREDIR
         rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
         rlRun "cp ${CERTDIR}/{agent2-key.pem,agent2-cert.pem} ${SECUREDIR}"
-        id keylime && rlRun "chown -R keylime.keylime ${SECUREDIR}"
+        id keylime && rlRun "chown -R keylime:keylime ${SECUREDIR}"
 
         # configure agent
         if limeIsPythonAgent; then

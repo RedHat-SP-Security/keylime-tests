@@ -34,7 +34,7 @@ rlJournalStart
             mkdir -p /etc/keylime
             [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
             rlRun "cp keylime-agent.conf /etc/keylime/agent.conf"
-            rlRun "chown keylime.keylime /etc/keylime/agent.conf && chmod 400 /etc/keylime/agent.conf"
+            rlRun "chown keylime:keylime /etc/keylime/agent.conf && chmod 400 /etc/keylime/agent.conf"
         fi
 
         # configure TPM to use sha256
