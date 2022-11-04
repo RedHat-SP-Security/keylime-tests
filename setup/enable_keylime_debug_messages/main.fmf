@@ -3,6 +3,8 @@ description: Updates keylime configuration to log on DEBUG level
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
+recommend:
+  - keylime
 test: ./test.sh
 tag:
   - setup
