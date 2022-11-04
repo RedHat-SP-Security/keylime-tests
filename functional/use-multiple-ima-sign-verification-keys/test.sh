@@ -15,6 +15,9 @@ rlJournalStart
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         rlRun "limeUpdateConf verifier quote_interval 2"
         rlRun "limeUpdateConf agent enable_revocation_notifications false"
+        rlRun "limeUpdateConf logger_root level DEBUG"
+        rlRun "limeUpdateConf logger_keylime level DEBUG"
+        rlRun "limeUpdateConf handler_consoleHandler level DEBUG"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
