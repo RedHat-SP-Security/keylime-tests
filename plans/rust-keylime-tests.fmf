@@ -3,6 +3,8 @@ summary:
 
 environment+:
   TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
+  KEYLIME_UPSTREAM_URL: "https://github.com/stefanberger/keylime.git"
+  KEYLIME_UPSTREAM_BRANCH: "fix_quick_succession_execution_log_validation_failure"
 
 context+:
   agent: rust
