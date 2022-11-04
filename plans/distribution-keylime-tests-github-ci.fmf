@@ -1,18 +1,14 @@
 summary:
   Tests used by Packit/TFT CI on Github to test distribution keylime
 
-# disable plan temporarily until keylime PR#1068 gets merged
+# disable plan for Fedora until keylime using the new syntax format gets there - PR#1068
 enabled: false
-
-adjust:
-    enabled: false
-    when: distro = centos-stream
 
 prepare:
   - how: shell
     script:
      - rm -f /etc/yum.repos.d/tag-repository.repo
-     - dnf config-manager --set-enabled updates-testing updates-testing-modular
+     - dnf config-manager --set-enabled updates-testing updates-testing-modular || true
   - how: shell
     order: 90
     script:
@@ -35,3 +31,12 @@ discover:
 
 execute:
     how: tmt
+
+adjust:
+ - when: distro == centos-stream-9
+   enabled: true
+
+ - when: distro == centos-stream-9
+   prepare:
+     script+:
+      - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
