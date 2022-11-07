@@ -13,11 +13,36 @@ prepare:
    - rm -f /etc/yum.repos.d/tag-repository.repo
 
 adjust:
+  # configure swap for Fedora
+  # see https://access.redhat.com/solutions/4570081
+  # and https://btrfs.readthedocs.io/en/latest/Swapfile.html
+  - when: distro == fedora
+    prepare+:
+       script+:
+        - truncate -s 0 /swapfile-keylime-tests
+        - chattr +C /swapfile-keylime-tests
+        - fallocate -l 4G /swapfile-keylime-tests
+        - chown root:root /swapfile-keylime-tests
+        - chmod 0600 /swapfile-keylime-tests
+        - mkswap /swapfile-keylime-tests
+        - swapon /swapfile-keylime-tests
+        - echo "/swapfile-keylime-tests none swap sw 0 0" >> /etc/fstab
+        - free -m
+
   - when: distro == centos-stream-9
     prepare+:
        script+:
         - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
         - yum config-manager --set-enabled crb
+        # configure swap on C9S
+        - dd if=/dev/zero of=/swapfile-keylime-tests bs=1M count=4096
+        - chown root:root /swapfile-keylime-tests
+        - chmod 0600 /swapfile-keylime-tests
+        - mkswap /swapfile-keylime-tests
+        - swapon /swapfile-keylime-tests
+        - echo "/swapfile-keylime-tests none swap sw 0 0" >> /etc/fstab
+        - free -m
+
   - when: distro == centos-stream-8
     enabled: false
 
