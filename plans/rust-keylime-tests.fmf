@@ -11,6 +11,8 @@ prepare:
   how: shell
   script:
    - rm -f /etc/yum.repos.d/tag-repository.repo
+   - systemctl disable dnf-makecache.service || true
+   - systemctl stop dnf-makecache.service || true
 
 adjust:
   # configure swap for Fedora
