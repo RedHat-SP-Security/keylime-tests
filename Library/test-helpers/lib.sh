@@ -1751,7 +1751,13 @@ limeLibraryLoaded() {
         # print keylime package versions
         echo -e "\nInstalled keylime RPMs"
         rpm -qa \*keylime\*
-	free
+	echo free -m
+	free -m
+	echo cat /proc/sys/vm/swappiness 
+	cat /proc/sys/vm/swappiness
+	echo ulimit -m
+	ulimit -m
+        echo dmesg
 	dmesg
 	echo '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
 	journalctl
