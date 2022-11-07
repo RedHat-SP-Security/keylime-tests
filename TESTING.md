@@ -1,3 +1,7 @@
+This document describes running tests from the `keylime-tests` repository using the [`tmt`](https://tmt.readthedocs.io/en/latest/overview.html) tool.
+It is focused primarily on running tests and testing changes in the `keylime-tests` repository. 
+However, the content is relevant also when you want to test changes made in keylime itself. Also, there is a dedicated section [Running CI tests from the upstream keylime project] with more details.
+
 ## Running tests on a local test system
 
 The following distributions are supported and tested via Packit CI.
@@ -7,35 +11,50 @@ The following distributions are supported and tested via Packit CI.
 
 ### Using tmt (Test Metadata Tool)
 
-Install [`tmt`](https://tmt.readthedocs.io/en/latest/overview.html) and clone tests repository
+Install `tmt` from default Fedora repositories or EPEL (if using RHEL-9/C9S case).
 
 ```
 # yum -y install tmt-all
+```
+or
+```
+# yum -y install tmt-all --enablerepo=epel
+```
+
+Now clone a repository containing `tmt` test plans. Clone `keylime-tests` repository if you 
+want to develop tests for that repository. All `tmt` plans are stored in the `plans` directory
+and they are being used for CI testing of test updates using the Packit service.
+
+```
 $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 $ cd keylime-tests
 ```
 
-With `tmt` you can easily run all test plans. Currently, there are two
-test plans in the `plans/` directory. These are being used for CI testing
-using Packit service. When running tests yourself you may want to update
-them (or even remove) in order to run only the required tasks.
+Before running tests you may want to modify those plans in order to run only the required tests.
 
+To list all the test plans and tests that would be executed you can run:
 ```
-$ tmt run -vvv prepare discover provision -h local execute
+$ tmt -c distro=fedora-35 run -vvv discover
 ```
+
+To execute all test plans against the local system one would run the following command:
+```
+$ tmt -c distro=fedora-35 run -vvv prepare discover provision -h local execute
+```
+However, this way of running tests is not recommended and you should rather use the `provision -h virtual` method to run tests in a virtual system (more on that below).
 
 ### Manual test execution
 
 For troubleshooting purposes you may want to run particular test
 manually. Remember that some setup tasks needs to be run on
-a test system before tests.
+a test system before the test itself.
 
 Prior running a test make sure that all test requirements
 listed in `main.fmf` file are installed.
 
 ```
 # cd ../../functional/basic-attestation-on-localhost/
-# ## make sure to install all requirements from main.fmf
+# ## make sure to install all requirements (`require:` and `recommend:`) from main.fmf
 # bash test.sh
 ```
 
@@ -50,7 +69,7 @@ The procedure below assumes that you have libvirtd installed and running
 First you need to install `tmt` tool and clone tests repository.
 
 ```
-# yum -y install tmt tmt-provision-virtual
+# yum -y install tmt tmt-all
 $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 ```
 
@@ -58,17 +77,17 @@ Then you can run all test plans e.g. on F35 system.
 
 ```
 $ cd keylime-tests
-$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute finish
+$ tmt -c distro=fedora=35 run -vvv discover prepare provision -h virtual -i Fedora-35 -c system execute report finish
 ```
 
 The above command will download Fedora-35 image and use it for a newly created virtual
 system. Also, due to `finish` command the system will be disposed when tests are executed.
 However, for debugging purposes you may want to access test system once
-tests are finished. The `tmt login` command used below will give you a shell after all tests are finished.
+tests are finished. The `login` command used below will give you a shell after all tests are finished.
 
 ```
 $ cd keylime-tests
-$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute login finish
+$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute login report finish
 ```
 
 You can use it to inspect test logs or even modify test sources and run your tests
@@ -80,28 +99,22 @@ The above applies also to CentOS Stream, except that one has to define a `--cont
 is properly detected and prepare step adjustment enabling EPEL gets run.
 
 ```
-$ tmt -c distro=centos-stream-9 run -vvv prepare discover provision -h virtual -i centos-stream-9 -c system execute finish
+$ tmt -c distro=centos-stream-9 run -vvv discover prepare provision -h virtual -i centos-stream-9 -c system execute finish
 ```
 
-### Running tests from specific test plan or specific tests
+## Running tests from a specific test plan or selected tests
 
-In case you do not want to run tests from all plans the easiest option would be tell `tmt` to run only specific tests.
-
+In case you do not want to run tests from all plans the easiest option would be to instruct `tmt` to run only specific plan.
 ```
-$ tmt run -vvv prepare discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' provision -h virtual -i Fedora-35 -c system execute finish
+$ tmt run -vvv plan -n upstream-keylime-tests-github-ci discover prepare provision -h virtual -i Fedora-35 -c system execute report finish
+```
+Eventually, you can run only specific tests from the plan.
+```
+$ tmt run -vvv plan -n upstream-keylime-tests-github-ci discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' prepare provision -h virtual -i Fedora-35 -c system execute report finish
 ```
 This will run only tests whose names contains provided regexp patterns.
 
-You can also tell `tmt` to run only tests from a particular test plan. E.g.
-
-```
-$ tmt run -vvv plan --name upstream prepare discover -h fmf provision -h virtual -i Fedora-35 -c system execute finish
-```
-will execute only tests from test plans whose name contains "upstream".
-
-Finally, you can (locally) edit or remove test plans in the `plan/` directory in order to get to a desired state.
-
-### Running multi-host tests
+## Running multi-host tests
 
 `tmt` cannot schedule multi-host tests yet. However, we can use `tmt` to do the necessary setup and then execute the test manually.
 
@@ -142,15 +155,16 @@ This variable is necessary for the proper functioning of a sync mechanism.
 
 ## Running CI tests from the upstream keylime project
 
-Clone the upstream keylime bits (and change the branch if needed).
+Clone the keylime source code from the upstream project (or your fork) and change the branch if necessary.
 
 ```
 # git clone https://github.com/keylime/keylime.git
+# cd keylime
+# git checkout BRANCH
 ```
 
-Test plan for functional CI tests is stored in `packit.yaml`.
-You may want to edit the file e.g. to point to a different
-tests repository and branch by modifying the section listed below.
+Test plans for functional CI tests are stored in `packit-ci.fmf`.
+The `discover` section of a test plan instructs `tmt` to run tests from the `keylime-tests` repository.
 
 ```
 discover:
@@ -158,9 +172,16 @@ discover:
     url: https://github.com/RedHat-SP-Security/keylime-tests
     ref: main
 ```
+If your keylime changes would require also changes in `keylime-tests`, you may want to
+fork `keylime-tests` repository too and point the plan to your fork by updating the `discover` section.
 
-Then you can run tests using the `tmt` command as described in the section above.
-E.g. with
+Check what plans and tests are configured and modify them when necessary.
 ```
-$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute finish
+$ tmt -c distro=fedora-35 run -vvv discover
 ```
+
+Now, you can run tests using the `tmt` command as described in the section above. E.g. using:
+```
+$ tmt -c distro=fedora-35 run -vvv plan -n e2e-with-revocation discover prepare provision -h virtual -i Fedora-35 -c system execute report finish
+```
+`tmt` will upload keylime sources from the (current) repository to the provisioned virtual system and the task/test `/setup/install_upstream_keylime` from a test plan takes care of installing keylime from those uploaded sources before proceeding with other tests.
