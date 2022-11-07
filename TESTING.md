@@ -10,7 +10,7 @@ The following distributions are supported and tested via Packit CI.
 Install [`tmt`](https://tmt.readthedocs.io/en/latest/overview.html) and clone tests repository
 
 ```
-# yum -y install tmt
+# yum -y install tmt-all
 $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 $ cd keylime-tests
 ```
