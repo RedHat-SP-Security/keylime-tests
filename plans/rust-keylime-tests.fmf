@@ -28,7 +28,7 @@ adjust:
         - chmod 0600 /swapfile-keylime-tests
         - mkswap /swapfile-keylime-tests
         - swapon -p 10 /swapfile-keylime-tests
-        - echo "/swapfile-keylime-tests none swap defaults,prio=10 0 0" >> /etc/fstab
+        - echo "/swapfile-keylime-tests swap swap defaults,prio=10 0 0" >> /etc/fstab
         - free -m
 
   - when: distro == centos-stream-9
@@ -42,7 +42,7 @@ adjust:
         - chmod 0600 /swapfile-keylime-tests
         - mkswap /swapfile-keylime-tests
         - swapon -p 10 /swapfile-keylime-tests
-        - echo "/swapfile-keylime-tests none swap defaults,prio=10 0 0" >> /etc/fstab
+        - echo "/swapfile-keylime-tests swap swap defaults,prio=10 0 0" >> /etc/fstab
         - free -m
 
   - when: distro == centos-stream-8
