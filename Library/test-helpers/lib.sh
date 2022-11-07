@@ -1751,6 +1751,10 @@ limeLibraryLoaded() {
         # print keylime package versions
         echo -e "\nInstalled keylime RPMs"
         rpm -qa \*keylime\*
+	free
+	dmesg
+	echo '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'
+	journalctl
         return 0
     else
         rlLogError "Failed loading library keylime/test-helpers."
