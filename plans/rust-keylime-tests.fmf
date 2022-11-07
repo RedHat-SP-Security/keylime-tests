@@ -42,7 +42,7 @@ adjust:
         - chmod 0600 /swapfile-keylime-tests
         - mkswap /swapfile-keylime-tests
         - swapon /swapfile-keylime-tests
-        - echo "/swapfile-keylime-tests none swap sw 0 0" >> /etc/fstab
+        - echo "/swapfile-keylime-tests none swap defaults,prio=10 0 0" >> /etc/fstab
         - free -m
 
   - when: distro == centos-stream-8
