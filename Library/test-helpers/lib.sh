@@ -1749,6 +1749,8 @@ limeLibraryLoaded() {
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
         # print keylime package versions
+	echo cat /proc/swaps
+	cat /proc/swaps
 	echo cat /proc/meminfo
 	grep '^Commit' /proc/meminfo
 	echo cat /proc/sys/vm/overcommit_ratio
@@ -1757,7 +1759,8 @@ limeLibraryLoaded() {
 	cat /proc/sys/vm/overcommit_memory
 
         rlRun "dmesg"
-        rlRun "journalctl --boot --lines=all"
+        rlRun "journalctl"
+
 
         echo -e "\nInstalled keylime RPMs"
         rpm -qa \*keylime\*
