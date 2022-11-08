@@ -3,6 +3,6 @@ jobs:
   trigger: pull_request
   metadata:
     targets:
-      - fedora-rawhide
-      - fedora-37
+    - fedora-rawhide
+    - fedora-36
     skip_build: true
