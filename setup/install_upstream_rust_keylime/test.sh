@@ -23,7 +23,30 @@ rlJournalStart
             rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/common.rs"
             rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/main.rs"
         fi
+        echo cat /proc/meminfo
+
+	grep '^Commit' /proc/meminfo
+
+	echo cat /proc/sys/vm/overcommit_ratio
+
+	cat /proc/sys/vm/overcommit_ratio
+
+	echo cat /proc/sys/vm/overcommit_memory
+
+	cat /proc/sys/vm/overcommit_memory
         rlRun "cargo build"
+       echo cat /proc/meminfo
+
+	grep '^Commit' /proc/meminfo
+
+	echo cat /proc/sys/vm/overcommit_ratio
+
+	cat /proc/sys/vm/overcommit_ratio
+
+	echo cat /proc/sys/vm/overcommit_memory
+
+	cat /proc/sys/vm/overcommit_memory 
+        
         rlAssertExists target/debug/keylime_agent
         [ -f /usr/local/bin/keylime_agent ] && rlRun "mv /usr/local/bin/keylime_agent /usr/local/bin/keylime_agent.backup"
         rlRun "cp target/debug/keylime_agent /usr/local/bin/keylime_agent"
