@@ -123,6 +123,7 @@ _EOF"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
+rlFileSubmit /var/log/audit/audit.log
         #rlRun "rm -f $TESTDIR/*"  # possible but not really necessary
     rlPhaseEnd
 
