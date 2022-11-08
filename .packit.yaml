@@ -1,5 +1,4 @@
 
-specfile_path: "foo.spec"
 jobs:
 - job: tests
   trigger: pull_request
