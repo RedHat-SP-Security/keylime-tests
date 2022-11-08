@@ -1,6 +1,7 @@
 summary:
   Tests used by Packit/TFT CI on Github to test upstream keylime
 
+enabled: false
 prepare:
   how: shell
   script:
