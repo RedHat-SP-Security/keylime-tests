@@ -4,5 +4,4 @@ jobs:
   metadata:
     targets:
     - fedora-rawhide
-    - fedora-36
     skip_build: true
