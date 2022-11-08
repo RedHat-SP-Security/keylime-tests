@@ -1749,14 +1749,18 @@ limeLibraryLoaded() {
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
         # print keylime package versions
-        echo -e "\nInstalled keylime RPMs"
-        rpm -qa \*keylime\*
 	echo cat /proc/meminfo
 	grep '^Commit' /proc/meminfo
 	echo cat /proc/sys/vm/overcommit_ratio
 	cat /proc/sys/vm/overcommit_ratio
 	echo cat /proc/sys/vm/overcommit_memory
 	cat /proc/sys/vm/overcommit_memory
+
+        rlRun "dmesg"
+        rlRun "journalctl --boot --lines=all"
+
+        echo -e "\nInstalled keylime RPMs"
+        rpm -qa \*keylime\*
         return 0
     else
         rlLogError "Failed loading library keylime/test-helpers."

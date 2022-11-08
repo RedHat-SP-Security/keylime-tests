@@ -86,7 +86,8 @@ _EOF"
 
     rlPhaseStartTest "Test installed binaries"
         rlRun "keylime_agent --help" 0,1
+	rlRun "dmesg"
+	rlRun "journalctl --boot --lines=all"
     rlPhaseEnd
 dmesg
-journalctl
 rlJournalEnd
