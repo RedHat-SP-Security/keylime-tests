@@ -1716,6 +1716,237 @@ limeSubmitCommonLogs() {
 
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeconCreateNetwork
+
+Create container network.
+
+    limeconCreateNetwork NAME SUBNET
+
+=over
+
+=item NAME
+
+Name of container network.
+
+=item SUBNET
+
+Container network subnet in CIDR format, for example 172.18.0.0/16.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconCreateNetwork() {
+
+    local NAME=$1
+    local SUBNET=$2
+
+    if [ -z "${NAME}" ] || [ -z "${SUBNET}" ]; then
+        echo "Network name or network subnet was not specified!"
+        echo "Usage: limeconCreateNetwork \"agent_network\" 172.18.0.0/16"
+        return 1
+    fi
+
+    podman network create --subnet=$SUBNET $NAME
+    podman network inspect $NAME
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconDeleteNetwork
+
+Delete container network.
+
+    limeconDeleteNetwork NAME
+
+=over
+
+=item NAME
+
+Name of the container network.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconDeleteNetwork() {
+
+    local NAME=$1
+
+    podman network rm $NAME
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconPrepareAgentImage
+
+Prepare podman image with keylime agent. Install keylime agent and
+copy CA cert from the host into image and set needed permissions.
+
+    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+
+=over
+
+=item -f, --file DOCKER_FILE
+
+Parameter specify use of non-default docker file.
+
+=item TAG
+
+Name of image tag.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconPrepareAgentImage() {
+
+    if [ "$1" == "-f" -o "$1" == "--file" ]; then
+        local DOCKER_FILE=$2
+        shift 2
+    else
+        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.agent"
+        DOCKER_FILE="${limeLibraryDir}/Dockerfile.agent"
+    fi
+
+    local TAG=$1
+
+    cp /var/lib/keylime/cv_ca/cacert.crt .    
+    podman build -t=$TAG --file $DOCKER_FILE .
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconRunAgent
+
+Container run via podman with specified parameters.
+
+    limeconRunAgent NAME TAG IP NETWORK AGENT_FILE TESTDIR 
+
+=item NAME
+
+Set name of container.
+
+=item TAG
+
+Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=item AGENT_FILE
+
+Mounted dir with configuration file.
+
+=item TESTDIR
+
+Mounted test dir.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunAgent() {
+
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+    local AGENT_FILE=$5
+    local TESTDIR=$6
+
+    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --ip ${IP} --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconPrepareAgentConfdir
+
+Setup agent configuration files for container and copy to newly created confdir.
+
+    limeconSetupAgent AGENT_ID AGENT_IP CONF_DIR
+
+=over
+
+=item AGENT_ID
+
+ID of keylime agent.
+
+=item AGENT_IP
+
+Ip address of keylime agent in container.
+
+=item CONF_DIR
+
+Name of dir for agent config files.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconPrepareAgentConfdir() {
+
+        local AGENT_ID=$1
+        local AGENT_IP=$2
+        local CONF_DIR=$3
+
+        echo "Creating dir ${CONFIG_DIR}"
+        mkdir -p $CONF_DIR
+
+        cp -r /etc/keylime/* $CONF_DIR
+        limeUpdateConf -d $CONF_DIR agent uuid \"$AGENT_ID\"
+        limeUpdateConf -d $CONF_DIR agent ip \"$AGENT_IP\"
+        limeUpdateConf -d $CONF_DIR agent contact_ip \"$AGENT_IP\"
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconStopAgent
+
+Stop container and delete container.
+
+    limeconStopAgent NAMES
+
+=over
+
+=item NAMES
+
+Name of the container to be stopped, could be regular expression.
+
+Returns 0.
+
+=cut
+
+limeconStopAgent() {
+
+        local NAMES=$1
+
+        podman ps -a --format "{{.Names}}" | grep -e "^${NAMES}\$" | xargs podman stop | xargs podman rm
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Initialization
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
