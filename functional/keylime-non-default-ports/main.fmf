@@ -13,6 +13,7 @@ framework: beakerlib
 tag:
   - CI-Tier-1
 require:
+  - expect
   - yum
   - tpm2-tools
 recommend:
