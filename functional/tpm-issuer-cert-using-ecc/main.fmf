@@ -32,3 +32,5 @@ adjust:
     enabled: false
     because: swtpm is not rhel-8 and CentOS-Stream-8
 enabled: true
+extra-nitrate: TC#0614433
+id: 9dafa82e-01f8-447a-b38a-e53f75446a84
