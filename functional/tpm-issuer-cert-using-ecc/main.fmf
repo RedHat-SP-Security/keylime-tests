@@ -13,6 +13,8 @@ test: ./test.sh
 framework: beakerlib
 link:
   - verifies: https://github.com/keylime/keylime/issues/1070
+tag:
+  - CI-Tier-1
 require:
   - yum
   - openssl
