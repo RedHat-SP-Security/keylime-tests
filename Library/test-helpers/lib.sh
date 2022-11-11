@@ -167,9 +167,13 @@ true <<'=cut'
 Updates respective [SECTION] in keylime config files,
 replacing OPTION = .* with OPTION = VALUE.
 
-    limeUpdateConf SECTION OPTION VALUE
+    limeUpdateConf [-d CONF_DIR] SECTION OPTION VALUE
 
 =over
+
+=item
+
+    -d CONF_DIR - Directory with keylime configuration (default /etc/keylime)
 
 =back
 
@@ -184,9 +188,16 @@ function limeUpdateConf() {
   local KEY=$2
   local VALUE=$3
   local SED_OPTIONS=$4
-  local FILES="$( find /etc/keylime -name '*.conf' )"
+  local FILES
   local MODIFIED
+  local CONF_DIR=/etc/keylime
 
+  if [ "$1" == "-d" ]; then
+      CONF_DIR="$2"
+      shift 2
+  fi
+
+  FILES="$( find ${CONF_DIR} '*.conf' )"
   for FILE in ${FILES}; do
       MODIFIED=false
       if [ -f ${FILE} ]; then
