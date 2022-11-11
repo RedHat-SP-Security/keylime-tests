@@ -18,6 +18,8 @@ discover:
    - /setup/enable_keylime_debug_messages
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "/functional/basic-attestation-.*"
+   - /setup/configure_non_default_encrypting_algorithm
+   - /functional/basic-attestation-on-localhost
 
 execute:
     how: tmt
