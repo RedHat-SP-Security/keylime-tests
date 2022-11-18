@@ -269,7 +269,7 @@ Agent() {
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
     rlPhaseEnd
 
 if [ -n "${AGENT2}" ]; then
@@ -279,13 +279,12 @@ if [ -n "${AGENT2}" ]; then
 
         # first register AGENT2 and confirm it has passed validation
         AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
-        # download Agent2 lists
-        rlRun "wget -O allowlist2.txt 'http://${AGENT2_IP}:8000/allowlist.txt'"
-        rlRun "wget -O excludelist2.txt 'http://${AGENT2_IP}:8000/excludelist.txt'"
+        # download Agent2 list
+        rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
         # register
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --allowlist allowlist2.txt --exclude excludelist2.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --runtime-policy policy2.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -304,7 +303,7 @@ fi
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -421,11 +420,11 @@ Agent2() {
         # so let's just wait for 20 seconds
         rlRun "sleep 20"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
 
         # expose lists to Agent
         rlRun "mkdir http"
-        rlRun "cp excludelist.txt allowlist.txt http"
+        rlRun "cp policy.json http"
         rlRun "pushd http"
         rlRun "python3 -m http.server 8000 &"
         HTTP_PID=$!

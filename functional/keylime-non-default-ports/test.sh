@@ -50,7 +50,7 @@ rlJournalStart
         #default port 8992
         rlRun "limeUpdateConf agent receive_revocation_port 18992"
         rlRun "limeUpdateConf verifier zmq_port 18992"
-        # default port 8891 
+        # default port 8891
         rlRun "limeUpdateConf tenant registrar_port 18891"
         rlRun "limeUpdateConf verifier registrar_port 18891"
         rlRun "limeUpdateConf registrar tls_port 18891"
@@ -64,14 +64,14 @@ rlJournalStart
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
         REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -114,4 +114,3 @@ _EOF"
     rlPhaseEnd
 
 rlJournalEnd
-

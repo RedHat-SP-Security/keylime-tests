@@ -38,7 +38,7 @@ rlJournalStart
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
     rlPhaseEnd
 
     rlPhaseStartTest "Add IMA signature to a test file"
@@ -58,7 +58,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key ${limeIMAPublicKey} -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key ${limeIMAPublicKey} -c add"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E

@@ -39,7 +39,7 @@ rlJournalStart
         #move to testdir
         rlRun "pushd $TESTDIR"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
         rlRun "limeInstallIMAKeys first_key $PWD"
         rlRun "limeInstallIMAKeys second_key $PWD"
         rlRun "cat > script_first.sh <<_EOF
@@ -60,7 +60,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent with keys"
-        rlRun "keylime_tenant -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key  x509_first_key.pem --sign_verification_key x509_second_key.pem  -c add"
+        rlRun "keylime_tenant -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key  x509_first_key.pem --sign_verification_key x509_second_key.pem  -c add"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E

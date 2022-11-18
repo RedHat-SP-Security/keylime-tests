@@ -52,7 +52,7 @@ rlJournalStart
         rlRun "pushd ${TMPDIR}"
 
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
 
         # start rngd to provide more random data
         pidof rngd && ENTROPY=false || ENTROPY=true
@@ -108,7 +108,7 @@ EOF
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -u ${AGENT_ID} --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt --sign_verification_key ${limeIMAPublicKey} -c add"
+        rlRun "keylime_tenant -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key ${limeIMAPublicKey} -c add"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
