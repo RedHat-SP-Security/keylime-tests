@@ -78,14 +78,14 @@ _EOF"
         rlRun "pgrep -f keylime_agent -u root" 1 "keylime_agent should not be running as root"
         rlRun "pgrep -f keylime_agent -u kagent" 0 "keylime_agent shouldbe running as kagent"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
         REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof

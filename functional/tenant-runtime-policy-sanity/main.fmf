@@ -1,5 +1,5 @@
-summary: Tests basic tenant allowlist related commands and options
-description: Tests basic functionality of keylime_tenant allowlist related commands and options, including failure handling for several scenarios.
+summary: Tests basic tenant runtime policy related commands and options
+description: Tests basic functionality of keylime_tenant runtime policy related commands and options, including failure handling for several scenarios.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime

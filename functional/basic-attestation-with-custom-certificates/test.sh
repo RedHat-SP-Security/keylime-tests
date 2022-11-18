@@ -115,7 +115,7 @@ rlJournalStart
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
         # generate certificate for the SSL SERVER
         rlRun "cat > script.expect <<_EOF
 set timeout 20
@@ -151,7 +151,7 @@ _EOF"
         REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
