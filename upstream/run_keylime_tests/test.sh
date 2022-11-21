@@ -30,7 +30,7 @@ rlJournalStart
         # download the test suite
         rlAssertExists /var/tmp/keylime_sources/test
         rlRun "TmpDir=\$( mktemp -d )"
-        rlRun "cp -r /var/tmp/keylime_sources/test $TmpDir"
+        rlRun "cp -r /var/tmp/keylime_sources/{test,test-data,tpm_cert_store,scripts} $TmpDir"
         pushd $TmpDir/test
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -78,9 +78,9 @@ rlJournalStart
                 if ${__INTERNAL_limeCoverageEnabled}; then
                     # update coverage context to this particular test
                     rlRun "sed -i 's#context =.*#context = ${TEST}#' /var/tmp/limeLib/coverage/coveragerc"
-                    rlRun "/usr/local/bin/coverage run ${PWD}/${TEST}"
+                    rlRun "/usr/local/bin/coverage run -m unittest ${PWD}/${TEST} -v"
                 else
-                    rlRun "python3 ${PWD}/${TEST}"
+                    rlRun "python3 -m unittest ${PWD}/${TEST} -v"
                 fi
             fi
         rlPhaseEnd
