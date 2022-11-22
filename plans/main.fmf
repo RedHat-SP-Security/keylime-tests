@@ -2,3 +2,8 @@ context:
   swtpm: yes
   agent: python
   faked_measured_boot_log: true
+
+# modify defaults below to point upstream keylime URL to a different repo and branch
+environment:
+  KEYLIME_UPSTREAM_URL: "https://github.com/keylime/keylime.git"
+  KEYLIME_UPSTREAM_BRANCH: "master"
