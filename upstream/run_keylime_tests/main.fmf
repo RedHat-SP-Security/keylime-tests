@@ -12,6 +12,8 @@ require:
 - python3-psutil
 - python3-dbus
 - python3-pip
+- rpm-build
+- git
 recommend:
 - keylime
 duration: 15m

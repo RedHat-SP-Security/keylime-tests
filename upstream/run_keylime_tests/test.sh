@@ -27,8 +27,14 @@ rlJournalStart
         rlRun "chown -R root:root /var/lib/keylime"
         # install required python modules
         rlRun "pip3 install pytest-asyncio pyaml"
-        # download the test suite
-        rlAssertExists /var/tmp/keylime_sources/test
+        # if keylime sources are not available, download SRPM rpm and extract it
+        if ! test -e /var/tmp/keylime_sources; then
+            rlFetchSrcForInstalled keylime
+            rlAssertExists keylime*.src.rpm
+            rlRun "rpm -i keylime*.src.rpm"
+            rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec"
+            rlRun "ln -s ~/rpmbuild/BUILD/keylime* /var/tmp/keylime_sources"
+        fi
         rlRun "TmpDir=\$( mktemp -d )"
         rlRun "cp -r /var/tmp/keylime_sources/{test,test-data,tpm_cert_store,scripts} $TmpDir"
         pushd $TmpDir/test
