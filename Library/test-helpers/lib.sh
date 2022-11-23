@@ -1239,14 +1239,19 @@ true <<'=cut'
 Creates allowlist.txt and excludelist.txt to be used for testing purposes.
 Allowlist will contain only initramdisk related content and files provided
 as command line arguments.
-Exclude list will contain all root dir / content except /keylime-tests.
+Exclude list will contain all root dir / content except /keylime-tests plus
+regular expressions specified on a command line.
 This is based on an assumption that content used for testing purposes will
 be created under /keylime-tests in a directory with an unique name.
 See limeExtendNextExcludelist and limeCreateTestDir for more details.
 
-    limeCreateTestLists
+    limeCreateTestLists [ -e REXEXP ] [FILE] ...
 
 =over
+
+=item -e
+
+Append REGEXP to exclude list.
 
 =back
 
@@ -1256,13 +1261,27 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 
 limeCreateTestLists() {
 
+    local ALLOW=""
+    local EXCLUDE=""
+
+    while [ $# -gt 0 ]; do
+        if [ "$1" == "-e" ]; then
+            EXCLUDE="$2\n${EXCLUDE}"
+	    shift 2
+        else
+            ALLOW="$1 ${ALLOW}"
+	    shift 1
+        fi
+    done
+
     # generate allowlist
-    bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum -- $@ && \
+    bash $limeLibraryDir/create_allowlist.sh allowlist.txt sha256sum -- ${ALLOW} && \
     # generate excludelist
     bash $limeLibraryDir/create_excludelist.sh excludelist.txt && \
     # make sure the file exists
     touch $__INTERNAL_limeBaseExcludeList && \
     cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt
+    echo -e "${EXCLUDE}" >> excludelist.txt
 
 }
 
