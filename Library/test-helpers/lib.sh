@@ -184,18 +184,19 @@ Return success.
 
 function limeUpdateConf() {
 
-  local SECTION=$1
-  local KEY=$2
-  local VALUE=$3
-  local SED_OPTIONS=$4
-  local FILES
-  local MODIFIED
   local CONF_DIR=/etc/keylime
 
   if [ "$1" == "-d" ]; then
       CONF_DIR="$2"
       shift 2
   fi
+
+  local SECTION=$1
+  local KEY=$2
+  local VALUE=$3
+  local SED_OPTIONS=$4
+  local FILES
+  local MODIFIED
 
   FILES="$( find ${CONF_DIR} -name '*.conf' )"
   for FILE in ${FILES}; do
