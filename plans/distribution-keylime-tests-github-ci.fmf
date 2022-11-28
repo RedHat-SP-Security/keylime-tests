@@ -23,6 +23,7 @@ prepare:
 
 discover:
   how: fmf
+  ref: main
   test: 
    - /setup/configure_tpm_emulator
    # change IMA policy to simple and run one attestation scenario
