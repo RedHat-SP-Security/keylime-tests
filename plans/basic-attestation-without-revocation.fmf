@@ -13,6 +13,7 @@ prepare:
 
 discover:
   how: fmf
+  ref: main
   test: 
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
