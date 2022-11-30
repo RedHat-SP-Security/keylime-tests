@@ -55,7 +55,7 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho This is good-script1' > $TESTDIR/good-script1.sh && chmod a+x $TESTDIR/good-script1.sh"
         rlRun "echo -e '#!/bin/bash\necho This is good-script2' > $TESTDIR/good-script2.sh && chmod a+x $TESTDIR/good-script2.sh"
         # create allowlist and excludelist
-        rlRun "limeCreateTestLists ${TESTDIR}/*"
+        rlRun "limeCreateTestPolicy ${TESTDIR}/*"
         HTTP_SERVER_LOG=$( mktemp )
         # start revocation notifier webhook server using ncat
         rlRun "ncat --no-shutdown -k -l ${HTTP_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${HTTP_SERVER_LOG} &"
@@ -66,7 +66,7 @@ rlJournalStart
         REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --allowlist policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof

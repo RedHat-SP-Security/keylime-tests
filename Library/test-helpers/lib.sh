@@ -1164,8 +1164,8 @@ true <<'=cut'
 
 =head2 limeInstallIMAKeys
 
-Generate and install IMA/EVM keys to /etc/keys/ or to the specified destination. 
-The file name consists of a prefix and a suffix. The prefix depends on the key type 
+Generate and install IMA/EVM keys to /etc/keys/ or to the specified destination.
+The file name consists of a prefix and a suffix. The prefix depends on the key type
 and the suffix is specified by the SUFFIX parameter.
 
     limeInstallIMAKeys
@@ -1235,9 +1235,9 @@ END
 true <<'=cut'
 =pod
 
-=head2 limeCreateTestLists
+=head2 limeCreateTestPolicy
 
-Creates allowlist.txt and excludelist.txt to be used for testing purposes.
+Creates policy.json to be used for testing purposes.
 Allowlist will contain only initramdisk related content and files provided
 as command line arguments.
 Exclude list will contain all root dir / content except /keylime-tests plus
@@ -1246,7 +1246,7 @@ This is based on an assumption that content used for testing purposes will
 be created under /keylime-tests in a directory with an unique name.
 See limeExtendNextExcludelist and limeCreateTestDir for more details.
 
-    limeCreateTestLists [ -e REXEXP ] [FILE] ...
+    limeCreateTestPolicy [ -e REXEXP ] [FILE] ...
 
 =over
 
@@ -1260,7 +1260,7 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 
 =cut
 
-limeCreateTestLists() {
+limeCreateTestPolicy() {
 
     local ALLOW=""
     local EXCLUDE=""
@@ -1284,6 +1284,9 @@ limeCreateTestLists() {
     cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt
     echo -e "${EXCLUDE}" >> excludelist.txt
 
+    # create policy.json...
+    rlRun "limeCopyKeylimeFile --source keylime/cmd/convert_ima_policy.py && python3 convert_ima_policy.py -a allowlist.txt -e excludelist.txt -o policy.json"
+
 }
 
 true <<'=cut'
@@ -1292,7 +1295,7 @@ true <<'=cut'
 =head2 limeExtendNextExcludelist
 
 
-Stores provided paths to a list which gets added to the excludelist generated using limeCreateTestLists.
+Stores provided paths to a list which gets added to the excludelist generated using limeCreateTestPolicy.
 Once a file not an a whitelist is measured by IMA it gets accounted until the next reboot.
 From this reason any file created by the test (even if they are deleted later) must be added to the
 exclude list to make sure that subsequent tests won't eventually fail attestation due to this file.
@@ -1511,11 +1514,11 @@ limeGetKeylimeFilepath(){
         --source | -s)
             WHERE="/var/tmp/keylime_sources /var/tmp/rust-keylime_sources"
             ;;
-            
+
         --install | -i)
             WHERE="/usr/lib/python*/site-packages/keylime /usr/local/lib/python*/site-packages/keylime*/keylime"
             ;;
-    
+
     esac
 
     find ${WHERE} -print 2> /dev/null | grep ${FILENAME} | head -1
@@ -1807,4 +1810,3 @@ Karel Srot <ksrot@redhat.com>
 =back
 
 =cut
-

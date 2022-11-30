@@ -55,11 +55,11 @@ _EOF"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestLists
+        limeCreateTestPolicy
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent and check genuine of TPM via ek_check_script option"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c update"
+        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist policy.json -f /etc/hostname -c update"
         rlAssertGrep "AGENT_UUID=$AGENT_ID" $rlRun_LOG -E
         rlAssertGrep "EK=-----BEGIN PUBLIC KEY-----" $rlRun_LOG -E
         rlAssertGrep "EK_CERT=[^ ]+" $rlRun_LOG -E
@@ -74,10 +74,10 @@ _EOF"
         #veryfing of ek cert via own custom script, verifying fail
         rlRun "limeUpdateConf tenant ek_check_script /var/lib/keylime/check_ek_script_fail.sh"
         #expected to fail
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c update" 1
+        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist policy.json -f /etc/hostname -c update" 1
         rlAssertGrep "ERROR - External check script failed to validate EK" $rlRun_LOG
     rlPhaseEnd
-    
+
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
@@ -94,4 +94,3 @@ _EOF"
     rlPhaseEnd
 
 rlJournalEnd
-

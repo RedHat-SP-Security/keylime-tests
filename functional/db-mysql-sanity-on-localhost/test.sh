@@ -16,7 +16,7 @@ rlJournalStart
         # backup and configure mysql/mariadb
         rlFileBackup --clean --missing-ok /var/lib/mysql
         rlRun "rm -rf /var/lib/mysql/*"
- 
+
         # check if mariadb is installed and replace it with mysql-server
         PKGS=$( rpm -qa | grep 'mariadb' | xargs echo )
         if [ -n "$PKGS" ]; then
@@ -66,8 +66,8 @@ rlJournalStart
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestLists
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hostname -c add"
+        limeCreateTestPolicy
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist policy.json -f /etc/hostname -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
