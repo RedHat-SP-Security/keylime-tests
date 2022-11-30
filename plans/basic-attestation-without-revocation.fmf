@@ -13,7 +13,6 @@ prepare:
 
 discover:
   how: fmf
-  ref: "@.tmt/ref_disabled.fmf"
   test: 
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
