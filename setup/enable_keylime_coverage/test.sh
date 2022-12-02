@@ -16,7 +16,11 @@ rlJournalStart
 
     rlPhaseStartSetup "Modify keylime systemd unit files"
         id keylime && rlRun "chown -R keylime /var/tmp/limeLib && chmod -R g+w /var/tmp/limeLib"
-	LIBDIR=$( ls -d /usr/local/lib/python*/site-packages )
+        if rpm -q keylime-99 &> /dev/null; then
+            LIBDIR=$( ls -d /usr/local/lib/python*/site-packages )
+        else
+            LIBDIR=$( ls -d /usr/lib/python*/site-packages )
+        fi
 	rlRun "cat > ${LIBDIR}/sitecustomize.py <<_EOF
 import coverage
 coverage.process_startup()

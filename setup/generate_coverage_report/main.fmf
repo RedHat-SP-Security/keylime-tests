@@ -12,6 +12,9 @@ framework: beakerlib
 require:
   - python3-pip
   - yum
+  - git
+  - rpm-build
+  - selinux-policy-devel
 duration: 5m
 enabled: true
 extra-nitrate: TC#0612775

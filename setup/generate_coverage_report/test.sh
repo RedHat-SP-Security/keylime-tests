@@ -96,12 +96,12 @@ rlJournalStart
     # log env variables exported by Packit CI
     env | grep PACKIT_
 
-# generate patch coverage report only if PACKIT variables were populated and we are targeting keylime repo
+# generate patch coverage report when PACKIT variables were populated and we are targeting keylime repo
 if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_SOURCE_URL}" ] && [ -n "${PACKIT_SOURCE_BRANCH}" ] && \
   [ "${PACKIT_TARGET_URL}" == "https://github.com/keylime/keylime" ] && [ -n "${PACKIT_TARGET_BRANCH}" ] && \
   [ -n "${PACKIT_SOURCE_SHA}" ]; then
 
-    rlPhaseStartTest "Generate patch coverage report"
+    rlPhaseStartTest "Generate patch coverage report for upstream keylime"
         # from Packit CI / TMT we do not have the .git dir in /var/tmp/keylime_sources.. so we need to recreate the patch
         # using PACKIT_ variables
         rlRun "TmpDir=\$( mktemp -d )"
@@ -111,6 +111,38 @@ if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_SOURCE_URL}" ] && [ -n "${P
         rlRun "git fetch PR_TARGET"
         rlRun "ANCESTOR_COMMIT=\$( git merge-base ${PACKIT_SOURCE_BRANCH} PR_TARGET/${PACKIT_TARGET_BRANCH} )"
         rlRun "git diff ${ANCESTOR_COMMIT}..${PACKIT_SOURCE_SHA} > $__INTERNAL_limeCoverageDir/patch.txt"
+        rlRun "popd"
+        rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
+        rlRun "rm -rf ${TmpDir}"
+    rlPhaseEnd
+
+# generate patch coverage report when BASELINE_KEYLIME_RPM is defined, comparing against the installed RPM
+elif [ -n "${BASELINE_KEYLIME_RPM}" ]; then
+
+    rlPhaseStartTest "Generate patch coverage report for keylime RPM"
+        rlLogInfo "Using ${BASELINE_KEYLIME_RPM} as a baseline RPM"
+        rlRun "TmpDir=\$( mktemp -d )"
+        rlRun "pushd ${TmpDir}"
+        rlRun "mkdir sources"
+        rlRpmDownload --source ${BASELINE_KEYLIME_RPM}
+        rlRun "rpm -i keylime-*src.rpm"
+        rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
+        rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec && rm -rf ~/rpmbuild/BUILD/keylime*/.git"
+        rlRun "/usr/bin/cp -rf $(echo ~/rpmbuild/BUILD/keylime*)/* sources/"
+        rlRun "pushd sources"
+        rlRun "git init && git config user.email foo@bar.com && git config user.name 'Foo Bar'"
+        rlRun "git add -A && git commit -m 'baseline'"
+        rlRun "popd"
+        rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
+        rlRun "rm keylime-*src.rpm"
+        rlFetchSrcForInstalled keylime
+        rlRun "rpm -i keylime-*src.rpm"
+        rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
+        rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec && rm -rf ~/rpmbuild/BUILD/keylime*/.git"
+        rlRun "/usr/bin/cp -rf $(echo ~/rpmbuild/BUILD/keylime*)/* sources/"
+        rlRun "pushd sources"
+        rlRun "git diff > $__INTERNAL_limeCoverageDir/patch.txt"
+        rlRun "popd"
         rlRun "popd"
         rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
         rlRun "rm -rf ${TmpDir}"
