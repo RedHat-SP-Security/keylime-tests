@@ -11,3 +11,4 @@ tag:
 framework: beakerlib
 duration: 3m
 enabled: true
+extra-nitrate: TC#0614625

@@ -25,3 +25,4 @@ adjust:
   - when: swtpm == yes
     enabled: false
     because: This tests needs TPM device since kernel boot
+extra-nitrate: TC#0614624
