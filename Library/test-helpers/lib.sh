@@ -1401,7 +1401,7 @@ true <<'=cut'
 
 Copy keylime file identified by NAME to the specified DEST location. Eventually, downloads file from keylime Git repository.
 
-    limeCopyKeylimeFile {--source|--install} NAME [DEST]
+    limeCopyKeylimeFile [--install|--source] NAME [DEST]
 
     E.g.
 
@@ -1409,13 +1409,15 @@ Copy keylime file identified by NAME to the specified DEST location. Eventually,
 
 =over
 
-=item -s, --source
-
-Locate file amongst keylime sources present on a system or copy from a Git repo.
-
 =item -i, --install
 
 Locate file amongst keylime files installed on a system (/var/tmp/keylime_sources or /var/tmp/rust-keylime_sources).
+This is the default behavior.
+
+=item -s, --source
+
+Locate file amongst keylime sources present on a system or copy from a Git repo. You should avoid using --source
+unless it is really necessary (e.g. file you need is not being shipped/installed).
 
 =item NAME
 
@@ -1433,12 +1435,18 @@ Returns 0 when the copy or download of file to actual dir is succesfull.
 
 limeCopyKeylimeFile(){
 
-    local OPTION=$1
-    local NAME=$2
-    local DEST=$3
+    local OPTION="--install"
 
-    if [ -z "${OPTION}" ] || [ -z "${NAME}" ]; then
-        echo "Parameters are empty."
+    if [ "$1" == "--install" -o "$1" == "--source" ]; then
+        OPTION="$1"
+        shift
+    fi
+
+    local NAME=$1
+    local DEST=$2
+
+    if [ -z "${NAME}" ]; then
+        echo "Parameter NAME was not provided."
         return 1
     fi
 
