@@ -24,6 +24,7 @@ Dummy package that prevents replacing installed keylime bits with keylime RPM
 rm -f /etc/systemd/system/{keylime_*.service,keylime_agent_secure.mount}
 rm -f /usr/local/bin/keylime_*
 rm -rf /usr/local/lib/python*/site-packages/keylime-*.egg
+rm -rf /usr/share/keylime
 systemctl daemon-reload
 
 %files
