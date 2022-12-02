@@ -84,6 +84,10 @@ _EOF'
 tpm_hash_alg = sha256
 _EOF'
 
+        # install scripts to /usr/share/keylime
+        rlRun "mkdir -p /usr/share/keylime"
+        rlRun "cp -r scripts /usr/share/keylime/"
+
         if $INSTALL_SERVICE_FILES; then
             rlRun "cd services; bash installer.sh"
             rlRun "systemctl daemon-reload"
