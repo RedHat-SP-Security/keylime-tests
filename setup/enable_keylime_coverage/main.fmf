@@ -13,7 +13,6 @@ require:
   - python3-devel
   - yum
   - gcc
-recommend:
 duration: 5m
 enabled: true
 extra-nitrate: TC#0612766
