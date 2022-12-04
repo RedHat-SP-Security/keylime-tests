@@ -15,7 +15,7 @@ UPLOAD_URL=https://transfer.sh
 # PACKIT_TARGET_BRANCH - branch which PR targets
 # PACKIT_SOURCE_SHA - last commit in the PACKIT_SOURCE_BRANCH
 
-[ -n "${PATCH_COVERAGE_TRESHOLD}" ] || PATCH_COVERAGE_TRESHOLD=0
+[ -n "${PATCH_COVERAGE_THRESHOLD}" ] || PATCH_COVERAGE_THRESHOLD=0
 
 # for Packit PRs we would be uploading code coverage files unless forbidden
 [ -n "${PACKIT_SOURCE_URL}" -a -z "${UPLOAD_COVERAGE}" ] && UPLOAD_COVERAGE=1
@@ -112,7 +112,7 @@ if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_SOURCE_URL}" ] && [ -n "${P
         rlRun "ANCESTOR_COMMIT=\$( git merge-base ${PACKIT_SOURCE_BRANCH} PR_TARGET/${PACKIT_TARGET_BRANCH} )"
         rlRun "git diff ${ANCESTOR_COMMIT}..${PACKIT_SOURCE_SHA} > $__INTERNAL_limeCoverageDir/patch.txt"
         rlRun "popd"
-        rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
+        rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_THRESHOLD}"
         rlRun "rm -rf ${TmpDir}"
     rlPhaseEnd
 
@@ -160,7 +160,7 @@ elif [ -n "${BASELINE_KEYLIME_RPM}" ]; then
             rlRun "git diff > $__INTERNAL_limeCoverageDir/patch.txt"
             rlRun "popd"
             rlRun "popd"
-            rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
+            rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_THRESHOLD}"
             rlRun "rm -rf ${TmpDir}"
 
         fi
