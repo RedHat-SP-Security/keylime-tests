@@ -25,8 +25,10 @@ rlJournalStart
 import coverage
 coverage.process_startup()
 _EOF"
-	grep -q COVERAGE_PROCESS_START /etc/bashrc || rlRun "echo 'export COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc' >> /etc/bashrc"
-        for F in agent verifier registrar; do
+        grep -q COVERAGE_PROCESS_START /etc/bashrc || rlRun "echo 'export COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc' >> /etc/bashrc"
+        SERVICES="verifier registrar"
+        limeIsPythonAgent && SERVICES="${SERVICES} agent"
+        for F in ${SERVICES}; do
             rlRun "mkdir -p /etc/systemd/system/keylime_${F}.service.d"
             rlRun "cat > /etc/systemd/system/keylime_${F}.service.d/10-coverage.conf <<_EOF
 [Service]
