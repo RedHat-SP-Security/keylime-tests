@@ -124,14 +124,22 @@ elif [ -n "${BASELINE_KEYLIME_RPM}" ]; then
         # BASELINE_KEYLIME_RPM=previous means we will try to find previous NVR
         if [ "${BASELINE_KEYLIME_RPM}" == "previous" ]; then
             rlLogInfo "Searching for previous package version"
-            rlRun -s "dnf list keylime --available --exclude $(rpm -q keylime)"
+            # list available keylime versions and choosing the last one before the currently installed one
+            rlRun -s "dnf list keylime --available --exclude $(rpm -q keylime) --disablerepo testing-farm-tag-repository"
             PREV_NVR=$( awk '/Available Packages/ { getline; print $2 }' $rlRun_LOG )
             if [ -z "${PREV_NVR}" ]; then
                 rlFail "Did not find previous package version"
                 BASELINE_KEYLIME_RPM=""
             else
-                BASELINE_KEYLIME_RPM=keylime-${PREV_NVR}
-                rlLogInfo "Using ${BASELINE_KEYLIME_RPM} as a baseline RPM"
+                rpmdev-vercmp ${PREV_NVR} $(rpm -q --qf '%{VERSION}-%{RELEASE}' keylime)
+                NVR_TEST=$?
+                if [ ${NVR_TEST} -eq 12 ]; then
+                    BASELINE_KEYLIME_RPM=keylime-${PREV_NVR}
+                    rlLogInfo "Using ${BASELINE_KEYLIME_RPM} as a baseline RPM"
+                else
+                    rlFail "Package version found ${PREV_NVR} is not lower than currently installed $(rpm -q keylime)"
+                    BASELINE_KEYLIME_RPM=""
+                fi
             fi
         fi
 
