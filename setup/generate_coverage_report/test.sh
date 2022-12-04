@@ -120,32 +120,51 @@ if [ -d /var/tmp/keylime_sources ] && [ -n "${PACKIT_SOURCE_URL}" ] && [ -n "${P
 elif [ -n "${BASELINE_KEYLIME_RPM}" ]; then
 
     rlPhaseStartTest "Generate patch coverage report for keylime RPM"
-        rlLogInfo "Using ${BASELINE_KEYLIME_RPM} as a baseline RPM"
-        rlRun "TmpDir=\$( mktemp -d )"
-        rlRun "pushd ${TmpDir}"
-        rlRun "mkdir sources"
-        rlRpmDownload --source ${BASELINE_KEYLIME_RPM}
-        rlRun "rpm -i keylime-*src.rpm"
-        rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
-        rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec && rm -rf ~/rpmbuild/BUILD/keylime*/.git"
-        rlRun "/usr/bin/cp -rf $(echo ~/rpmbuild/BUILD/keylime*)/* sources/"
-        rlRun "pushd sources"
-        rlRun "git init && git config user.email foo@bar.com && git config user.name 'Foo Bar'"
-        rlRun "git add -A && git commit -m 'baseline'"
-        rlRun "popd"
-        rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
-        rlRun "rm keylime-*src.rpm"
-        rlFetchSrcForInstalled keylime
-        rlRun "rpm -i keylime-*src.rpm"
-        rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
-        rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec && rm -rf ~/rpmbuild/BUILD/keylime*/.git"
-        rlRun "/usr/bin/cp -rf $(echo ~/rpmbuild/BUILD/keylime*)/* sources/"
-        rlRun "pushd sources"
-        rlRun "git diff > $__INTERNAL_limeCoverageDir/patch.txt"
-        rlRun "popd"
-        rlRun "popd"
-        rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
-        rlRun "rm -rf ${TmpDir}"
+
+        # BASELINE_KEYLIME_RPM=previous means we will try to find previous NVR
+        if [ "${BASELINE_KEYLIME_RPM}" == "previous" ]; then
+            rlLogInfo "Searching for previous package version"
+            rlRun -s "dnf list keylime --available --exclude $(rpm -q keylime)"
+            PREV_NVR=$( awk '/Available Packages/ { getline; print $2 }' $rlRun_LOG )
+            if [ -z "${PREV_NVR}" ]; then
+                rlFail "Did not find previous package version"
+                BASELINE_KEYLIME_RPM=""
+            else
+                BASELINE_KEYLIME_RPM=keylime-${PREV_NVR}
+                rlLogInfo "Using ${BASELINE_KEYLIME_RPM} as a baseline RPM"
+            fi
+        fi
+
+        if [ -n "${BASELINE_KEYLIME_RPM}" ]; then
+
+            rlRun "TmpDir=\$( mktemp -d )"
+            rlRun "pushd ${TmpDir}"
+            rlRun "mkdir sources"
+            rlRpmDownload --source ${BASELINE_KEYLIME_RPM}
+            rlRun "rpm -i keylime-*src.rpm"
+            rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
+            rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec && rm -rf ~/rpmbuild/BUILD/keylime*/.git"
+            rlRun "/usr/bin/cp -rf $(echo ~/rpmbuild/BUILD/keylime*)/* sources/"
+            rlRun "pushd sources"
+            rlRun "git init && git config user.email foo@bar.com && git config user.name 'Foo Bar'"
+            rlRun "git add -A && git commit -m 'baseline'"
+            rlRun "popd"
+            rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
+            rlRun "rm keylime-*src.rpm"
+            rlFetchSrcForInstalled keylime
+            rlRun "rpm -i keylime-*src.rpm"
+            rlRun "rpmbuild --clean ~/rpmbuild/SPECS/keylime.spec"
+            rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec && rm -rf ~/rpmbuild/BUILD/keylime*/.git"
+            rlRun "/usr/bin/cp -rf $(echo ~/rpmbuild/BUILD/keylime*)/* sources/"
+            rlRun "pushd sources"
+            rlRun "git diff > $__INTERNAL_limeCoverageDir/patch.txt"
+            rlRun "popd"
+            rlRun "popd"
+            rlRun "./patchcov.py ${__INTERNAL_limeCoverageDir}/patch.txt ${__INTERNAL_limeCoverageDir}/.coverage ${PATCH_COVERAGE_TRESHOLD}"
+            rlRun "rm -rf ${TmpDir}"
+
+        fi
+
     rlPhaseEnd
 
 fi
