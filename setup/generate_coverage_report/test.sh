@@ -15,6 +15,8 @@ UPLOAD_URL=https://transfer.sh
 # PACKIT_TARGET_BRANCH - branch which PR targets
 # PACKIT_SOURCE_SHA - last commit in the PACKIT_SOURCE_BRANCH
 
+# PATCH_COVERAGE_THRESHOLD=total means the patch coverage should be
+# same or larger than the current total coverage
 [ -n "${PATCH_COVERAGE_THRESHOLD}" ] || PATCH_COVERAGE_THRESHOLD=0
 
 # for Packit PRs we would be uploading code coverage files unless forbidden
@@ -70,7 +72,10 @@ rlJournalStart
         ls -l .coverage*
         rlLogInfo "combined code coverage summary report"
         rlRun "coverage html --include '*keylime*' $OMIT_FILES --show-contexts"
-        rlRun "coverage report --include '*keylime*' $OMIT_FILES"
+        rlRun -s "coverage report --include '*keylime*' $OMIT_FILES"
+        CURRENT_COVERAGE=$( sed -nE 's/TOTAL.* ([0-9]*)%/\1/ p' $rlRun_LOG )
+	rlLogInfo "Current total coverage is ${CURRENT_COVERAGE}%"
+	[ "${PATCH_COVERAGE_THRESHOLD}" == "total" ] && PATCH_COVERAGE_THRESHOLD=${CURRENT_COVERAGE}
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
