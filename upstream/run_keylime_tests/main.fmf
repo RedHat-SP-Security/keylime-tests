@@ -4,6 +4,8 @@ component:
   - keylime
 test: ./test.sh
 framework: beakerlib
+tag:
+  - upstream
 require:
   - yum
   - openssl
