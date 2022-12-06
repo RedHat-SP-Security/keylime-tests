@@ -6,7 +6,9 @@ rlJournalStart
 
     rlPhaseStartSetup "Install coverage script its dependencies"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun 'pip3 install coverage'
+        rpm -q python3-coverage && rlRun "rpm -e python3-coverage"
+        rlRun "pip3 install coverage"
+        INSTALL_DIR=$( dirname $(find /usr/local/lib*/python*/site-packages -name coverage ) )
         rlRun "touch $__INTERNAL_limeCoverageDir/enabled"
     rlPhaseEnd
 
@@ -16,12 +18,16 @@ rlJournalStart
 
     rlPhaseStartSetup "Modify keylime systemd unit files"
         id keylime && rlRun "chown -R keylime /var/tmp/limeLib && chmod -R g+w /var/tmp/limeLib"
+        LOCAL_LIBDIR=$( ls -d /usr/local/lib/python*/site-packages )
+        SYSTEM_LIBDIR=$( ls -d /usr/lib/python*/site-packages )
         if rpm -q keylime-99 &> /dev/null; then
-            LIBDIR=$( ls -d /usr/local/lib/python*/site-packages )
+            LIBDIR=${LOCAL_LIBDIR}
         else
-            LIBDIR=$( ls -d /usr/lib/python*/site-packages )
+            LIBDIR=${SYSTEM_LIBDIR}
         fi
 	rlRun "cat > ${LIBDIR}/sitecustomize.py <<_EOF
+import sys
+sys.path.append(\"${INSTALL_DIR}\")
 import coverage
 coverage.process_startup()
 _EOF"
