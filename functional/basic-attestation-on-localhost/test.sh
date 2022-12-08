@@ -5,7 +5,6 @@
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
 [ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
 HTTP_SERVER_PORT=8080
-AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
 rlJournalStart
 
@@ -30,6 +29,7 @@ rlJournalStart
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications false"
         fi
+        rlRun "limeUpdateConf agent uuid '\"hash_ek\"'"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -43,6 +43,7 @@ rlJournalStart
             rlRun "limeStartIMAEmulator"
         fi
         sleep 5
+        AGENT_ID=$( tpm2_nvread 0x1c00002 | openssl x509 -inform DER -pubkey -noout | sha256sum | cut -d ' ' -f 1)
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
@@ -80,32 +81,6 @@ _EOF"
         rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
-    rlPhaseStartTest "Running allowed scripts should not affect attestation"
-        rlRun "${TESTDIR}/good-script1.sh"
-        rlRun "${TESTDIR}/good-script2.sh"
-        rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script1.sh"
-        rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script2.sh"
-	rlRun "sleep 5"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-    rlPhaseEnd
-
-    rlPhaseStartTest "Fail keylime agent"
-        rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/bad-script.sh && chmod a+x $TESTDIR/bad-script.sh"
-        rlRun "$TESTDIR/bad-script.sh"
-        rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/bad-script.sh" $(limeVerifierLogfile)
-        rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
-        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
-            rlRun "tail -20 $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
-            rlAssertNotExists /var/tmp/test_payload_file
-            cat ${HTTP_SERVER_LOG}
-            rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${HTTP_SERVER_LOG} -i
-            rlAssertNotGrep ERROR ${HTTP_SERVER_LOG} -i
-        fi
-    rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "kill ${HTTP_SERVER_PID}"
