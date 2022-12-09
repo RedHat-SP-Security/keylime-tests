@@ -11,7 +11,6 @@ adjust:
 prepare:
   - how: shell
     script:
-     - rm -f /etc/yum.repos.d/tag-repository.repo
      - dnf config-manager --set-enabled updates-testing updates-testing-modular
      - systemctl disable --now dnf-makecache.service || true
      - systemctl disable --now dnf-makecache.timer || true
