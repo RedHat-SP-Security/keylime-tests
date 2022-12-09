@@ -3,6 +3,7 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 BEAKERLIB_SCRIPT=/usr/share/beakerlib/logging.sh
+[ -n "${AVC_CHECK_AUSEARCH_PARAMS}" ] || AVC_CHECK_AUSEARCH_PARAMS=""
 
 rlJournalStart
 
@@ -27,7 +28,7 @@ _EOF
             CODE=$(cat <<_EOF
 if [[ \${AVC_ERROR} != *"no_avc_check"* ]]; then \
 echo ":: Test phase SELinux AVC denials since test phase start:: \${__INTERNAL_TIMESTAMP_AVC}:"; \
-ausearch -m AVC -ts \${__INTERNAL_TIMESTAMP_AVC} --input-logs && rlFail "Found SELinux AVC denials within a test phase!"; \
+ausearch -m AVC -ts \${__INTERNAL_TIMESTAMP_AVC} --input-logs ${AVC_CHECK_AUSEARCH_PARAMS} && rlFail "Found SELinux AVC denials within a test phase!"; \
 fi
 _EOF
 )
