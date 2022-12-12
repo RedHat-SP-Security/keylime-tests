@@ -7,3 +7,5 @@ context:
 environment:
   KEYLIME_UPSTREAM_URL: "https://github.com/keylime/keylime.git"
   KEYLIME_UPSTREAM_BRANCH: "master"
+  RUST_KEYLIME_UPSTREAM_URL: "https://github.com/keylime/rust-keylime.git"
+  RUST_KEYLIME_UPSTREAM_BRANCH: "master"

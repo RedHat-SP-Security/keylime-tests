@@ -19,9 +19,11 @@ rlJournalStart
         rlRun "pushd /var/tmp/rust-keylime_sources"
 
         # when TPM_BINARY_MEASUREMENTS is defined, change filepath in sources
+        SRC_FILES="src/common.rs src/main.rs keylime-agent/src/common.rs keylime-agent/src/main.rs"
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
-            rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/common.rs"
-            rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' src/main.rs"
+            for FILE in ${SRC_FILES}; do
+                [ -f ${FILE} ] && rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' $FILE"
+            done
         fi
         rlRun "cargo build"
         rlAssertExists target/debug/keylime_agent
