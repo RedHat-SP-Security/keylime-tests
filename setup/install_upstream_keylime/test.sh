@@ -33,10 +33,11 @@ repo_gpgcheck=0
 enabled=1
 enabled_metadata=1
 _EOF'
-            RHEL_EXTRA_PKGS="cfssl python3-pip python3-typing-extensions"
-            RHEL_EXTRA_ARGS="--enablerepo epel"
+            RHEL_EXTRA_PKGS="cfssl python3-pip"
             if rlIsRHEL 8 || rlIsCentOS 8; then
                 RHEL_EXTRA_PIP_PKGS="packaging"
+                RHEL_EXTRA_PKGS="$RHEL_EXTRA_PKGS python3-typing-extensions"
+                RHEL_EXTRA_ARGS="--enablerepo epel"
             else
                 RHEL_EXTRA_PKGS="$RHEL_EXTRA_PKGS python3-packaging"
             fi
