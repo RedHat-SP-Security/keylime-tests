@@ -5,7 +5,7 @@ However, the content is relevant also when you want to test changes made in keyl
 ## Running tests on a local test system
 
 The following distributions are supported and tested via Packit CI.
- * Stable Fedora distributions (Fedora-34, Fedora-35)
+ * Stable Fedora distributions (Fedora-36, Fedora-37)
  * Fedora Rawhide
  * CentOS Stream 9 / RHEL-9
 
@@ -34,12 +34,12 @@ Before running tests you may want to modify those plans in order to run only the
 
 To list all the test plans and tests that would be executed you can run:
 ```
-$ tmt -c distro=fedora-35 run -vvv discover
+$ tmt -c distro=fedora-37 run -vvv discover
 ```
 
 To execute all test plans against the local system one would run the following command:
 ```
-$ tmt -c distro=fedora-35 run -vvv prepare discover provision -h local execute
+$ tmt -c distro=fedora-37 run -vvv prepare discover provision -h local execute
 ```
 However, this way of running tests is not recommended and you should rather use the `provision -h virtual` method to run tests in a virtual system (more on that below).
 
@@ -73,21 +73,21 @@ First you need to install `tmt` tool and clone tests repository.
 $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 ```
 
-Then you can run all test plans e.g. on F35 system.
+Then you can run all test plans e.g. on F37 system.
 
 ```
 $ cd keylime-tests
-$ tmt -c distro=fedora=35 run -vvv discover prepare provision -h virtual -i Fedora-35 -c system execute report finish
+$ tmt -c distro=fedora=37 run -vvv discover prepare provision -h virtual -i Fedora-37 -c system execute report finish
 ```
 
-The above command will download Fedora-35 image and use it for a newly created virtual
+The above command will download Fedora-37 image and use it for a newly created virtual
 system. Also, due to `finish` command the system will be disposed when tests are executed.
 However, for debugging purposes you may want to access test system once
 tests are finished. The `login` command used below will give you a shell after all tests are finished.
 
 ```
 $ cd keylime-tests
-$ tmt run -vvv prepare discover provision -h virtual -i Fedora-35 -c system execute login report finish
+$ tmt run -vvv prepare discover provision -h virtual -i Fedora-37 -c system execute login report finish
 ```
 
 You can use it to inspect test logs or even modify test sources and run your tests
@@ -106,11 +106,11 @@ $ tmt -c distro=centos-stream-9 run -vvv discover prepare provision -h virtual -
 
 In case you do not want to run tests from all plans the easiest option would be to instruct `tmt` to run only specific plan.
 ```
-$ tmt run -vvv plan -n upstream-keylime-tests-github-ci discover prepare provision -h virtual -i Fedora-35 -c system execute report finish
+$ tmt run -vvv plan -n upstream-keylime-tests-github-ci discover prepare provision -h virtual -i Fedora-37 -c system execute report finish
 ```
 Eventually, you can run only specific tests from the plan.
 ```
-$ tmt run -vvv plan -n upstream-keylime-tests-github-ci discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' prepare provision -h virtual -i Fedora-35 -c system execute report finish
+$ tmt run -vvv plan -n upstream-keylime-tests-github-ci discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'functional/basic-attestation' prepare provision -h virtual -i Fedora-37 -c system execute report finish
 ```
 This will run only tests whose names contains provided regexp patterns.
 
@@ -129,12 +129,12 @@ $ git clone https://github.com/RedHat-SP-Security/keylime-tests.git
 
 In the next step we will start 3 virtual systems using `tmt`.
 
-In case you do not have Fedora-35 image already downloaded (in `/var/tmp/tmt/testcloud/images`) you may want to run commands below in the 1st terminal first to avoid simultaneous downloads.
+In case you do not have Fedora-37 image already downloaded (in `/var/tmp/tmt/testcloud/images`) you may want to run commands below in the 1st terminal first to avoid simultaneous downloads.
 
 On all terminals:
 ```
 $ cd keylime-tests
-$ tmt run -vvv prepare discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'Multihost/basic-attestation' provision -h virtual -i Fedora-35 -c system execute login finish
+$ tmt run -vvv prepare discover -h fmf -t 'configure_tpm_emulator' -t 'install_upstream_keylime' -t 'Multihost/basic-attestation' provision -h virtual -i Fedora-37 -c system execute login finish
 ```
 
 Multihost test won't be run properly but at least tmt will install all test requirements and do the setup.
@@ -177,11 +177,11 @@ fork `keylime-tests` repository too and point the plan to your fork by updating 
 
 Check what plans and tests are configured and modify them when necessary.
 ```
-$ tmt -c distro=fedora-35 run -vvv discover
+$ tmt -c distro=fedora-37 run -vvv discover
 ```
 
 Now, you can run tests using the `tmt` command as described in the section above. E.g. using:
 ```
-$ tmt -c distro=fedora-35 run -vvv plan -n e2e-with-revocation discover prepare provision -h virtual -i Fedora-35 -c system execute report finish
+$ tmt -c distro=fedora-37 run -vvv plan -n e2e-with-revocation discover prepare provision -h virtual -i Fedora-37 -c system execute report finish
 ```
 `tmt` will upload keylime sources from the (current) repository to the provisioned virtual system and the task/test `/setup/install_upstream_keylime` from a test plan takes care of installing keylime from those uploaded sources before proceeding with other tests.
