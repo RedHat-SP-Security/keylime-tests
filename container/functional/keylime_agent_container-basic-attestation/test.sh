@@ -14,7 +14,7 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         #getting ip of host
-        SERVER_IP=$(hostname -I | xargs)
+        SERVER_IP=$( hostname -I | awk '{ print $1 }' )
 
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
