@@ -19,7 +19,7 @@ rlJournalStart
         rlRun "rpm -Uvh $RPMPKG"
         # for RHEL and CentOS Stream configure Sergio's copr repo providing necessary dependencies
         if rlIsFedora; then
-            FEDORA_EXTRA_PKGS="python3-lark-parser python3-packaging"
+            EXTRA_PKGS="python3-lark-parser python3-packaging"
         else
             rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
 [copr:copr.fedorainfracloud.org:scorreia:keylime]
@@ -32,23 +32,23 @@ gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/pubke
 repo_gpgcheck=0
 enabled=1
 enabled_metadata=1
+priority=999
 _EOF'
-            RHEL_EXTRA_PKGS="cfssl python3-pip"
             if rlIsRHEL 8 || rlIsCentOS 8; then
-                RHEL_EXTRA_PIP_PKGS="packaging"
-                RHEL_EXTRA_PKGS="$RHEL_EXTRA_PKGS python3-typing-extensions"
-                RHEL_EXTRA_ARGS="--enablerepo epel"
+                EXTRA_PKGS="python3-pip python3-typing-extensions"
+                EXTRA_DNF_ARGS="--enablerepo epel"
+                EXTRA_PIP_PKGS="packaging"
             else
-                RHEL_EXTRA_PKGS="$RHEL_EXTRA_PKGS python3-packaging"
+                EXTRA_PKGS="python3-packaging python3-lark-parser"
             fi
         fi
-        rlRun "yum -y install $FEDORA_EXTRA_PKGS $RHEL_EXTRA_PKGS git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-pyasn1-modules python3-jinja2 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch ${RHEL_EXTRA_ARGS}"
+        rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-pyasn1-modules python3-jinja2 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "yum -y install python3-zmq"
         fi
         # need to install few more pgs from pip on RHEL
-        if ! rlIsFedora; then
-            rlRun "pip3 install lark-parser $RHEL_EXTRA_PIP_PKGS"
+        if [ -n "$EXTRA_PIP_PKGS" ]; then
+            rlRun "pip3 install lark-parser $EXTRA_PIP_PKGS"
         fi
         if [ -d /var/tmp/keylime_sources ]; then
             rlLogInfo "Installing keylime from /var/tmp/keylime_sources"
