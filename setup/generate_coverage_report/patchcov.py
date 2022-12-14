@@ -170,7 +170,7 @@ def get_patch_coverage(patch_path, db_path):
 
     # print total coverage and legend
     print('-'*80)
-    frac_coverage = 0 if code_lines_total == 0 else round(code_lines_covered*100/code_lines_total)
+    frac_coverage = 100 if code_lines_total == 0 else round(code_lines_covered*100/code_lines_total)
     print('Overall patch coverage: {} %, {} out of {} lines are covered by a test'.format(frac_coverage, code_lines_covered, code_lines_total))
     print('\nLegend:')
     print('  +  there are additional tests executing this line')
