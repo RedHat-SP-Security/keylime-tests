@@ -10,6 +10,8 @@ description: |
     Verifiers that container passed with agent attestation.
     Do changes in scripts monitored by agents and confirm they fail attestation accordingly.    
 contact: Patrik Koncity <pkoncity@redhat.com>
+tag:
+  - container
 component:
   - keylime
 test: ./test.sh
