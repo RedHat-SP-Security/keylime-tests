@@ -17,10 +17,9 @@ rlJournalStart
         RPMPKG=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
         # replace installed keylime with our newly built dummy package
         rlRun "rpm -Uvh $RPMPKG"
-        # for RHEL and CentOS Stream configure Sergio's copr repo providing necessary dependencies
-        if rlIsFedora; then
-            EXTRA_PKGS="python3-lark-parser python3-packaging"
-        else
+        EXTRA_PKGS="python3-lark-parser python3-packaging"
+        # for RHEL8 and CentOS Stream8 configure Sergio's copr repo providing necessary dependencies
+        if rlIsRHEL 8 || rlIsCentOS 8; then
             rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
 [copr:copr.fedorainfracloud.org:scorreia:keylime]
 name=Copr repo for keylime owned by scorreia
@@ -34,13 +33,9 @@ enabled=1
 enabled_metadata=1
 priority=999
 _EOF'
-            if rlIsRHEL 8 || rlIsCentOS 8; then
-                EXTRA_PKGS="python3-pip python3-typing-extensions"
-                EXTRA_DNF_ARGS="--enablerepo epel"
-                EXTRA_PIP_PKGS="packaging"
-            else
-                EXTRA_PKGS="python3-packaging python3-lark-parser"
-            fi
+            EXTRA_PKGS="python3-pip python3-typing-extensions"
+            EXTRA_DNF_ARGS="--enablerepo epel"
+            EXTRA_PIP_PKGS="packaging lark-parser"
         fi
         rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-pyasn1-modules python3-jinja2 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
@@ -48,7 +43,7 @@ _EOF'
         fi
         # need to install few more pgs from pip on RHEL
         if [ -n "$EXTRA_PIP_PKGS" ]; then
-            rlRun "pip3 install lark-parser $EXTRA_PIP_PKGS"
+            rlRun "pip3 install $EXTRA_PIP_PKGS"
         fi
         if [ -d /var/tmp/keylime_sources ]; then
             rlLogInfo "Installing keylime from /var/tmp/keylime_sources"

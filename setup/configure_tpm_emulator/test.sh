@@ -47,6 +47,7 @@ gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/pubke
 repo_gpgcheck=0
 enabled=1
 enabled_metadata=1
+priority=999
 _EOF'
         fi
 
