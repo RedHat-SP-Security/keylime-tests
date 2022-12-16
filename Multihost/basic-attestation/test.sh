@@ -477,6 +477,7 @@ export TESTSOURCEDIR=`pwd`
 
 rlJournalStart
     rlPhaseStartSetup
+        MY_IP=$( hostname -I | awk '{ print $1 }' )
         [ -n "$VERIFIER" ] && export VERIFIER_IP=$( get_IP $VERIFIER )
         [ -n "$REGISTRAR" ] && export REGISTRAR_IP=$( get_IP $REGISTRAR )
         [ -n "${AGENT}" ] && export AGENT_IP=$( get_IP ${AGENT} )
@@ -485,12 +486,13 @@ rlJournalStart
         rlLog "REGISTRAR: $REGISTRAR ${REGISTRAR_IP}"
         rlLog "AGENT: ${AGENT} ${AGENT_IP}"
         rlLog "AGENT2: ${AGENT2} ${AGENT2_IP}"
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
+	rlLog "This system is: $(hostname) ${MY_IP}"
 
         ###############
         # common setup
         ###############
 
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         # import keylime library
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
@@ -505,7 +507,6 @@ rlJournalStart
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
-    MY_IP=$( hostname -I | awk '{ print $1 }' )
     if echo " $HOSTNAME $MY_IP " | grep -q " $VERIFIER "; then
         Verifier
     elif echo " $HOSTNAME $MY_IP " | grep -q " ${REGISTRAR} "; then
