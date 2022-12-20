@@ -36,7 +36,7 @@ rlJournalStart
             rlRun "ln -s ~/rpmbuild/BUILD/keylime* /var/tmp/keylime_sources"
         fi
         rlRun "TmpDir=\$( mktemp -d )"
-        rlRun "cp -r /var/tmp/keylime_sources/{test,test-data,tpm_cert_store,scripts} $TmpDir"
+        rlRun "cp -r /var/tmp/keylime_sources/{test,test-data,tpm_cert_store,scripts,templates} $TmpDir"
         pushd $TmpDir/test
         # if TPM emulator is present
         if limeTPMEmulated; then
