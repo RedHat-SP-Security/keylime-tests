@@ -21,6 +21,9 @@ adjust:
         - yum config-manager --set-enabled crb
   - when: distro == centos-stream-8
     enabled: false
+  # disable temporarily on Rawhide since latest Rust agent cannot be compiled
+  - when: distro == fedora-rawhide
+    enabled: false
 
 discover:
   how: fmf
