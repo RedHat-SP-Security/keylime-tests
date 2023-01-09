@@ -8,22 +8,30 @@ context+:
   agent: rust
 
 prepare:
-  how: shell
-  script:
-   - systemctl disable --now dnf-makecache.service || true
-   - systemctl disable --now dnf-makecache.timer || true
+  - how: shell
+    script:
+     - systemctl disable --now dnf-makecache.service || true
+     - systemctl disable --now dnf-makecache.timer || true
 
 adjust:
   - when: distro == centos-stream-9
     prepare+:
-       script+:
-        - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
-        - yum config-manager --set-enabled crb
+      - how: shell
+        script:
+         - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+         - yum config-manager --set-enabled crb
   - when: distro == centos-stream-8
     enabled: false
   # disable temporarily on Rawhide since latest Rust agent cannot be compiled
   - when: distro == fedora-rawhide
     enabled: false
+
+  - when: "distro == fedora-36 or distro == fedora-37"
+    prepare+:
+      - how: shell
+        order: 99
+        script:
+          - yum -y downgrade tpm2-tss
 
 discover:
   how: fmf
