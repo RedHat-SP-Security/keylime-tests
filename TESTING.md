@@ -185,3 +185,32 @@ Now, you can run tests using the `tmt` command as described in the section above
 $ tmt -c distro=fedora-37 run -vvv plan -n e2e-with-revocation discover prepare provision -h virtual -i Fedora-37 -c system execute report finish
 ```
 `tmt` will upload keylime sources from the (current) repository to the provisioned virtual system and the task/test `/setup/install_upstream_keylime` from a test plan takes care of installing keylime from those uploaded sources before proceeding with other tests.
+
+### Example
+In this example we would like to manually run test `/functional/ek-cert-use-ek_check_script` from plan `e2e-with-revocation` for keylime code in [PR#1271](https://github.com/keylime/keylime/pull/1271).
+
+Since this PR will be merged one day and the respective branch could be deleted it is very likely that you won't be able to follow this example using copy&paste method but it should be trivial to modify the procedure to a different PR and test.
+
+Before we run the required test we need to run also all the required setup tasks to ensure that a test system is configured properly. Running other tests is usually not necessary and therefore we can speed things up by skipping them. To do that we have to options. Either we edit the respective plan in `packit-ci.fmf` and delete all unwanted tasks/tests or we list all the required tasks/tests on `tmt` command line. Here we use the second approach. It is not necessary to provide complete test path, providing a pattern that can be find in the required test (or tests) is sufficient. Similarly, we do not need to run other plans and therefore we specify just one plan name.
+
+Also, we want to be able to login to a test system after the test is finished so we can troubleshoot the issue and re-run it manually. For that we use the `login` command on `tmt` command line.
+
+Let's proceed with the actual test execution.
+
+```
+$ git clone https://github.com/maugustosilva/keylime.git
+$ cd keylime
+$ git checkout consistent_agent_add_delete
+$ tmt -c distro=fedora-37 run -vvv plan -n e2e-with-revocation discover -h fmf -t configure_tpm_emulator -t install_upstream_keylime -t ima_policy_signing -t ek-cert-use-ek_check_script prepare provision -h virtual -i Fedora-37 -c system execute login report finish
+```
+
+Now tests should be executed in a newly provisioned virtual system and at the end we should get a shell prompt. To re-run test manually enter a directory with sources and run test script.
+
+```
+# cd /var/tmp/tmt/run-*/packit-ci/e2e-with-revocation/discover/default-0/tests/functional/ek-cert-use-ek_check_script/
+# ./test.sh
+```
+
+This way you can run the test multiple times and also modify its source files to adjust the behavior.
+
+After exiting the original shell a virtual test system will be deleted (due to the `finish` command being provided to `tmt`).
