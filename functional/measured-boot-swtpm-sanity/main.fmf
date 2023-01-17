@@ -40,3 +40,6 @@ adjust:
   - when: agent == rust and faked_measured_boot_log == false
     enabled: false
     because: For Rust agent we are not able to fake measuredboot log during runtime
+  - when: distro == fedora-rawhide
+    enabled: false
+    because: tss2 package is missing in Rawhide
