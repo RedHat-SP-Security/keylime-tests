@@ -1,0 +1,28 @@
+summary: Test basic keylime attestation scenario on localhost
+description: |
+    Split functionality into multiple parts:
+      setup, test, cleanup
+    which can be run either separately or together
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+recommend:
+  - keylime
+duration: 5m
+enabled: true
+
+/all:
+  environment:
+    PHASES: all
+
+/setup:
+  environment:
+    PHASES: setup
+
+/test:
+  environment:
+    PHASES: test
