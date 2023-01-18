@@ -392,7 +392,7 @@ __limeWaitForProcessEnd() {
         echo -n "."
         sleep 1
         # if process has already stopped
-        if ! pgrep -f ${NAME} &> /dev/null; then
+        if ! pgrep -f "${NAME}([[:space:]]|\$)" &> /dev/null; then
             RET=0
             break
         fi
@@ -420,12 +420,12 @@ __limeStopKeylimeService() {
     # otherwise stop the process directly
     else
         # send SIGINT when measuring coverage to generate the report
-        if $__INTERNAL_limeCoverageEnabled && pgrep -f keylime_${NAME} &> /dev/null; then
+        if $__INTERNAL_limeCoverageEnabled && pgrep -f "keylime_${NAME}([[:space:]]|\$)" &> /dev/null; then
             pkill -INT -f keylime_${NAME}
             __limeWaitForProcessEnd keylime_${NAME}
         fi
         # send SIGTERM if not stopped yet
-        if pgrep -f keylime_${NAME} &> /dev/null; then
+        if pgrep -f "keylime_${NAME}([[:space:]]|\$)" &> /dev/null; then
             #if $__INTERNAL_limeCoverageEnabled; then
             #    echo "Process wasn't termnated after SIGINT, coverage data may not be correct"
             #    RET=1
@@ -436,19 +436,21 @@ __limeStopKeylimeService() {
     fi
 
     # send SIGKILL if the process didn't stop yet
-    if pgrep -f keylime_${NAME} &> /dev/null; then
-        pgrep -af keylime_${NAME}
+    if pgrep -f "keylime_${NAME}([[:space:]]|\$)" &> /dev/null; then
+        pgrep -af "keylime_${NAME}([[:space:]]|\$)"
         echo "Process wasn't terminated with SIGTERM, sending SIGKILL signal..."
         RET=9
         pkill -KILL -f keylime_${NAME}
         __limeWaitForProcessEnd keylime_${NAME}
     fi
+
     # in case of an error print tail of service log
     if [ $RET -ne 0 ] && [ -f ${LOGFILE} ]; then
         echo "----- Tail of ${LOGFILE} -----"
         sed -n "$TAIL,\$ p" ${LOGFILE}
         echo "------------------------------"
     fi
+
     # copy .coverage* files to a persistent location
     $__INTERNAL_limeCoverageEnabled && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
 
