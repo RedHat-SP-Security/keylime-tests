@@ -26,3 +26,5 @@ adjust:
   - when: agent == python
     enabled: false
     because: This functionality exist mostly in rust agent.
+extra-nitrate: TC#0614770
+id: cb356842-780f-44f6-91c8-17018678765f
