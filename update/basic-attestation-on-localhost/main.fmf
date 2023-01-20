@@ -15,6 +15,10 @@ recommend:
 duration: 5m
 enabled: true
 
+adjust:
+  - when: "distro == rhel-8 or distro == centos-stream-8"
+    enabled: false
+
 /all:
   environment:
     PHASES: all

@@ -21,6 +21,7 @@ discover:
    # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "/functional/.*"
+   - /update/basic-attestation-on-localhost/all
    # now set zeromq as a default revocation notifier and test it
    - /setup/configure_default_revocation_notifier/zeromq
    - /functional/basic-attestation-on-localhost
