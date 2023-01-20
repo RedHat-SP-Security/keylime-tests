@@ -38,7 +38,7 @@ rlJournalStart
         rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
 
-    rhts-reboot
+    rhts-reboot -t 1800
 
   else
     rlPhaseStartTest "post-reboot IMA test"
