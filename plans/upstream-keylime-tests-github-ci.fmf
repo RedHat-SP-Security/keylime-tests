@@ -45,7 +45,7 @@ adjust:
           - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 #          - yum config-manager --set-enabled powertools
 
-  - when: "distro == fedora-36 or distro == fedora-37"
+  - when: "distro == fedora-36"
     prepare+:
       - how: shell
         order: 99

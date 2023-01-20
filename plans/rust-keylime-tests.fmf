@@ -26,7 +26,7 @@ adjust:
   - when: distro == fedora-rawhide
     enabled: false
 
-  - when: "distro == fedora-36 or distro == fedora-37"
+  - when: "distro == fedora-36"
     prepare+:
       - how: shell
         order: 99

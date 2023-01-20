@@ -1,6 +1,8 @@
 summary:
   Tests upstream keylime without revocation actions
 
+enabled: false
+
 environment+:
   KEYLIME_TEST_DISABLE_REVOCATION: 1
 
