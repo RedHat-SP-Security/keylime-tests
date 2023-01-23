@@ -15,7 +15,7 @@ rlJournalStart
             rlRun "mkdir -p /var/log/keylime"
         fi
         rlServiceStart rsyslog
-        systemctl status rsyslog
+        systemctl status rsyslog --no-pager
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
