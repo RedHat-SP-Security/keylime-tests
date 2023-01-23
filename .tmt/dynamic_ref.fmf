@@ -11,6 +11,9 @@ adjust:
  - when: distro = rhel-9
    ref: rhel-9-main
    continue: false
+ - when: distro = fedora-rawhide
+   ref: fedora-rawhide
+   continue: false
  - when: distro = fedora
    ref: fedora-main
    continue: false
