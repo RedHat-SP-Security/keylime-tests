@@ -61,7 +61,7 @@ Description=swtpm TPM Software emulator
 Type=fork
 ExecStartPre=/usr/bin/mkdir -p /var/lib/tpm/swtpm
 ExecStartPre=/usr/bin/swtpm_setup --tpm-state /var/lib/tpm/swtpm --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
-ExecStart=/usr/bin/swtpm socket --tpmstate dir=/var/lib/tpm/swtpm --log level=4 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
+ExecStart=/usr/bin/swtpm socket --tpmstate dir=/var/lib/tpm/swtpm --log level=1 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
 
 [Install]
 WantedBy=multi-user.target
