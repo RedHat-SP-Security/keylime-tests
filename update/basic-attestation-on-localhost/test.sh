@@ -52,12 +52,12 @@ if echo ${PHASES} | egrep -qi '(setup|all)'; then
         # create some script
         TESTDIR=`limeCreateTestDir`
         rlRun "echo -e '#!/bin/bash\necho This is good-script1' > $TESTDIR/good-script1.sh && chmod a+x $TESTDIR/good-script1.sh"
-        # create allowlist and excludelist
-        rlRun "limeCreateTestLists ${TESTDIR}/*"
+        # create test policy
+        rlRun "limeCreateTestPolicy ${TESTDIR}/*"
     rlPhaseEnd
 
     rlPhaseStartSetup "Add keylime agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt --file /etc/hostname -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --file /etc/hostname -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
