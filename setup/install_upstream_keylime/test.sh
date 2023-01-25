@@ -33,15 +33,20 @@ enabled=1
 enabled_metadata=1
 priority=999
 _EOF'
-            EXTRA_PKGS="python3-pip python3-typing-extensions"
+            EXTRA_PKGS="python3-pip"
             EXTRA_DNF_ARGS="--enablerepo epel"
-            EXTRA_PIP_PKGS="packaging lark-parser"
+            EXTRA_PIP_PKGS="packaging lark-parser typing_extensions"
+        elif rlIsRHEL 9 || rlIsCentOS 9; then
+            EXTRA_PKGS+=" python3-typing-extensions"
+        elif rlIsFedora 36; then
+            EXTRA_PKGS+=" python3-pip"
+            EXTRA_PIP_PKGS="typing_extensions"
         fi
         rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-pyasn1-modules python3-jinja2 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "yum -y install python3-zmq"
         fi
-        # need to install few more pgs from pip on RHEL
+        # need to install few more pgs from pip
         if [ -n "$EXTRA_PIP_PKGS" ]; then
             rlRun "pip3 install $EXTRA_PIP_PKGS"
         fi
