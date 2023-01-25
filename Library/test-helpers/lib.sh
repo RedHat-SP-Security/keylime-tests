@@ -123,11 +123,8 @@ limeServiceUnitFileExists() {
         return 1
     fi
 
-    if systemctl is-enabled $1 2>&1 | grep -q 'Failed to get unit file state'; then
-        return 1
-    else
-        return 0
-    fi
+    systemctl is-enabled $1 2>/dev/null | grep -E -q '(enabled|disabled)'
+
 }
 
 
