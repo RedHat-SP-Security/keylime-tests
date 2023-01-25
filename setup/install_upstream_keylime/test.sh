@@ -87,7 +87,6 @@ _EOF'
 
         if $INSTALL_SERVICE_FILES; then
             rlRun "cd services; bash installer.sh"
-            rlRun "systemctl daemon-reload"
         fi
 
         # fix conf file ownership
