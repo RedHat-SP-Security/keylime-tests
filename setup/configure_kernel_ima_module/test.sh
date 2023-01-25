@@ -36,6 +36,9 @@ rlJournalStart
         fi
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
         rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
+        # ensure debugfs won't be mounted
+        rlRun "rm -f /{lib,etc}/systemd/system/sysinit.target.wants/sys-kernel-debug.mount"
+        rlRun "systemctl daemon-reload"
     rlPhaseEnd
 
     rhts-reboot
