@@ -1,6 +1,0 @@
-summary: Configures kernel ima module using policy ima-policy-signing
-description: Enables ima-policy-signing on a tested system.
-environment:
-    IMA_POLICY_FILE: ima-policy-signing
-    IMA_TEMPLATE: ima-sig
-extra-nitrate: TC#0613883
