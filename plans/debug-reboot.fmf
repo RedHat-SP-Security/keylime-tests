@@ -1,0 +1,14 @@
+summary: Debug reboot
+
+prepare:
+  - how: shell
+    script:
+     - systemctl disable --now dnf-makecache.timer || true
+
+discover:
+  how: fmf
+  test: 
+   - /setup/configure_kernel_ima_module/ima_policy_signing
+
+execute:
+    how: tmt
