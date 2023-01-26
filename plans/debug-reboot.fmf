@@ -5,7 +5,7 @@
     how: fmf
     test: 
      - /setup/plain_reboot
-     - /setup/configure_kernel_ima_module/ima_policy_simple
+     - /setup/configure_kernel_ima_module
 
   execute:
     how: tmt
@@ -17,7 +17,7 @@
     how: fmf
     test: 
      - /setup/plain_reboot
-     - /setup/configure_kernel_ima_module/ima_policy_simple
+     - /setup/configure_kernel_ima_module
 
   execute:
     how: tmt
@@ -29,7 +29,7 @@
     how: fmf
     test: 
      - /setup/plain_reboot
-     - /setup/configure_kernel_ima_module/ima_policy_simple
+     - /setup/configure_kernel_ima_module
 
   execute:
     how: tmt

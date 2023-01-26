@@ -1,6 +1,0 @@
-summary: Configures kernel ima module using policy ima-policy-simple
-description: Enables ima-policy-simple on a tested system.
-environment:
-  IMA_POLICY_FILE: ima-policy-simple
-  IMA_TEMPLATE: ima-ng
-extra-nitrate: TC#0611629

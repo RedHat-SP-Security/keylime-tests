@@ -9,7 +9,7 @@ tag:
 framework: beakerlib
 require:
 - grubby
-duration: 15m
+duration: 5m
 enabled: true
 adjust:
   - when: distro == rhel-8 or distro = centos-stream-8
