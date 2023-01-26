@@ -27,7 +27,7 @@ rlJournalStart
         [ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
         rlRun "touch $COOKIE"
         # generate key and certificate for IMA
-        rlRun "limeInstallIMAKeys"
+        #rlRun "limeInstallIMAKeys"
         # install IMA policy
         rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
