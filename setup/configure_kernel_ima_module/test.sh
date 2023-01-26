@@ -14,7 +14,7 @@ rlJournalStart
 
   if [ ! -e $COOKIE ]; then
     rlPhaseStartSetup "pre-reboot phase"
-        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        #rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
         #rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
@@ -30,8 +30,7 @@ rlJournalStart
         #rlRun "limeInstallIMAKeys"
         # install IMA policy
         #rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
-	rlRun "mkdir /etc/ima"
-        rlRun "cat > /etc/ima/ima-policy<<EOF
+        rlRun "cat > policy<<EOF
 dont_measure fsmagic=0x9fa0
 dont_measure fsmagic=0x62656572
 dont_measure fsmagic=0x64626720
@@ -42,6 +41,9 @@ measure func=BPRM_CHECK
 measure func=FILE_MMAP mask=MAY_EXEC
 measure func=MODULE_CHECK uid=0
 EOF"
+        rlRun "cat policy > /sys/kernel/security/ima/policy"
+	rlRun "mkdir /etc/ima"
+        rlRun "cat policy > /etc/ima/ima-policy"
         rlRun "restorecon -Rv /etc/ima"
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
         #rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
