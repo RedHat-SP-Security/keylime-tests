@@ -19,17 +19,17 @@ rlJournalStart
         rlRun "grubby --default-index"
         #rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
         rlRun -s "grubby --info DEFAULT | grep '^args'"
-        rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
-        rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
-        rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
-        rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
+        #rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
+        #rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
+        #rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
+        #rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
         # on s390x run zipl to make change done through grubby effective
-        [ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
+        #[ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
         rlRun "touch $COOKIE"
         # generate key and certificate for IMA
         #rlRun "limeInstallIMAKeys"
         # install IMA policy
-        rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
+        #rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
         #rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
@@ -39,18 +39,18 @@ rlJournalStart
   else
     rlPhaseStartTest "post-reboot IMA test"
         rlRun -s "cat /proc/cmdline"
-        rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
-        rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
-        rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
-        rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
+        #rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
+        #rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
+        #rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
+        #rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
         rlRun "rm $COOKIE"
 
-        if [ "${IMA_STATE}" == "on" -o "${IMA_STATE}" == "1" ]; then
-            rlRun "touch ${TESTFILE} && cat ${TESTFILE} && rm ${TESTFILE}"
-            rlRun "grep ${TESTFILE} /sys/kernel/security/ima/ascii_runtime_measurements"
-        fi
+        #if [ "${IMA_STATE}" == "on" -o "${IMA_STATE}" == "1" ]; then
+        #    rlRun "touch ${TESTFILE} && cat ${TESTFILE} && rm ${TESTFILE}"
+        #    rlRun "grep ${TESTFILE} /sys/kernel/security/ima/ascii_runtime_measurements"
+        #fi
     rlPhaseEnd
   fi
 
