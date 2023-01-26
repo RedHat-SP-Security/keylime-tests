@@ -17,7 +17,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
-        rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
+        #rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
         rlRun -s "grubby --info DEFAULT | grep '^args'"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
@@ -30,12 +30,8 @@ rlJournalStart
         rlRun "limeInstallIMAKeys"
         # install IMA policy
         rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
-        # clear TPM
-        if ! limeTPMEmulated; then
-            rlRun "tpm2_clear"
-        fi
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
-        rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
+        #rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
 
     rhts-reboot
