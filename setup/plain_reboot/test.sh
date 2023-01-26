@@ -9,6 +9,8 @@ rlJournalStart
   if [ ! -e $COOKIE ]; then
     rlPhaseStartSetup "pre-reboot phase"
         rlRun "grubby --info ALL"
+        rlRun "grubby --update-kernel DEFAULT --args 'rd.shell rd.debug log_buf_len=1M' --remove-args='quiet'"
+        rlRun "grubby --info ALL"
         rlRun "touch $COOKIE"
     rlPhaseEnd
 
