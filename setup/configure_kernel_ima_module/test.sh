@@ -30,6 +30,7 @@ rlJournalStart
         #rlRun "limeInstallIMAKeys"
         # install IMA policy
         #rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
+	rlRun "mkdir /etc/ima"
         rlRun "cat > /etc/ima/ima-policy<<EOF
 dont_measure fsmagic=0x9fa0
 dont_measure fsmagic=0x62656572
@@ -41,6 +42,7 @@ measure func=BPRM_CHECK
 measure func=FILE_MMAP mask=MAY_EXEC
 measure func=MODULE_CHECK uid=0
 EOF"
+        rlRun "restorecon -Rv /etc/ima"
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
         #rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
