@@ -42,9 +42,9 @@ measure func=FILE_MMAP mask=MAY_EXEC
 measure func=MODULE_CHECK uid=0
 EOF"
         rlRun "cat policy > /sys/kernel/security/ima/policy"
-	#rlRun "mkdir /etc/ima"
-        #rlRun "cat policy > /etc/ima/ima-policy"
-        #rlRun "restorecon -Rv /etc/ima"
+	rlRun "mkdir /etc/ima"
+        rlRun "cat policy > /etc/ima/ima-policy"
+        rlRun "restorecon -Rv /etc/ima"
         # FIXME: workaround for issue https://github.com/keylime/keylime/issues/1025
         #rlRun "echo 'd /var/run/keylime 0700 keylime keylime' > /usr/lib/tmpfiles.d/keylime.conf"
     rlPhaseEnd
