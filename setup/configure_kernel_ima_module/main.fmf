@@ -11,7 +11,7 @@ require:
 - grubby
 - tpm2-tools
 - openssl
-duration: 35m
+duration: 60m
 enabled: true
 adjust:
   - when: distro == rhel-8 or distro = centos-stream-8
