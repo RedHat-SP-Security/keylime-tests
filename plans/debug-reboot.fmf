@@ -8,6 +8,8 @@ prepare:
 discover:
   how: fmf
   test: 
+   - /setup/plain_reboot/
+   - /setup/configure_kernel_ima_module/ima_policy_simple
    - /setup/configure_kernel_ima_module/ima_policy_signing
 
 execute:
