@@ -1,16 +1,35 @@
-summary: Debug reboot
+/reboot-run-1:
+  summary: Debug reboot run 1
 
-prepare:
-  - how: shell
-    script:
-     - systemctl disable --now dnf-makecache.timer || true
+  discover:
+    how: fmf
+    test: 
+     - /setup/plain_reboot
+     - /setup/configure_kernel_ima_module/ima_policy_simple
 
-discover:
-  how: fmf
-  test: 
-   - /setup/plain_reboot
-   - /setup/configure_kernel_ima_module/ima_policy_simple
-   #- /setup/configure_kernel_ima_module/ima_policy_signing
+  execute:
+    how: tmt
 
-execute:
+/reboot-run-2:
+  summary: Debug reboot run 2
+
+  discover:
+    how: fmf
+    test: 
+     - /setup/plain_reboot
+     - /setup/configure_kernel_ima_module/ima_policy_simple
+
+  execute:
+    how: tmt
+
+/reboot-run-3:
+  summary: Debug reboot run 3
+
+  discover:
+    how: fmf
+    test: 
+     - /setup/plain_reboot
+     - /setup/configure_kernel_ima_module/ima_policy_simple
+
+  execute:
     how: tmt
