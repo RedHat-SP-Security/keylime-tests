@@ -3,5 +3,5 @@ jobs:
   trigger: pull_request
   metadata:
     targets:
-    - fedora-rawhide
+    - fedora-all
     skip_build: true
