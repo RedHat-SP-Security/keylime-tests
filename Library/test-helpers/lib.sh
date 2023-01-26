@@ -122,7 +122,8 @@ limeServiceUnitFileExists() {
     if ${limeIGNORE_SYSTEMD}; then
         return 1
     fi
-
+    rpm -q systemd 1>&2
+    systemctl is-enabled $1 1>&2
     if systemctl is-enabled $1 2>&1 | grep -q 'Failed to get unit file state'; then
         return 1
     else
