@@ -20,6 +20,7 @@ rlJournalStart
     rlPhaseStartTest "post-reboot IMA test"
         rlRun "grubby --info ALL"
         rlRun "rm $COOKIE"
+	rlRun "sleep 60"
     rlPhaseEnd
   fi
 
