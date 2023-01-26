@@ -1112,6 +1112,12 @@ limeInstallIMAConfig() {
 
     local FILE
     local DEFAULT=ima-policy-simple
+    local RUNTIME=1
+
+    if [ "$1" == "--no-runtime" ]; then
+        RUNTIME=0
+        shift
+    fi
 
     #when no policy has been passed as an argument
     if [ -z "$1" ]; then
@@ -1139,10 +1145,13 @@ limeInstallIMAConfig() {
         echo "Installing IMA policy from ${FILE}"
         mkdir -p /etc/ima/
         cat ${FILE} > /etc/ima/ima-policy && cat ${FILE} > ${__INTERNAL_limeTmpDir}/installed-ima-policy
-        if [ $(cat /sys/kernel/security/ima/policy | wc -l) -eq 0 ]; then
-            cat ${FILE} > /sys/kernel/security/ima/policy
-        else
-            echo "Warning: IMA policy already configured in /sys/kernel/security/ima/policy"
+        # when direct write to /sys/kernel/security/ima/policy is required
+        if [ "${RUNTIME}" == "1" ]; then
+            if [ $(cat /sys/kernel/security/ima/policy | wc -l) -eq 0 ]; then
+                cat ${FILE} > /sys/kernel/security/ima/policy
+            else
+                echo "Warning: IMA policy already configured in /sys/kernel/security/ima/policy"
+            fi
         fi
     fi
 

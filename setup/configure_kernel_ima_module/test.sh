@@ -29,7 +29,7 @@ rlJournalStart
         # generate key and certificate for IMA
         rlRun "limeInstallIMAKeys"
         # install IMA policy
-        rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
+        rlRun "limeInstallIMAConfig --no-runtime ${IMA_POLICY_FILE}"
         # clear TPM
         if ! limeTPMEmulated; then
             rlRun "tpm2_clear"
