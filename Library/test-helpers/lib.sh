@@ -83,6 +83,7 @@ export __INTERNAL_limeCoverageContext
 
 export __INTERNAL_limeIMADir
 export __INTERNAL_limeIMAKeysDir="/etc/keys"
+export __INTERNAL_limeTPMDetails="${__INTERNAL_limeTmpDir}/TPM_info.txt"
 export limeIMAPrivateKey=${__INTERNAL_limeIMAKeysDir}/privkey_evm.pem
 export limeIMAPublicKey=${__INTERNAL_limeIMAKeysDir}/x509_evm.pem
 export limeIMACertificateDER=${__INTERNAL_limeIMAKeysDir}/x509_evm.der
@@ -569,10 +570,15 @@ Returns 0 when the start was successful, non-zero otherwise.
 
 limeStartAgent() {
 
-    # print TPM details
-    echo -e "--- TPM details ---"
-    tpm2_getcap properties-fixed | grep -Pzo '(MANUFACTURER|VENDOR_STRING|FIRMWARE_VERSION).*?\n.*?raw.*?\n(.*?value.*?\n)?'
-    echo -e "-------------------"
+    # save TPM details
+    date >> ${__INTERNAL_limeTPMDetails}
+    echo -e "\n# tpm2_getcap properties-fixed" >> ${__INTERNAL_limeTPMDetails}
+    tpm2_getcap properties-fixed >> ${__INTERNAL_limeTPMDetails}
+    echo -e "\n# tpm2_getcap algorithms" >> ${__INTERNAL_limeTPMDetails}
+    tpm2_getcap algorithms >> ${__INTERNAL_limeTPMDetails}
+    echo -e "\n# tpm2_getcap pcrs" >> ${__INTERNAL_limeTPMDetails}
+    tpm2_getcap pcrs >> ${__INTERNAL_limeTPMDetails}
+    echo >> ${__INTERNAL_limeTPMDetails}
 
     limeStopAgent
     __limeStartKeylimeService agent
@@ -1694,6 +1700,7 @@ Uses rlFileSubmit to submit common logs. Currently these are:
   $limeAgentLogfile
   $limeIMAEmulatorLogfile (if limeTPMEmulated)
   /sys/kernel/security/ima/ascii_runtime_measurements
+  $__INTERNAL_limeTPMDetails
 
     limeSubmitCommonLogs
 
@@ -1720,6 +1727,7 @@ limeSubmitCommonLogs() {
     cat /sys/kernel/security/ima/binary_runtime_measurements > $__INTERNAL_limeTmpDir/binary_runtime_measurements
     gzip -f $__INTERNAL_limeTmpDir/binary_runtime_measurements
     limeLogfileSubmit --silent $__INTERNAL_limeTmpDir/binary_runtime_measurements.gz
+    [ -f ${__INTERNAL_limeTPMDetails} ] && limeLogfileSubmit ${__INTERNAL_limeTPMDetails}
 
 }
 
@@ -2007,6 +2015,9 @@ export COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc
 if ! id ${limeTestUser}; then
     useradd -m --user-group ${limeTestUser} --uid ${limeTestUserUID}
 fi
+
+# delete previously existing TPM data
+rm -f ${__INTERNAL_limeTPMDetails}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Verification
