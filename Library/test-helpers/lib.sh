@@ -848,6 +848,88 @@ limeStopTPMEmulator() {
     esac
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeCheckRemotePort
+
+Use limeCheckRemotePort to check port on specified ip adress.
+
+    limeCheckRemotePort [LOGFILE] [PORT_NUMBER] [IP]
+
+=over
+
+=item
+
+    PORT - Port number to check it.
+
+=item
+
+    IP - IP adress to specify host.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+function limeCheckRemotePort() {
+
+    PORT=$1
+    IP=$2
+
+    echo $IP | grep -q "::" && NMAP_PARAMS="-6"
+
+    nmap -p $PORT $IP $NMAP_PARAMS | grep -E -q "^${PORT}/(tcp|udp) open"
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeWaitForKeylimeService
+
+Use rlWaitForSocket to wait for the services to start or if it's remote,
+use limeCheckRemotePort for check open ports.
+
+    limeWaitForKeylimeService [LOGFILE] [PORT_NUMBER] [IP]
+
+=over
+
+=item
+
+    LOGFILE - Filepath to a log file.
+
+=item
+
+    PORT - Port number to wait for.
+
+=item
+
+    IP - IP adress to wait for.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeWaitForKeylimeService() {
+
+    local LOGFILE=$1
+    local PORT=$2
+    local IP=$3
+
+    if [ -z "${IP}" ]; then
+        if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
+            cat $LOGFILE
+            return 1
+        else
+            return 0
+        fi
+    else
+        rlWaitForCmd "limeCheckRemotePort ${PORT} ${IP}" -m 5 -t ${limeTIMEOUT} -d 1
+    fi
+}
 
 true <<'=cut'
 =pod
@@ -856,13 +938,17 @@ true <<'=cut'
 
 Use rlWaitForSocket to wait for the verifier to start.
 
-    limeWaitForVerifier [PORT_NUMBER]
+    limeWaitForVerifier [PORT_NUMBER] [IP]
 
 =over
 
 =item
 
     PORT_NUMBER - Port number to wait for, 8881 by default.
+
+=item
+
+    IP - IP adress to wait for, local by default.
 
 =back
 
@@ -873,14 +959,11 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeWaitForVerifier() {
 
     local PORT
-    [ -n "$1" ] && PORT=$1 || PORT=8881
-    if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
-        cat $( limeVerifierLogfile )
-        return 1
-    else
-        return 0
-    fi
+    local IP=$2
 
+    [ -n "$1" ] && PORT=$1 || PORT=8881
+
+    limeWaitForKeylimeService $(limeVerifierLogfile) $PORT $IP
 }
 
 true <<'=cut'
@@ -890,13 +973,17 @@ true <<'=cut'
 
 Use rlWaitForSocket to wait for the registrar to start.
 
-    limeWaitForRegistrar [PORT_NUMBER]
+    limeWaitForRegistrar [PORT_NUMBER] [IP]
 
 =over
 
 =item
 
     PORT_NUMBER - Port number to wait for, 8891 by default.
+
+=item
+
+    IP - IP adress to wait for, local by default.
 
 =back
 
@@ -907,13 +994,11 @@ Returns 0 when the start was successful, non-zero otherwise.
 limeWaitForRegistrar() {
 
     local PORT
+    local IP=$2
+
     [ -n "$1" ] && PORT=$1 || PORT=8891
-    if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
-        cat $( limeRegistrarLogfile )
-        return 1
-    else
-        return 0
-    fi
+
+    limeWaitForKeylimeService $(limeRegistrarLogfile) $PORT $IP
 }
 
 
@@ -942,12 +1027,8 @@ limeWaitForAgent() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=9002
-    if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
-        cat $( limeAgentLogfile )
-        return 1
-    else
-        return 0
-    fi
+
+    limeWaitForKeylimeService $( limeAgentLogfile ) $PORT
 }
 
 
@@ -1844,6 +1925,86 @@ limeconPrepareAgentImage() {
 true <<'=cut'
 =pod
 
+=head2 limeconPrepareRegistrarImage
+
+Prepare podman image with keylime registrar. Install keylime registrar.
+
+    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+
+=over
+
+=item -f, --file DOCKER_FILE
+
+Parameter specify use of non-default docker file.
+
+=item TAG
+
+Name of image tag.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconPrepareRegistrarImage() {
+
+    if [ "$1" == "-f" -o "$1" == "--file" ]; then
+        local DOCKER_FILE=$2
+        shift 2
+    else
+        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.registrar"
+        DOCKER_FILE="${limeLibraryDir}/Dockerfile.registrar"
+    fi
+
+    local TAG=$1
+
+    podman build -t=$TAG --file $DOCKER_FILE .
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconPrepareVerifierImage
+
+Prepare podman image with keylime verifier. Install keylime verifier.
+
+    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+
+=over
+
+=item -f, --file DOCKER_FILE
+
+Parameter specify use of non-default docker file.
+
+=item TAG
+
+Name of image tag.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconPrepareVerifierImage() {
+
+    if [ "$1" == "-f" -o "$1" == "--file" ]; then
+        local DOCKER_FILE=$2
+        shift 2
+    else
+        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.verifier"
+        DOCKER_FILE="${limeLibraryDir}/Dockerfile.verifier"
+    fi
+
+    local TAG=$1
+
+    podman build -t=$TAG --file $DOCKER_FILE .
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeconRunAgent
 
 Container run via podman with specified parameters.
@@ -1889,7 +2050,90 @@ limeconRunAgent() {
     local AGENT_FILE=$5
     local TESTDIR=$6
 
-    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --ip ${IP} --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent
+    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconRunRegistrar
+
+Container run via podman with specified parameters.
+
+    limeconRunRegistrar NAME TAG IP NETWORK
+
+=item NAME
+
+Set name of container.
+
+=item TAG
+
+Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunRegistrar() {
+
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+
+
+    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:rw localhost/$TAG /usr/bin/keylime_registrar
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconRunVerifier
+
+Container run via podman with specified parameters.
+
+    limeconRunVerifier NAME TAG IP NETWORK
+
+=item NAME
+
+Set name of container.
+
+=item TAG
+
+Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunVerifier() {
+
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+
+    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/bin/keylime_verifier
 }
 
 true <<'=cut'
@@ -1939,11 +2183,12 @@ limeconPrepareAgentConfdir() {
 true <<'=cut'
 =pod
 
-=head2 limeconStopAgent
+=head2 limeconStop
 
-Stop container and delete container.
+Stop container, delete container and set default permission 
+for agent container if stopping agent container.
 
-    limeconStopAgent NAMES
+    limeconStop NAMES
 
 =over
 
@@ -1955,7 +2200,7 @@ Returns 0.
 
 =cut
 
-limeconStopAgent() {
+limeconStop() {
 
         local NAMES=$1
 
@@ -2040,6 +2285,11 @@ limeLibraryLoaded() {
         rlLogError "Failed loading library keylime/test-helpers."
         return 1
     fi
+
+    local PACKAGES="tpm2-tools openssl beakerlib podman nmap"
+
+    echo -e "\nInstall packages required by the library when missing."
+    rpm -q $PACKAGES || yum -y install $PACKAGES
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
