@@ -44,7 +44,7 @@ rlJournalStart
         TESTDIR_SECOND=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_FIRST/good-script.sh && chmod a+x $TESTDIR_FIRST/good-script.sh"
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_SECOND/good-script.sh && chmod a+x $TESTDIR_SECOND/good-script.sh"
-        #allow container access to /dev/tpmrm0
+        #mandatory for access agent containers to tpm
         rlRun "chmod o+rw /dev/tpmrm0"
 
         #setup of first agent
@@ -117,10 +117,12 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        rlRun "limeconStopAgent 'agent_container.*'"
+        rlRun "limeconStop 'agent_container.*'"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
+        #set tmp resource manager permission to default state
+        rlRun "chmod o-rw /dev/tpmrm0"
         limeExtendNextExcludelist $TESTDIR_FIRST
         limeExtendNextExcludelist $TESTDIR_SECOND
         rlRun "rm -f $TESTDIR_FIRST/*"
