@@ -49,15 +49,18 @@ rlJournalStart
         rlRun "limeStopAgent"
     rlPhaseEnd
 
+    # disable agent_UUID_assignment_options test regarding to bz#2165055
+    if false; then
     rlPhaseStartTest "Generate UUID"
         AGENT_ID="generate"
         rlRun "limeUpdateConf agent  uuid '\"$AGENT_ID\"'"
         rlRun "limeStartAgent"
         sleep 3
-        GENERATE_UUID=$(systemctl status keylime_agent -all | tail -2 | head -1 | grep -oP '(?<=Agent )[^ ]*')
+        GENERATE_UUID=$(journalctl _SYSTEMD_INVOCATION_ID=$(systemctl show -p InvocationID --value keylime_agent.service) | grep -oP '(?<=Generated a new UUID: ).*')
         rlRun "limeWaitForAgentRegistration ${GENERATE_UUID}"
         rlRun "limeStopAgent"
     rlPhaseEnd
+    fi
 
     rlPhaseStartTest "Use ENV variable to set agent UUID"
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c01111"
