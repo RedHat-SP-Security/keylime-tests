@@ -1,7 +1,7 @@
 summary: Tests basic keylime attestation scenario with custom TLS certificates
 description: |
  Running all services on localhost.
- Uses custom generated TLS certificates.
+ Uses custom generated TLS certificates with an intermediate CA in the chain.
  Starts verifier, registrar, agent.
  Registers agent providing a payload with autorun.sh and python revocation script.
  Verifiers that system passed attestation and autorun.sh has been executed.

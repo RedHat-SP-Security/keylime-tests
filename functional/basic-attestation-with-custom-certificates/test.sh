@@ -24,23 +24,26 @@ rlJournalStart
         # registrar = webserver cert used for the registrar server
         # tenant = webclient cert used (twice) by the tenant, running on AGENT server
         # btw, we could live with just one key instead of generating multiple keys.. but that's just how openssl/certgen works
-        rlRun "x509KeyGen ca" 0 "Preparing RSA CA certificate"
-        rlRun "x509KeyGen verifier" 0 "Preparing RSA verifier certificate"
-        rlRun "x509KeyGen verifier-client" 0 "Preparing RSA verifier-client certificate"
-        rlRun "x509KeyGen registrar" 0 "Preparing RSA registrar certificate"
-        rlRun "x509KeyGen tenant" 0 "Preparing RSA tenant certificate"
+        rlRun "x509KeyGen ca" 0 "Generating Root CA RSA key pair"
+        rlRun "x509KeyGen intermediate-ca" 0 "Generating Intermediate CA RSA key pair"
+        rlRun "x509KeyGen verifier" 0 "Generating verifier RSA key pair"
+        rlRun "x509KeyGen verifier-client" 0 "Generating verifier-client RSA key pair"
+        rlRun "x509KeyGen registrar" 0 "Generating registrar RSA key pair"
+        rlRun "x509KeyGen tenant" 0 "Generating tenant RSA key pair"
         #rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
-        rlRun "x509SelfSign ca" 0 "Selfsigning CA certificate"
-        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with our CA certificate"
-        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
-        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
-        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with our CA"
+        rlRun "x509SelfSign ca" 0 "Selfsigning Root CA certificate"
+        rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our Root CA key"
+        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with intermediate CA key"
+        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with intermediate CA key"
+        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with intermediate CA key"
+        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with intermediate CA key"
         #rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
         rlRun "mkdir -p $CERTDIR"
         rlRun "cp $(x509Cert ca) $CERTDIR/cacert.pem"
+        rlRun "cp $(x509Cert intermediate-ca) $CERTDIR/intermediate-cacert.pem"
         rlRun "cp $(x509Cert verifier) $CERTDIR/verifier-cert.pem"
         rlRun "cp $(x509Key verifier) $CERTDIR/verifier-key.pem"
         rlRun "cp $(x509Cert verifier-client) $CERTDIR/verifier-client-cert.pem"
@@ -59,8 +62,8 @@ rlJournalStart
         # verifier
         rlRun "limeUpdateConf verifier check_client_cert True"
         rlRun "limeUpdateConf verifier tls_dir $CERTDIR"
-        rlRun "limeUpdateConf verifier trusted_server_ca '[\"cacert.pem\"]'"
-        rlRun "limeUpdateConf verifier trusted_client_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf verifier trusted_server_ca '[\"intermediate-cacert.pem\", \"cacert.pem\"]'"
+        rlRun "limeUpdateConf verifier trusted_client_ca '[\"intermediate-cacert.pem\", \"cacert.pem\"]'"
         rlRun "limeUpdateConf verifier server_cert verifier-cert.pem"
         rlRun "limeUpdateConf verifier server_key verifier-key.pem"
         rlRun "limeUpdateConf verifier client_cert ${CERTDIR}/verifier-client-cert.pem"
@@ -71,22 +74,25 @@ rlJournalStart
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
-        rlRun "limeUpdateConf tenant trusted_server_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf tenant trusted_server_ca '[\"intermediate-cacert.pem\", \"cacert.pem\"]'"
         rlRun "limeUpdateConf tenant client_cert tenant-cert.pem"
         rlRun "limeUpdateConf tenant client_key tenant-key.pem"
         # registrar
         rlRun "limeUpdateConf registrar check_client_cert True"
         rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
-        rlRun "limeUpdateConf registrar trusted_client_ca '[\"cacert.pem\"]'"
+        rlRun "limeUpdateConf registrar trusted_client_ca '[\"intermediate-cacert.pem\", \"cacert.pem\"]'"
         rlRun "limeUpdateConf registrar server_cert registrar-cert.pem"
         rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # agent
         if limeIsPythonAgent; then
-            rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/cacert.pem\"]'"
+            rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/intermediate-cacert.pem\", \"${CERTDIR}/cacert.pem\"]'"
             rlRun "limeUpdateConf agent server_key agent-key.pem"
             rlRun "limeUpdateConf agent server_cert agent-cert.pem"
         else
-            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
+            # For rust agent the trusted_client_ca is a single file
+            # See: https://github.com/keylime/rust-keylime/issues/455
+            rlRun "cat ${CERTDIR}/intermediate-cacert.pem ${CERTDIR}/cacert.pem> ${CERTDIR}/cabundle.pem"
+            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cabundle.pem\"'"
             rlRun "limeUpdateConf agent server_key '\"agent-key.pem\"'"
             rlRun "limeUpdateConf agent server_cert '\"agent-cert.pem\"'"
         fi
