@@ -53,7 +53,7 @@ rlJournalStart
         rlRun -s "tpm2_pcrread sha256:23"
         rlAssertNotGrep "0000" $rlRun_LOG
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        rlAssertGrep "keylime.tpm - ERROR - PCR #23: .* from quote does not match expected value" $(limeVerifierLogfile) -E
+	rlAssertGrep "keylime.tpm - ERROR - PCR #23: .* from quote.* does not match expected value" $(limeVerifierLogfile) -E
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
     rlPhaseEnd
 
