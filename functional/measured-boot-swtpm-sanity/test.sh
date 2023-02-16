@@ -85,7 +85,7 @@ rlJournalStart
         #rlRun "tsseventextend -tpm -if /var/tmp/binary_bios_measurements"
         rlRun -s "keylime_tenant -u $AGENT_ID --verify --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add --mb_refstate mb_refstate2.txt"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Tenant Quote Failed'"
-        rlAssertGrep "keylime.tpm - ERROR - For PCR 0 and hash sha256 the boot event log has value '.*' but the agent returned '.*'" $(limeVerifierLogfile) -E
+        rlAssertGrep "keylime.tpm - ERROR - For PCR 0 and hash sha256 the boot event log has value '.*' but the agent .*returned '.*'" $(limeVerifierLogfile) -E
     rlPhaseEnd
 
     rlPhaseStartTest "Restart services and re-register agent"
