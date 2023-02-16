@@ -34,10 +34,18 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
+        #encrypting of message
+        rlRun "keylime_userdata_encrypt payload/secret_message.txt"
     rlPhaseEnd
 
     rlPhaseStartTest "-c add"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c add"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+    rlPhaseEnd
+
+    rlPhaseStartTest "-c update"
+        #deliver payload with keys
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -p content_payload.txt -k content_keys.txt -c update"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
     rlPhaseEnd
 
