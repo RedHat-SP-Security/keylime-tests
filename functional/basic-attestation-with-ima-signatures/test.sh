@@ -68,7 +68,8 @@ rlJournalStart
         rlRun "echo >> ${SCRIPT}"
         rlRun "${SCRIPT}"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} '(Failed|Invalid Quote)'"
-        rlAssertGrep "WARNING - signature for file ${SCRIPT} is not valid" $(limeVerifierLogfile)
+        # the change in the Warning message has been introduced in https://github.com/keylime/keylime/pull/1322
+        rlAssertGrep "WARNING - (File not found in allowlist: ${SCRIPT}|signature for file ${SCRIPT} is not valid)" $(limeVerifierLogfile) -E
         rlAssertGrep "ERROR - IMA ERRORS: Some entries couldn't be validated" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent ${AGENT_ID} failed, stopping polling" $(limeVerifierLogfile)
     rlPhaseEnd
