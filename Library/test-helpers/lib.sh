@@ -2249,7 +2249,7 @@ else
 fi
 cat > /var/tmp/limeLib/coverage/coveragerc <<_EOF
 [run]
-source = /usr/bin/keylime*,/usr/local/bin/keylime*,/usr/share/keylime*,$KEYLIMESRC
+source = /usr/bin/,/usr/local/bin/,/usr/share/keylime/,$KEYLIMESRC
 parallel = True
 concurrency = multiprocessing,thread
 context = foo
