@@ -47,7 +47,8 @@ rlJournalStart
         rlAssertExists .coverage
         # packit summary report
         rlLogInfo "keylime-tests code coverage summary report"
-        rlRun "coverage report --include '*keylime*' $OMIT_FILES"
+        rlRun -s "coverage report --include '*keylime*' $OMIT_FILES"
+        rlAssertGreater "coverage report should contain at least 100 files" $( grep -c keylime $rlRun_LOG ) 100
         rlRun "coverage xml --include '*keylime*' $OMIT_FILES"
         rlRun "mv coverage.xml coverage.packit.xml"
         rlRun "mv .coverage .coverage.packit"

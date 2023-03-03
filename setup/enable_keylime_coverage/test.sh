@@ -7,7 +7,7 @@ rlJournalStart
     rlPhaseStartSetup "Install coverage script its dependencies"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rpm -q python3-coverage && rlRun "rpm -e python3-coverage"
-        rlRun "pip3 install coverage"
+        rlRun "pip3 install coverage==6.5.0"
         INSTALL_DIR=$( dirname $(find /usr/local/lib*/python*/site-packages -name coverage ) )
         rlRun "touch $__INTERNAL_limeCoverageDir/enabled"
     rlPhaseEnd
