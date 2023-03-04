@@ -2246,7 +2246,7 @@ source = /usr/bin/,/usr/local/bin/,/usr/share/keylime/,$KEYLIMESRC
 parallel = True
 concurrency = multiprocessing,thread
 context = foo
-omit = test_*
+omit = test_*,*example*
 _EOF
 # set code coverage context depending on a test
 # create context depending on the test directory by
