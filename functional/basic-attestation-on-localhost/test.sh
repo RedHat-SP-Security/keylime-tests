@@ -30,6 +30,11 @@ rlJournalStart
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf agent enable_revocation_notifications false"
         fi
+        # if enviroment variable is set, the default algorithm in configuration file has changed
+        if [ -n "$KEYLIME_TEST_USE_NON_DEFAULT_ALGORITHM" ]; then
+            rlRun "limeUpdateConf agent tpm_encryption_alg ecc"
+            rlRun "limeUpdateConf agent tpm_signing_alg ecschnorr"
+        fi
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -123,6 +128,10 @@ _EOF"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
+        # remove file with env variablo for future rerun of tests
+        if [ -n "$KEYLIME_TEST_USE_NON_DEFAULT_ALGORITHM" ]; then
+            rlRun "rm -rf /etc/profile.d/export_KEYLIME_TEST_USE_NON_DEFAULT_ALGORITHM.sh"
+        fi
         #rlRun "rm -f $TESTDIR/*"  # possible but not really necessary
     rlPhaseEnd
 
