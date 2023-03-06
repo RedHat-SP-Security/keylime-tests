@@ -48,12 +48,12 @@ _EOF"
         # start tpm emulator
         rlRun "limeStartTPMEmulator"
         rlRun "limeWaitForTPMEmulator"
-        # print EK cert details
-        rlRun "tpm2_nvread 0x1c00002 > ekcert-rsa.der"
-        rlRun "openssl x509 -inform der -in ekcert-rsa.der -noout -text"
         # make sure tpm2-abrmd is running
         rlServiceStart tpm2-abrmd
         sleep 5
+        # print EK cert details
+        rlRun "tpm2_nvread 0x1c00002 > ekcert-rsa.der"
+        rlRun "openssl x509 -inform der -in ekcert-rsa.der -noout -text"
         # clear old data about TPM
         rlRun "rm -f /var/lib/keylime/tpmdata.yml"
         # tenant, set to true to verify ek on TPM
