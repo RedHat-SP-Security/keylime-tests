@@ -16,6 +16,7 @@ require:
   - expect
   - yum
   - tpm2-tools
+  - python3-toml
 recommend:
   - keylime
 duration: 5m

@@ -19,6 +19,7 @@ require:
   - yum
   - expect
   - nmap-ncat
+  - python3-toml
 recommend:
   - keylime
 duration: 5m

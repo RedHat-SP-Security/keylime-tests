@@ -13,6 +13,7 @@ tag:
 require:
   - yum
   - expect
+  - python3-toml
 recommend:
   - keylime
 duration: 10m
