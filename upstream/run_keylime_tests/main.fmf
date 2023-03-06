@@ -16,6 +16,7 @@ require:
   - python3-pip
   - rpm-build
   - git
+  - efivar-libs
 recommend:
   - keylime
 duration: 15m
