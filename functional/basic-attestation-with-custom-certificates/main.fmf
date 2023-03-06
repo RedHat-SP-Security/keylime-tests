@@ -21,6 +21,7 @@ require:
 - expect
 - openssl
 - nmap-ncat
+- python3-toml
 recommend:
 - keylime
 duration: 15m
