@@ -42,7 +42,7 @@ _EOF'
             EXTRA_PKGS+=" python3-pip"
             EXTRA_PIP_PKGS="typing_extensions"
         fi
-        rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-pyasn1-modules python3-jinja2 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
+        rlRun "yum -y install git-core python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-pyasn1-modules python3-jinja2 procps-ng tpm2-abrmd tpm2-tss tpm2-tools patch python3-toml ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "yum -y install python3-zmq"
         fi
