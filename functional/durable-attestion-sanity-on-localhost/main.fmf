@@ -1,0 +1,22 @@
+summary:  Test of keylime durable attestation
+description: |
+    Running all services on localhost.
+    Configures agent to validate durable attestation.
+    Configures both registar and verifier to load the "flat file" durable attestation plugin.
+    Starts verifier, registrar, agent.
+    Add keylime agent with both measured boot and runtime policies.
+    Run keylime_attest CLI to ensure store attestation artifacts are attested.
+contact: Marcio Silva <marcio.a.silva@ibm.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - tpm2-tools 
+recommend:
+  - keylime
+duration: 5m
+extra-nitrate: TC#0614117
