@@ -38,37 +38,14 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         rlRun "limeCreateTestPolicy /etc/hostname"
+        rlRun "sed 's/0/1/' policy-dsse-ecdsa.json > policy-dsse-ecdsa-bad.json"
         CHECKSUM=$( sha256sum policy.json | cut -d ' ' -f 1 )
+        CHECKSUM_DSSE_ECDSA=$( sha256sum policy-dsse-ecdsa.json | cut -d ' ' -f 1 )
+        CHECKSUM_DSSE_X509=$( sha256sum policy-dsse-x509.json | cut -d ' ' -f 1 )
+        CHECKSUM_DSSE_ECDSA_BAD=$( sha256sum policy-dsse-ecdsa-bad.json | cut -d ' ' -f 1 )
         # start simple http server to serve files
         rlRun "python3 -m http.server 8000 &"
         HTTP_PID=$!
-        # generate GPG key
-        rlRun "gpgconf --kill gpg-agent"
-        rlRun "export GNUPGHOME=${TmpDir}"
-        rlRun "cat >gpg.script <<EOF
-%echo Generating a basic OpenPGP key
-Key-Type: RSA
-Key-Length: 4096
-Subkey-Type: RSA
-Subkey-Length: 4096
-Name-Real: Joe Tester
-Name-Comment: with no passphrase
-Name-Email: joe@foo.bar
-Expire-Date: 0
-# Do a commit here, so that we can later print 'done' :-)
-%commit
-%echo done
-EOF"
-        rlRun "gpg --batch --pinentry-mode=loopback --passphrase '' --generate-key gpg.script"
-        rlRun "gpg --list-secret-keys"
-        rlRun "gpg --armor -o gpg-key.pub --export joe@foo.bar"
-        # sign our policy.json
-        rlRun "gpg --detach-sign -o allowlist-gpg.sig policy.json"
-	# generate ECDSA key and sign our allowlist
-	rlRun "openssl ecparam -genkey -name secp384r1 -noout -out ecdsa-priv.pem"
-	rlRun "openssl ec -in ecdsa-priv.pem -pubout -out ecdsa-pub.pem"
-	rlRun "openssl dgst -sha256 -binary policy.json > allowlist.hash256"
-	rlRun "openssl pkeyutl -sign -inkey ecdsa-priv.pem -in allowlist.hash256 -out allowlist-hash256.sig"
     rlPhaseEnd
 
     rlPhaseStartTest "Test addruntimepolicy"
@@ -92,20 +69,14 @@ EOF"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-url and --runtime-policy-sig and --runtime-policy-sig-key with GPG key"
-        rlRun "gpg --verify allowlist-gpg.sig policy.json"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list4 --runtime-policy-url 'http://localhost:8000/policy.json' --runtime-policy-sig allowlist-gpg.sig --runtime-policy-sig-key gpg-key.pub"
+    rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-url with ECDSA-signed DSSE policy and --runtime-policy-sig-key with ECDSA key"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list4 --runtime-policy-url 'http://localhost:8000/policy-dsse-ecdsa.json' --runtime-policy-sig-key dsse-ecdsa-pubkey.pub --runtime-policy-checksum ${CHECKSUM_DSSE_ECDSA}"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-url and --runtime-policy-sig and --runtime-policy-sig-key with ECDSA key"
-        rlRun "openssl pkeyutl -in allowlist.hash256 -inkey ecdsa-pub.pem -pubin -verify -sigfile allowlist-hash256.sig"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list7 --runtime-policy-url 'http://localhost:8000/policy.json' --runtime-policy-sig allowlist-hash256.sig --runtime-policy-sig-key ecdsa-pub.pem"
+    rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-url with x509-signed DSSE policy"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list7 --runtime-policy-url 'http://localhost:8000/policy-dsse-x509.json' --runtime-policy-checksum ${CHECKSUM_DSSE_X509}"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
-    rlPhaseEnd
-
-    rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-url and --runtime-policy-sig-url and --runtime-policy-sig-key"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list5 --runtime-policy-url 'http://localhost:8000/policy.json' --runtime-policy-sig-url 'http://localhost:8000/allowlist-gpg.sig' --runtime-policy-sig-key gpg-key.pub"
     rlPhaseEnd
 
     rlPhaseStartTest "Test showruntimepolicy"
@@ -176,30 +147,21 @@ EOF"
         rlAssertGrep "Checksum of runtime policy does not match!" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addruntimepolicy not matching --runtime-policy-sig with GPG key"
-        rlRun "sed 's/0/1/' policy.json > policy2.json"
-        rlRun "gpg --verify allowlist-gpg.sig policy2.json" 1
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list20 --runtime-policy policy2.json --runtime-policy-sig allowlist-gpg.sig --runtime-policy-sig-key gpg-key.pub" 1
-        rlAssertGrep "failed detached signature verification" $rlRun_LOG
+    rlPhaseStartTest "Test addruntimepolicy not matching DSSE policy with ECDSA key"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list20 --runtime-policy policy-dsse-ecdsa-bad.json --runtime-policy-sig-key dsse-ecdsa-pubkey.pub" 1
+        rlAssertGrep "failed DSSE signature verification" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addruntimepolicy not matching --runtime-policy-sig with ECDSA key"
-        rlRun "openssl dgst -sha256 -binary policy2.json > allowlist2.hash256"
-        rlRun "openssl pkeyutl -in allowlist2.hash256 -inkey ecdsa-pub.pem -pubin -verify -sigfile allowlist-hash256.sig" 1
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list23 --runtime-policy policy2.json --runtime-policy-sig allowlist-hash256.sig --runtime-policy-sig-key ecdsa-pub.pem" 1
-        rlAssertGrep "failed detached signature verification" $rlRun_LOG
+    rlPhaseStartTest "Test addruntimepolicy not matching DSSE policy with embedded x509 cert"
+        rlRun "sed 's/0/1/' policy-dsse-x509.json > policy-dsse-x509-bad.json"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list23 --runtime-policy policy-dsse-x509-bad.json" 1
+        rlAssertGrep "failed DSSE signature verification" $rlRun_LOG
     rlPhaseEnd
 
-    rlPhaseStartTest "Test addruntimepolicy from --runtime-policy-url not matching --runtime-policy-sig"
-        rlRun "curl 'http://localhost:8000/policy2.json'"
-        rlRun "gpg --verify allowlist-gpg.sig policy2.json" 1
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list21 --runtime-policy-url 'http://localhost:8000/policy2.json' --runtime-policy-sig allowlist-gpg.sig --runtime-policy-sig-key gpg-key.pub" 1
-        rlAssertGrep "failed detached signature verification" $rlRun_LOG
-    rlPhaseEnd
-
-    rlPhaseStartTest "Test addruntimepolicy from --runtime-policy-url not matching --runtime-policy-sig-url"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list22 --runtime-policy-url 'http://localhost:8000/policy2.json' --runtime-policy-sig-url 'http://localhost:8000/allowlist-gpg.sig' --runtime-policy-sig-key gpg-key.pub" 1
-        rlAssertGrep "failed detached signature verification" $rlRun_LOG
+    rlPhaseStartTest "Test addruntimepolicy from --runtime-policy-url not matching DSSE signature with ECDSA key"
+        rlRun "curl 'http://localhost:8000/policy-dsse-ecdsa-bad.json.json'"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list21 --runtime-policy-url 'http://localhost:8000/policy-dsse-ecdsa-bad.json' --runtime-policy-sig-key dsse-ecdsa-pubkey.pub --runtime-policy-checksum ${CHECKSUM_DSSE_ECDSA_BAD}" 1
+        rlAssertGrep "failed DSSE signature verification" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addruntimepolicy fails on malformed policy"

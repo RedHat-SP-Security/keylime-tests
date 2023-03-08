@@ -1374,8 +1374,11 @@ limeCreateTestPolicy() {
     cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt
     echo -e "${EXCLUDE}" >> excludelist.txt
 
-    # create policy.json...
-    rlRun "limeCopyKeylimeFile --install cmd/convert_runtime_policy.py && python3 convert_runtime_policy.py -a allowlist.txt -e excludelist.txt -o policy.json"
+    # create policy.json and create signed policies and keys
+    keylime_convert_runtime_policy -a allowlist.txt -e excludelist.txt -o policy.json && \
+    keylime_sign_runtime_policy -r policy.json -p dsse-ecdsa-privkey.key -b ecdsa -o policy-dsse-ecdsa.json && \
+    keylime_sign_runtime_policy -r policy.json -p dsse-x509-privkey.key -b x509 -o policy-dsse-x509.json && \
+    openssl ec -in dsse-ecdsa-privkey.key -pubout -out dsse-ecdsa-pubkey.pub
 
 }
 
@@ -2192,7 +2195,7 @@ true <<'=cut'
 
 =head2 limeconStop
 
-Stop container, delete container and set default permission 
+Stop container, delete container and set default permission
 for agent container if stopping agent container.
 
     limeconStop NAMES
