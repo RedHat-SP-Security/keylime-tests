@@ -1,0 +1,38 @@
+name: Tier1 tests
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    name: Run PR test plans
+    steps:
+    - uses: actions/checkout@v3
+    - name: Remove labels PASSED_Tier1, PASSED_Tier2
+      run: gh pr edit $PR_NUMBER --remove-label "PASSED_Tier1,PASSED_Tier2"
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Install testing-farm script
+      run: pip3 -v install tft-cli
+    - name: Run tests on Testing Farm
+      run: testing-farm request --git-url "https://github.com/$GIT_NAME.git" --git-ref "$GIT_REF" --context pr_id=$PR_NUMBER --context distro=fedora-37 --arch x86_64 --compose Fedora-37 --plan '/PR-plans/.*' 2>&1 | tee tt_output
+      env:
+        TESTING_FARM_API_TOKEN: ${{ secrets.TESTING_FARM_API_TOKEN }}
+        PR_NUMBER: ${{ github.event.number }}
+        GIT_REF: ${{ github.head_ref }}
+        GIT_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+    - name: Check test result
+      run: if grep -q 'tests passed' tt_output; then echo "Tests passed (OK)"; elif grep -q "Did not find any plans" tt_output; then echo "There was no dedicated plan for PR#$PR_NUMBER (IGNORED)"; else echo "Something went wrong" && false; fi
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+    - name: Add label PASSED_Tier1
+      run: gh pr edit $PR_NUMBER --add-label "PASSED_Tier1"
+      env:
+        PR_NUMBER: ${{ github.event.number }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Trigger workflow run-pr-plans-tier2.yaml
+      run: gh workflow run --ref $GIT_REF run-pr-plans-tier2.yaml
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GIT_REF: ${{ github.head_ref }}
