@@ -1,0 +1,19 @@
+summary: Plan for PR#329
+
+enabled: false
+
+discover:
+  how: fmf
+  test: 
+   - /setup/configure_tpm_emulator
+   - /setup/install_upstream_keylime
+   - /setup/enable_keylime_debug_messages
+   - /setup/configure_kernel_ima_module/ima_policy_simple
+   - /functional/basic-attestation-on-localhost
+
+execute:
+    how: tmt
+
+adjust:
+  - when: pr_id == 329
+    enabled: true
