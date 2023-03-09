@@ -20,11 +20,6 @@ require:
   - openssl
 recommend:
   - keylime
-  - keylime-verifier
-  - keylime-registrar
-  - python3-keylime-agent
-  - keylime-tenant
-  - keylime-tools
 duration: 5m
 adjust:
   - when: swtpm is not defined or swtpm != yes
