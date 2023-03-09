@@ -8,15 +8,32 @@ description: |
     Run keylime_attest CLI to ensure store attestation artifacts are attested.
 contact: Marcio Silva <marcio.a.silva@ibm.com>
 component:
-  - keylime
+- keylime
 test: ./test.sh
 framework: beakerlib
-tag:
-  - CI-Tier-1
 require:
-  - yum
-  - tpm2-tools 
+- yum
+- tpm2-tools
+- tss2
+- tpm2-tss
 recommend:
-  - keylime
+- keylime
+- efivar-libs
 duration: 5m
-extra-nitrate: TC#0614117
+enabled: true
+adjust:
+  - when: swtpm is not defined or swtpm != yes
+    enabled: false
+    because: This tests works only with SWTPM emulator
+  - when: arch == s390x
+    enabled: false
+    because: Measured boot not functioning on s390x
+  - when: distro == rhel-8 or distro = centos-stream-8
+    enabled: false
+    because: RHEL-8 has old tpm2-tools
+  - when: agent == rust and faked_measured_boot_log is not defined
+    enabled: false
+    because: For Rust agent we are not able to fake measuredboot log during runtime
+  - when: agent == rust and faked_measured_boot_log == false
+    enabled: false
+    because: For Rust agent we are not able to fake measuredboot log during runtime
