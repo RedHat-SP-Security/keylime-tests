@@ -1,2 +1,3 @@
 FROM quay.io/centos/centos:stream9
 RUN dnf install -y keylime-verifier util-linux-core && dnf clean all
+CMD ["/usr/bin/keylime_verifier"]

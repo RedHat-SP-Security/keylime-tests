@@ -30,6 +30,8 @@ rlJournalStart
         # prepare registrar container
         rlRun "limeUpdateConf registrar ip $IP_REGISTRAR"
 
+        rlRun "limeconSetupSSH"
+
         #build verifier container
         TAG_VERIFIER="verifier_image"
         rlRun "limeconPrepareVerifierImage ${TAG_VERIFIER}"
@@ -106,6 +108,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
+        rlRun "rm -f /root/.ssh/id_rsa*"
         #possible manage function to stop it all
         rlRun "limeconStop 'registrar_container'"
         rlRun "limeconStop 'verifier_container'"

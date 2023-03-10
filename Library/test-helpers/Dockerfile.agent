@@ -2,3 +2,4 @@ FROM quay.io/centos/centos:stream9
 RUN dnf install -y keylime-agent-rust util-linux-core && dnf clean all
 COPY cacert.crt /var/lib/keylime/cv_ca/
 RUN chmod o+r /var/lib/keylime/cv_ca/cacert.crt
+CMD ["/usr/bin/keylime_agent"]

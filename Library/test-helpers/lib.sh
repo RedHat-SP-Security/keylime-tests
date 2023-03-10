@@ -2050,7 +2050,11 @@ limeconRunAgent() {
     local AGENT_FILE=$5
     local TESTDIR=$6
 
-    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent
+
+    #when will keylime run as service is need to be set ownership of mounted dir
+    podman run -it --name $NAME --rm --volume=/etc/keylime/:/etc/keylime/:Z localhost/$TAG chown keylime: /etc/keylime -R
+
+    podman run -d --name $NAME --net $NETWORK --ip ${IP} --cap-add CAP_AUDIT_WRITE --privileged --volume=${AGENT_FILE}:/etc/keylime/:Z --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG
 }
 
 true <<'=cut'
@@ -2092,7 +2096,11 @@ limeconRunRegistrar() {
     local NETWORK=$4
 
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:rw localhost/$TAG /usr/bin/keylime_registrar
+    #when will keylime run as service is need to be set ownership of mounted dir
+    podman run -it --name $NAME --rm --volume=/etc/keylime/:/etc/keylime/:Z localhost/$TAG chown keylime: /etc/keylime -R
+    podman run -it --name $NAME --rm --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:Z localhost/$TAG chown keylime: /var/lib/keylime/cv_ca -R
+
+    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --volume=/etc/keylime/:/etc/keylime/:Z --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:Z localhost/$TAG
 }
 
 true <<'=cut'
@@ -2133,7 +2141,10 @@ limeconRunVerifier() {
     local IP=$3
     local NETWORK=$4
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/bin/keylime_verifier
+    #when will keylime run as service is need to be set ownership of mounted dir
+    podman run -it --name $NAME --rm --volume=/etc/keylime/:/etc/keylime/:Z localhost/$TAG chown keylime: /etc/keylime -R
+
+    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --volume=/etc/keylime/:/etc/keylime/:Z localhost/$TAG
 }
 
 true <<'=cut'
@@ -2178,6 +2189,69 @@ limeconPrepareAgentConfdir() {
         limeUpdateConf -d $CONF_DIR agent uuid \"$AGENT_ID\"
         limeUpdateConf -d $CONF_DIR agent ip \"$AGENT_IP\"
         limeUpdateConf -d $CONF_DIR agent contact_ip \"$AGENT_IP\"
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconSetupSSH
+
+Setup SSH access for each container and or specify it.
+
+    limeconSetupSSH  [-f|--file DOCKER_FILE]
+
+=item -f, --file DOCKER_FILE
+
+Parameter specify use of docker file.
+
+Returns 0.
+
+=cut
+
+limeconSetupSSH() {
+
+    if [ "$1" == "-f" -o "$1" == "--file" ]; then
+        local DOCKER_FILE=$2
+        echo $DOCKER_FILE
+    else
+        echo "Setup SSH for all docker files in ${limeLibraryDir}"
+        DOCKER_FILE="${limeLibraryDir}/Dockerfile.*"
+    fi
+
+    mkdir -p /var/tmp/limeLib/ssh
+    #ssh passwordless setup
+    ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_rsa /root/.ssh/id_rsa.pub /var/tmp/limeLib/ssh/
+    cp /root/.ssh/id_rsa.pub .
+
+    for FILES in $DOCKER_FILE
+    do  
+        if [[ $FILES != *"Dockerfile.ansible"* ]] ; then
+            sed -i '$d' $FILES
+            SERVICE=$(cut -d "." -f3 <<< "$FILES")
+            ENABLE_SERVICE="RUN systemctl enable keylime_${SERVICE}"
+        fi
+        cat >> $FILES <<EOF
+
+RUN dnf install -y openssh-server systemd
+RUN mkdir /var/run/sshd
+RUN ssh-keygen -A
+RUN echo 'root:toor' | chpasswd
+RUN sed -i '/PermitRootLogin prohibit-password/s/^#//g' /etc/ssh/sshd_config
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i '/PubkeyAuthentication/s/^#//g' /etc/ssh/sshd_config
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+RUN mkdir -p /root/.ssh
+COPY id_rsa.pub /root/.ssh/
+RUN cat root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+RUN chmod 700 /root/.ssh/authorized_keys
+EXPOSE 22
+$ENABLE_SERVICE
+CMD ["/usr/sbin/init"]
+EOF
+    #set empty var for next run
+    ENABLE_SERVICE=""
+    done
 }
 
 true <<'=cut'
