@@ -37,11 +37,11 @@ jobs:
       env:
         PR_NUMBER: ${{ github.event.number }}
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Add comment to trigger run-pr-plans-tier2.yaml
-      run: gh pr comment $PR_NUMBER --body "/tier2"
-      env:
-        PR_NUMBER: ${{ github.event.number }}
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#    - name: Add comment to trigger run-pr-plans-tier2.yaml
+#      run: gh pr comment $PR_NUMBER --body "/tier2"
+#      env:
+#        PR_NUMBER: ${{ github.event.number }}
+#        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #    - name: Trigger workflow run-pr-plans-tier2.yaml
 #      run: gh workflow run --ref $GIT_REF run-pr-plans-tier2.yaml

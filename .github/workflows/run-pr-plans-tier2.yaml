@@ -1,14 +1,13 @@
 name: Tier2 tests
 
 on:
-  pull_request:
-    types: [labeled]
-  workflow_dispatch: null
+  issue_comment:
+    types: [created, edited]
 
 jobs:
   build:
-    if: ${{ github.event.label.name == 'PASSED_Tier1' }}
     runs-on: ubuntu-22.04
+    if: contains(github.event.comment.body, '/tier2')
     name: Run PR test plans
     steps:
     - uses: actions/checkout@v3
