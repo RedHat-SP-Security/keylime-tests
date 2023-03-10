@@ -18,6 +18,8 @@ require:
  - zeromq-devel
  - libarchive-devel
  - clang-devel
+ - rpm-build
+ - rust-packaging
 duration: 20m
 enabled: true
 extra-nitrate: TC#0613570

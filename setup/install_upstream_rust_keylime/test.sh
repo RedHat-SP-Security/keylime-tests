@@ -9,6 +9,14 @@ rlJournalStart
 
     rlPhaseStartSetup "Build and install rust-keylime bits"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+
+        if [ ${RPM_AGENT_COVERAGE} == "1" ] && rpm -qa | grep keylime-agent-rust; then
+            rlFetchSrcForInstalled "keylime-agent-rust"
+            rlRun "rpm -i keylime-agent-rust*.src.rpm"
+            rlRun "rpmbuild -bp ~/rpmbuild/SPECS/keylime-agent-rust.spec"
+            rlRun "rm -f /var/tmp/rust_keylime_sources && ln -s ~/rpmbuild/BUILD/rust-keylime-* /var/tmp/rust_keylime_sources"
+        fi
+
         if [ -d /var/tmp/rust-keylime_sources ]; then
             rlLogInfo "Compiling rust-keylime bits from /var/tmp/rust-keylime_sources"
         else
