@@ -1,12 +1,18 @@
 name: Tier1 tests
 
-on: [pull_request]
+on: 
+  pull_request: null
+  issue_comment:
+    types: [created, edited]
 
 jobs:
   build:
+    if: contains(github.event.comment.body, '/tier1') || ${{ github.event.issue.pull_request }}
     runs-on: ubuntu-22.04
     name: Run PR test plans
     steps:
+    - name: Print GitHub event action
+      run: echo "${{ github.event.action }}"
     - uses: actions/checkout@v3
     - name: Remove labels PASSED_Tier1, PASSED_Tier2
       run: gh pr edit $PR_NUMBER --remove-label "PASSED_Tier1,PASSED_Tier2"
@@ -31,8 +37,14 @@ jobs:
       env:
         PR_NUMBER: ${{ github.event.number }}
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Trigger workflow run-pr-plans-tier2.yaml
-      run: gh workflow run --ref $GIT_REF run-pr-plans-tier2.yaml
+    - name: Add comment to trigger run-pr-plans-tier2.yaml
+      run: gh pr comment $PR_NUMBER --body "/tier2"
       env:
+        PR_NUMBER: ${{ github.event.number }}
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GIT_REF: ${{ github.head_ref }}
+
+#    - name: Trigger workflow run-pr-plans-tier2.yaml
+#      run: gh workflow run --ref $GIT_REF run-pr-plans-tier2.yaml
+#      env:
+#        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        GIT_REF: ${{ github.head_ref }}
