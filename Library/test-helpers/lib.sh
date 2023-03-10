@@ -1889,9 +1889,13 @@ true <<'=cut'
 
 Create container network.
 
-    limeconCreateNetwork NAME SUBNET
+    limeconCreateNetwork [--ipv6] NAME SUBNET
 
 =over
+
+=item --ipv6
+
+Can be created IPv6 network by using --ipv6.
 
 =item NAME
 
@@ -1909,6 +1913,11 @@ Returns 0.
 
 limeconCreateNetwork() {
 
+    if [ "$1" == "--ipv6" ]; then
+        VERSION_IP="--ipv6"
+        shift
+    fi
+
     local NAME=$1
     local SUBNET=$2
 
@@ -1918,7 +1927,7 @@ limeconCreateNetwork() {
         return 1
     fi
 
-    podman network create --subnet=$SUBNET $NAME
+    podman network create $VERSION_IP --subnet=$SUBNET $NAME
     podman network inspect $NAME
 }
 
