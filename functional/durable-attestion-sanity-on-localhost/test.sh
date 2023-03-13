@@ -78,8 +78,22 @@ rlJournalStart
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 
-    rlPhaseStartTest "Run keylime offline (durable) attestation"
+    rlPhaseStartTest "Run keylime offline (durable) attestation - asssuming success"
         rlRun "keylime_attest"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Fail keylime agent"
+        rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/bad-script.sh && chmod a+x $TESTDIR/bad-script.sh"
+        rlRun "$TESTDIR/bad-script.sh"
+        rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
+        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Run keylime offline (durable) attestation - asssuming failure"
+        rlRun -s "keylime_attest"
+        rlAssertGrep "WARNING - File not found in allowlist: /bad-script.sh" $rlRun_LOG
+        rlAssertGrep "ERROR - IMA ERRORS: Some entries couldn't be validated." $rlRun_LOG
+        rlAssertGrep "keylime.durable_attestation_fetch_and_replay - INFO -.*Agent $AGENT_ID was NOT in \"attested\" state at.*" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
