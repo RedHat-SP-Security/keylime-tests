@@ -1,0 +1,79 @@
+name: Tier tests
+
+on:
+  workflow_call:
+    inputs:
+      tier:
+        type: string
+      pr_number:
+        required: true
+        type: string
+      pr_url:
+        required: true
+        type: string
+      repo:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+    secrets:
+      token:
+        required: true
+      testing_farm_token:
+        required: true
+
+jobs:
+  tier1:
+    runs-on: ubuntu-22.04
+    name: 'Tier 1'
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Tier"
+        uses: ./.github/actions/run-on-testing-farm
+        with:
+          distro: "fedora-37"
+          compose: "Fedora-37"
+          arch: "x86_64"
+          plan: "tier1"
+          pr_number: ${{ inputs.pr_number }}
+          pr_url: ${{ inputs.pr_url }}
+          repo: ${{ inputs.repo }}
+          branch: ${{ inputs.branch }}
+          head_sha: ${{ inputs.head_sha }}
+          token: ${{ secrets.token }}
+          testing_farm_token: ${{ secrets.testing_farm_token }}
+  tier2:
+    runs-on: ubuntu-22.04
+    name: 'Tier 2'
+    needs: tier1
+    if: contains(${{ inputs.tier }}, "tier2")
+    strategy:
+      fail-fast: false
+      matrix:
+        compose: ["Fedora-37", "Fedora-38"]
+        arch: ["x86_64"]
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Resolve distro"
+        id: resolve_distro
+        shell: bash
+        run: |
+          echo "distro=${{ matrix.compose }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_OUTPUT
+      - name: "Plan tier2 on ${{ steps.resolve_distro.outputs.distro }} ${{ matrix.arch }} for [PR ${{ inputs.pr_number }}](${{ inputs.pr_url }})"
+        uses: ./.github/actions/run-on-testing-farm
+        with:
+          distro: ${{ steps.resolve_distro.outputs.distro }}
+          compose: ${{ matrix.distro }}
+          arch: ${{ matrix.arch }}
+          plan: "tier2"
+          pr_number: ${{ inputs.pr_number }}
+          pr_url: ${{ inputs.pr_url }}
+          repo: ${{ inputs.repo }}
+          branch: ${{ inputs.branch }}
+          head_sha: ${{ inputs.head_sha }}
+          token: ${{ secrets.token }}
+          testing_farm_token: ${{ secrets.testing_farm_token }}

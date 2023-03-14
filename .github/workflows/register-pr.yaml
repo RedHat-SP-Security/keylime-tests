@@ -1,0 +1,24 @@
+name: Register PR
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  register:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Save PR info
+        run: |
+          mkdir -p ./pr
+          echo "{
+            \"pr_number\": \"${{ github.event.number }}\",
+            \"pr_url\": \"${{ github.event.pull_request.issue_url }}\",
+            \"repo\": \"${{ github.event.pull_request.head.repo.full_name }}\",
+            \"branch\": \"${{ github.event.pull_request.head.ref }}\",
+            \"head_sha\": \"${{ github.event.pull_request.head.sha }}\"
+          }" > ./pr/pr_data.json
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pr_data
+          path: pr/

@@ -1,0 +1,57 @@
+name: PR test
+
+on:
+  workflow_call:
+    inputs:
+      distro:
+        required: true
+        type: string
+      arch:
+        required: true
+        type: string
+      compose:
+        required: true
+        type: string
+      plan:
+        required: true
+        type: string
+      pr_number:
+        required: true
+        type: string
+      pr_url:
+        required: true
+        type: string
+      repo:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+    secrets:
+      token:
+        required: true
+      testing_farm_token:
+        required: true
+
+jobs:
+  run-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Plan ${{ inputs.plan }} on ${{ inputs.distro }} ${{ inputs.arch }} for [PR ${{ inputs.pr_number }}](${{ inputs.pr_url }})"
+        uses: ./.github/actions/run-on-testing-farm
+        with:
+          distro: ${{ inputs.distro }}
+          compose: ${{ inputs.compose }}
+          arch: ${{ inputs.arch }}
+          plan: ${{ inputs.plan }}
+          pr_number: ${{ inputs.pr_number }}
+          pr_url: ${{ inputs.pr_url }}
+          repo: ${{ inputs.repo }}
+          branch: ${{ inputs.branch }}
+          head_sha: ${{ inputs.head_sha }}
+          token: ${{ secrets.token }}
+          testing_farm_token: ${{ secrets.testing_farm_token }}
