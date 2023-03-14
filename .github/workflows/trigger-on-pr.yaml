@@ -1,0 +1,37 @@
+name: Testing Farm
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  pr_test:
+    name: PR specific test
+    uses: ./.github/workflows/pr-test.yaml
+    with:
+      distro: "fedora-37"
+      compose: "Fedora-37"
+      arch: "x86_64"
+      plan: ${{ github.event.number }}
+      pr_number: ${{ github.event.number }}
+      pr_url: ${{ github.event.pull_request.issue_url }}
+      repo: ${{ github.event.pull_request.head.repo.full_name }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      head_sha: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+      testing_farm_token: ${{ secrets.TESTING_FARM_API_TOKEN }}
+  tiers:
+    needs: pr_test
+    name: Tier tests
+    uses: ./.github/workflows/tiers.yaml
+    with:
+      tier: "tier2"
+      pr_number: ${{ github.event.number }}
+      pr_url: ${{ github.event.pull_request.issue_url }}
+      repo: ${{ github.event.pull_request.head.repo.full_name }}
+      branch: ${{ github.event.pull_request.head.ref }}
+      head_sha: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+      testing_farm_token: ${{ secrets.TESTING_FARM_API_TOKEN }}
