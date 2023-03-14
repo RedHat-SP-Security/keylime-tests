@@ -1,0 +1,265 @@
+name: 'Run plan on Testing Farm'
+description: 'Run a test plan on Testing Farm'
+
+inputs:
+  api_url:
+    description: 'A Testing Farm server URL'
+    required: false
+    default: 'https://api.dev.testing-farm.io/v0.1'
+  distro:
+    description: 'The distro identifier'
+    required: true
+    type: string
+  compose:
+    description: 'The compose to use'
+    required: true
+    type: string
+  arch:
+    description: 'Define an architecture for testing environment. Default: x86_64'
+    required: false
+    default: 'x86_64'
+  plan:
+    description: 'The name of the plan to run'
+    required: true
+    type: string
+  pr_number:
+    description: 'The number of the PR for which the tests are executed'
+    required: true
+    type: string
+  pr_url:
+    description: 'The URL to the PR for which the tests are executed'
+    required: true
+    type: string
+  repo:
+    description: 'The repository complete name (i.e. owner/repo)'
+    required: true
+    type: string
+  branch:
+    description: 'The branch to test'
+    required: true
+    type: string
+  head_sha:
+    description: 'The HEAD commit to test'
+    required: true
+    type: string
+  token:
+    description: 'The Github access token'
+    required: true
+  testing_farm_token:
+    description: 'The testing farm access token'
+    required: true
+
+outputs:
+  request_id:
+    description: 'An ID of a scheduled testing farm request'
+    value: ${{ steps.sched_test.outputs.req_id }}
+  request_url:
+    description: 'An url of a scheduled testing farm request'
+    value: ${{ steps.artifacts_url.outputs.url }}
+secrets:
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install mandatory packages
+      run: |
+        sudo apt update && sudo apt -y install curl jq libxml2-utils
+        pip3 -v install tft-cli
+      shell: bash
+
+    - name: Set artifacts url
+      id: artifacts_url
+      run: |
+        url="https://artifacts.dev.testing-farm.io"
+        echo "url=$url" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Create status pull request status name
+      id: create_status_name
+      run: echo "name=Plan ${{ inputs.plan }} on ${{ inputs.distro }} ${{ inputs.arch }} for [PR ${{ inputs.pr_number }}](${{ inputs.pr_url }})" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Schedule a test on Testing Farm
+      id: sched_test
+      run: |
+        cat << EOF > request.json
+        {
+          "api_key": "${{ inputs.testing_farm_token }}",
+          "test": {
+            "fmf": {
+              "url": "https://github.com/${{ inputs.repo }}.git",
+              "ref": "${{ inputs.branch }}",
+              "name": "${{ inputs.plan }}"
+            }
+          },
+          "environments": [{
+            "arch": "${{ inputs.arch }}",
+            "os": {
+              "compose": "${{ inputs.compose }}"
+            },
+            "tmt": {
+              "context": {
+                "pr_id": "${{ inputs.pr_number }}",
+                "distro": "${{ inputs.distro }}"
+                }
+              }
+          }]
+        }
+        EOF
+
+        # DEBUG
+        jq < request.json
+
+        curl ${{ inputs.api_url }}/requests \
+            --data @request.json \
+            --header "Content-Type: application/json" \
+            --output response.json
+
+        # DEBUG
+        jq < response.json
+
+        req_id=$(jq -r .id response.json)
+        echo "req_id=$req_id" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Switch pull request state to running
+      id: running
+      run: |
+        # Create running.json file for query, whether job is finished or not.
+        cat << EOF > running.json
+        {
+          "sha": "${{ inputs.head_sha }}",
+          "state": "pending",
+          "context": "Testing Farm - ${{ steps.create_status_name.outputs.name }}",
+          "description": "Build started",
+          "target_url": "${{ steps.artifacts_url.outputs.url }}/${{ steps.sched_test.outputs.req_id }}"
+        }
+        EOF
+
+        # Update GitHub status description to 'Build started'
+        curl -X POST \
+          -H "Authorization: Bearer ${{ inputs.token }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/${{ inputs.branch }} \
+          --data @running.json > update.json
+      shell: bash
+
+    - name: Check if scheduled test is still running
+      id: still_running
+      run: |
+        CMD=${{ inputs.api_url }}/requests/${{ steps.sched_test.outputs.req_id }}
+        curl $CMD > job.json
+
+        # DEBUG
+        jq < job.json
+
+        state=$(jq -r .state job.json)
+        while [ "$state" == "running" ] || [ "$state" == "new" ] || [ "$state" == "pending" ] || [ "$state" == "queued" ]; do
+          sleep 30
+          curl $CMD > job.json
+          state=$(jq -r .state job.json)
+        done
+      shell: bash
+
+    - name: Get final state of Testing Farm scheduled request
+      id: final_state
+      run: |
+        curl ${{ inputs.api_url }}/requests/${{ steps.sched_test.outputs.req_id }} > job.json
+
+        # DEBUG
+        jq < job.json
+
+        content=`cat job.json`
+        echo "result=$content" >> $GITHUB_OUTPUT
+        echo "not_found=Did not find any plans" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Process result and ignore if plan is not found
+      id: check_result
+      run: |
+        state=${{ fromJson(steps.final_state.outputs.result).state }}
+        overall=${{ fromJson(steps.final_state.outputs.result).result.overall }}
+        can_ignore=${{ contains(fromJson(steps.final_state.outputs.result).result.summary, steps.final_state.outputs.not_found) }}
+        echo "can_ignore=$can_ignore"
+        new_state="success"
+        infra_error=""
+        log=""
+        echo "State is $state and result is: $overall"
+        if [[ "$state" == "complete" ]]; then
+          if [[ "$overall" != "passed" ]]; then
+            if [[ "$can_ignore" == "true" ]]; then
+              echo "The test plan was not found, ignoring error."
+              new_state="ignored"
+            else
+              new_state="failed"
+            fi
+          fi
+        else
+          # Mark job in case of infrastructure issues. Report to Testing Farm team
+          infra_error="- Infra problems"
+          new_state="failed"
+          log="pipeline.log"
+        fi
+        echo "New State is: $new_state"
+        echo "Infra state is: $infra_error"
+        echo "FINAL_STATE=$new_state" >> $GITHUB_OUTPUT
+        echo "INFRA_STATE=$infra_error" >> $GITHUB_OUTPUT
+        echo "RESULT_SUMMARY=$result_summary" >> $GITHUB_OUTPUT
+        echo "LOG=$log" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Switch pull request GitHub status to final state
+      if: ${{ inputs.update_pull_request_status == 'true' }}
+      run: |
+        cat << EOF > final_request.json
+        {
+          "sha": "${{ inputs.head_sha }}",
+          "state": "${{ steps.check_result.outputs.FINAL_STATE }}",
+          "context": "Testing Farm - ${{ steps.create_status_name.outputs.name }}",
+          "description": "Build finished ${{ steps.check_result.outputs.INFRA_STATE }}",
+          "target_url": "${{ steps.artifacts_url.outputs.url }}/${{ steps.sched_test.outputs.req_id }}/${{ steps.check_result.outputs.LOG }}"
+        }
+        EOF
+        # Switch Github status to proper state
+        curl -X POST -H "Authorization: Bearer ${{ inputs.token }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/${{ inputs.branch }} \
+          --data @final_request.json > final_response.json
+      shell: bash
+
+    - name: Create github summary
+      shell: bash
+      run: |
+        if [ -z "${{ steps.check_result.outputs.INFRA_STATE }}" ]; then
+          infra_state=OK
+        else
+          infra_state=Failed
+        fi
+        tfaga_summary_header="Summary for ${{ steps.create_status_name.outputs.name }}:",
+        if  ! cat "$GITHUB_STEP_SUMMARY" | grep "$tfaga_summary_header" > /dev/null; then
+          echo "$tfaga_summary_header" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Compose | Arch | Infrastructure State | Test result | Link to logs |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---------|------|----------------------|-------------|--------------|" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        echo "|${{ inputs.distro }}|${{ inputs.arch }}| $infra_state |"\
+             " ${{ steps.check_result.outputs.FINAL_STATE }}|"\
+             "${{ steps.artifacts_url.outputs.url }}/${{ steps.sched_test.outputs.req_id }}|" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Show tests details
+      shell: bash
+      run: |
+        xunit='${{ fromJson(steps.final_state.outputs.result).result.xunit }}'
+        if [[ ! -z "$xunit" ]]; then
+          echo "$xunit" > xunit.xml
+          xmllint --format xunit.xml > results.xml
+          python3 .github/actions/run-on-testing-farm/src/summary.py results.xml >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Exit with error in case of failure in test
+      shell: bash
+      run: |
+        final_state="${{ steps.check_result.outputs.FINAL_STATE }}"
+        if [ "$final_state" == "failed" ]; then
+          exit 1
+        fi
+
