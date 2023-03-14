@@ -71,6 +71,8 @@ def should_ignore_line(line):
         return True
     if l.startswith('#'):
         return True
+    if l == '}' || l == '},':
+        return True
     return False
 
 
@@ -107,6 +109,7 @@ def get_patch_coverage(patch_path, db_path):
         # if this is a start of a new file
         if line.startswith('diff --git a/'):
             skip_file = False
+            code_change = False
             line_no = 0
             filename = line.split(' ')[2][2:]
             if filename.startswith('keylime/'):
@@ -125,43 +128,45 @@ def get_patch_coverage(patch_path, db_path):
         # if this is a *.py file
         elif filename.endswith('.py') and (not skip_file):
 
-            # if these are some diff parameters, print them
-            if line.startswith('--- a/') or line.startswith('+++ b/') or line.startswith('index '):
-                print_line(line)
-
-            # indicator of patch start
-            elif line.startswith('@@ '):
+            if line.startswith('@@ '):
+                # indicator of patch start
                 line_no = int(re.sub(r'.*\+([0-9]+),.*', r'\1', line)) - 1
                 print_line(line)
+                code_change = True
 
-            # removed lines we just print
-            elif line.startswith('-'):
+            elif not code_change:
+                # if these are some diff parameters, print them
                 print_line(line)
 
-            # these are either added/modified or untouched lines - both we want to present
-            else:
-                line_no += 1
-                # if we should not ignore the line:
-                if not should_ignore_line(line):
-                    # but we do stats only for added/modified lines
-                    if line.startswith('+'):
-                        code_lines_total += 1
-                    # find if the line has test coverage
-                    line_coverage = get_file_coverage(cur, file_id)
-                    contexts = [row[1] for row in line_coverage if line_no in row[2]]
-                    # if there was a test coverage
-                    if contexts:
-                        if line.startswith('+'):
-                            code_lines_covered += 1
-                        contexts_used |= set(contexts)
-                        prefix = ''.join([get_test_code(c) for c in contexts])
-                    else:
-                        prefix = '!'
-                    print_line(line, prefix)
+            else:  # code change
 
-                # if the change should not be counted
-                else:
-                    print_line(line, '~')
+                # removed lines we just print
+                if code_change and line.startswith('-'):
+                    print_line(line)
+
+                else:  # these are either added/modified or untouched lines - both we want to present
+                    line_no += 1
+                    # if we should not ignore the line:
+                    if not should_ignore_line(line):
+                        # but we do stats only for added/modified lines
+                        if line.startswith('+'):
+                            code_lines_total += 1
+                        # find if the line has test coverage
+                        line_coverage = get_file_coverage(cur, file_id)
+                        contexts = [row[1] for row in line_coverage if line_no in row[2]]
+                        # if there was a test coverage
+                        if contexts:
+                            if line.startswith('+'):
+                                code_lines_covered += 1
+                            contexts_used |= set(contexts)
+                            prefix = ''.join([get_test_code(c) for c in contexts])
+                        else:
+                            prefix = '!'
+                        print_line(line, prefix)
+
+                    # if the change should not be counted
+                    else:
+                        print_line(line, '~')
 
         # write info that this file is skipped and enable skipping
         elif not skip_file:
