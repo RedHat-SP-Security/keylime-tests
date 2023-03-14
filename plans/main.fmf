@@ -1,6 +1,6 @@
 context:
   swtpm: yes
-  agent: python
+  agent: rust
   faked_measured_boot_log: true
 
 # modify defaults below to point upstream keylime URL to a different repo and branch
