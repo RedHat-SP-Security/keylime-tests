@@ -2054,7 +2054,7 @@ limeconRunAgent() {
     #when will keylime run as service is need to be set ownership of mounted dir
     podman run -it --name $NAME --rm --volume=/etc/keylime/:/etc/keylime/:Z localhost/$TAG chown keylime: /etc/keylime -R
 
-    podman run -d --name $NAME --net $NETWORK --ip ${IP} --cap-add CAP_AUDIT_WRITE --privileged --volume=${AGENT_FILE}:/etc/keylime/:Z --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG
+    rlRun "podman run -d --name $NAME --net $NETWORK --ip ${IP} --cap-add CAP_AUDIT_WRITE --privileged --volume=${AGENT_FILE}:/etc/keylime/:Z --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent"
 }
 
 true <<'=cut'
@@ -2229,11 +2229,21 @@ limeconSetupSSH() {
         if [[ $FILES != *"Dockerfile.ansible"* ]] ; then
             sed -i '$d' $FILES
             SERVICE=$(cut -d "." -f3 <<< "$FILES")
-            ENABLE_SERVICE="RUN systemctl enable keylime_${SERVICE}"
+            ENABLE_SERVICE="/usr/bin/keylime_${SERVICE} &"
+            cat > run_${SERVICE}.sh << EOF
+#!/bin/bash
+#$ENABLE_SERVICE
+/usr/sbin/sshd &
+EOF
+            NAME_SCRIPT="run_${SERVICE}.sh"
+        #cat run_script.sh
         fi
-        cat >> $FILES <<EOF
 
-RUN dnf install -y openssh-server systemd
+        
+        cat >> $FILES <<_EOF
+
+RUN dnf install -y openssh-server
+#systemd
 RUN mkdir /var/run/sshd
 RUN ssh-keygen -A
 RUN echo 'root:toor' | chpasswd
@@ -2246,9 +2256,11 @@ COPY id_rsa.pub /root/.ssh/
 RUN cat root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
 RUN chmod 700 /root/.ssh/authorized_keys
 EXPOSE 22
-$ENABLE_SERVICE
-CMD ["/usr/sbin/init"]
-EOF
+COPY $NAME_SCRIPT .
+RUN chmod a+x $NAME_SCRIPT
+ENTRYPOINT ["./$NAME_SCRIPT"]
+_EOF
+    #cat $FILES
     #set empty var for next run
     ENABLE_SERVICE=""
     done

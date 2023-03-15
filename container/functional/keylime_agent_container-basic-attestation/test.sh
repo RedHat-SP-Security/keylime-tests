@@ -28,6 +28,8 @@ rlJournalStart
         rlRun "limeUpdateConf verifier ip $SERVER_IP"
         rlRun "limeUpdateConf verifier registrar_ip $SERVER_IP"
 
+        rlRun "limeconSetupSSH"
+
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
