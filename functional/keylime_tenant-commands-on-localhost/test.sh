@@ -118,6 +118,11 @@ rlJournalStart
         rlAssertGrep "Verifier at 127.0.0.1 with Port 8881 does not have agent $AGENT_ID" $rlRun_LOG
     rlPhaseEnd
 
+    rlPhaseStartTest "-c add fails due to bad policy"
+        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy <(echo '{}') -f /etc/hostname -c add" 1
+        # rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
+    rlPhaseEnd
+
     # TODO
     # -c addruntimepolicy
     # -c showruntimepolicy
