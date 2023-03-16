@@ -76,6 +76,11 @@ EOF"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
+    rlPhaseStartTest "Test updateruntimepolicy fails on malformed policy"
+        rlRun -s "keylime_tenant -c updateruntimepolicy --runtime-policy <(echo '{}') --runtime-policy-name list1)" 2
+        # rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
+    rlPhaseEnd
+
     rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-checksum"
         rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy policy.json  --runtime-policy-name list2 --runtime-policy-checksum ${CHECKSUM}"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
@@ -195,6 +200,11 @@ EOF"
     rlPhaseStartTest "Test addruntimepolicy from --runtime-policy-url not matching --runtime-policy-sig-url"
         rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list22 --runtime-policy-url 'http://localhost:8000/policy2.json' --runtime-policy-sig-url 'http://localhost:8000/allowlist-gpg.sig' --runtime-policy-sig-key gpg-key.pub" 1
         rlAssertGrep "failed detached signature verification" $rlRun_LOG
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test addruntimepolicy fails on malformed policy"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy <(echo '{}') --runtime-policy-name bad)" 2
+        # rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist"
