@@ -1919,6 +1919,9 @@ limeconPrepareAgentImage() {
     local TAG=$1
 
     cp /var/lib/keylime/cv_ca/cacert.crt .    
+    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_*.pub .
+    cp ${limeLibraryDir}/lime_con_start.sh .
     podman build -t=$TAG --file $DOCKER_FILE .
 }
 
@@ -1959,6 +1962,9 @@ limeconPrepareRegistrarImage() {
 
     local TAG=$1
 
+    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_*.pub .
+    cp ${limeLibraryDir}/lime_con_start.sh .
     podman build -t=$TAG --file $DOCKER_FILE .
 }
 
@@ -1999,6 +2005,9 @@ limeconPrepareVerifierImage() {
 
     local TAG=$1
 
+    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_*.pub .
+    cp ${limeLibraryDir}/lime_con_start.sh .
     podman build -t=$TAG --file $DOCKER_FILE .
 }
 
@@ -2050,7 +2059,7 @@ limeconRunAgent() {
     local AGENT_FILE=$5
     local TESTDIR=$6
 
-    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent
+    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_agent
 }
 
 true <<'=cut'
@@ -2092,7 +2101,7 @@ limeconRunRegistrar() {
     local NETWORK=$4
 
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:rw localhost/$TAG /usr/bin/keylime_registrar
+    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:z localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_registrar
 }
 
 true <<'=cut'
@@ -2133,7 +2142,7 @@ limeconRunVerifier() {
     local IP=$3
     local NETWORK=$4
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/bin/keylime_verifier
+    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_verifier
 }
 
 true <<'=cut'
@@ -2204,7 +2213,7 @@ limeconStop() {
 
         local NAMES=$1
 
-        podman ps -a --format "{{.Names}}" | grep -e "^${NAMES}\$" | xargs podman stop | xargs podman rm
+        podman ps -a --format "{{.Names}}" | grep -e "^${NAMES}\$" | xargs podman stop -t 3 | xargs podman rm
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
