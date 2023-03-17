@@ -37,6 +37,10 @@ execute:
     how: tmt
 
 adjust:
+  - when: target_PR_branch is defined and target_PR_branch != main
+    enabled: false
+    because: we want to run this plan only for PRs targeting the main branch
+
   - when: distro == centos-stream-9
     prepare+:
       - how: shell
