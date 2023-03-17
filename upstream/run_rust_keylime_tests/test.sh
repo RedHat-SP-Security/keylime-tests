@@ -38,11 +38,11 @@ rlJournalStart
         rlPhaseStartTest "Run cargo tests and measure code coverage"
             #run cargo tarpaulin code coverage
             rlRun "cargo tarpaulin -v --target-dir target/tarpaulin --workspace --exclude-files 'target/*' --ignore-panics --ignore-tests --out Xml --out Html --all-features"
-            rlRun "tar --create --file upstream_coverage.tar tarpaulin-report.html"
+            rlRun "tar -czf upstream_coverage.tar.gz tarpaulin-report.html"
             rlRun "mv cobertura.xml upstream_coverage.xml"
             rlFileSubmit upstream_coverage.xml
-            rlFileSubmit upstream_coverage.tar
-            rlRun "mv upstream_coverage.xml upstream_coverage.tar ${__INTERNAL_limeCoverageDir}"
+            rlFileSubmit upstream_coverage.tar.gz
+            rlRun "mv upstream_coverage.xml upstream_coverage.tar.gz ${__INTERNAL_limeCoverageDir}"
         rlPhaseEnd
     fi
 
