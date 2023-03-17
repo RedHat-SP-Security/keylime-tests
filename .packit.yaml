@@ -1,9 +1,11 @@
 jobs:
 - job: tests
   trigger: pull_request
-  metadata:
-    targets:
-    - fedora-all
-    - centos-stream-8-x86_64
+  targets:
     - centos-stream-9-x86_64
-    skip_build: true
+  skip_build: true
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            target_PR_branch: "rhel-9-main"
