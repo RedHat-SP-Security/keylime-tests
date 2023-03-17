@@ -10,7 +10,7 @@ rlJournalStart
     rlPhaseStartSetup "Build and install rust-keylime bits"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
 
-        if [ ${RPM_AGENT_COVERAGE} == "1" ] && rpm -qa | grep keylime-agent-rust; then
+        if [ "${RPM_AGENT_COVERAGE}" == "1" ] && rpm -qa | grep keylime-agent-rust; then
             rlFetchSrcForInstalled "keylime-agent-rust"
             rlRun "rpm -i keylime-agent-rust*.src.rpm"
             rlRun "rpmbuild -bp ~/rpmbuild/SPECS/keylime-agent-rust.spec"
@@ -26,7 +26,7 @@ rlJournalStart
         rlRun "pushd /var/tmp/rust-keylime_sources"
 
         # backup previously created files
-        [ -f /usr/local/bin/keylime_agent ] && rlRun "mv /usr/local/bin/keylime_agent /usr/local/bin/keylime_agent.backup"
+        [ -f /usr/bin/keylime_agent ] && rlRun "mv /usr/bin/keylime_agent /usr/bin/keylime_agent.backup"
         [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
 
         # when TPM_BINARY_MEASUREMENTS is defined, change filepath in sources
@@ -37,21 +37,21 @@ rlJournalStart
             done
         fi
 
+        rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y"
+        rlRun "source /root/.cargo/env"
+        rlRun "rustup default nightly"
+        rlRun "rustup component add llvm-tools-preview"
+        sleep 3
+        #install parser for code coverage files
+        rlRun "cargo install grcov"
+        # -Z is deprecated, use -C
         if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
-            rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y"
-            rlRun "source \"$HOME/.cargo/env\""
-            rlRun "rustup default nightly"
-            rlRun "rustup component add llvm-tools-preview"
-            sleep 3
-            #install parser for code coverage files
-            rlRun "cargo install grcov"
-            # -Z is deprecated, use -C
-            rlRun "export RUSTFLAGS='-Cinstrument-coverage'"
+            RUSTFLAGS='-Cinstrument-coverage'
         fi
         # remove agent unit file installed by the keylime Python install task (will not be needed in the future)
         rlRun "rm -f /etc/systemd/system/keylime_agent.service"
         #build
-        rlRun "make all"
+        rlRun "RUSTFLAGS='$RUSTFLAGS' cargo build"
         rlRun "make install"
 
         # configure TPM to use sha256

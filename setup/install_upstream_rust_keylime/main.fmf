@@ -10,8 +10,6 @@ framework: beakerlib
 require:
  - git
  - yum
- - rust
- - cargo
  - openssl-devel
  - gcc
  - tpm2-tss-devel
@@ -19,7 +17,6 @@ require:
  - libarchive-devel
  - clang-devel
  - rpm-build
- - rust-packaging
 duration: 20m
 enabled: true
 extra-nitrate: TC#0613570
