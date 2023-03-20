@@ -71,7 +71,7 @@ def should_ignore_line(line):
         return True
     if l.startswith('#'):
         return True
-    if l == '}' || l == '},':
+    if l == '}' or l == '},':
         return True
     return False
 
