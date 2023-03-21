@@ -1,24 +1,23 @@
-summary:
-  Tests used by Packit/TFT CI on Github to test distribution keylime
+summary: Run tests from the rhel-9.1.0 branch on the distribution keylime
 
-# disable plan temporarily until keylime PR#1068 gets merged
-enabled: false
+# unfortunately, filtering using adjust doesn't work for plan for context defined
+# in the very same plan. We need to update packit.yaml
+context:
+  swtpm: yes
+  agent: rust
+  faked_measured_boot_log: no
 
 adjust:
-    enabled: false
-    when: distro = centos-stream
+ - when: target_PR_branch is defined and target_PR_branch != rhel-9.1.0
+   enabled: false
+   because: we want to run this plan only for PRs targeting rhel-9.1.0 branch
 
 prepare:
   - how: shell
     script:
-     - dnf config-manager --set-enabled updates-testing updates-testing-modular
      - systemctl disable --now dnf-makecache.service || true
      - systemctl disable --now dnf-makecache.timer || true
-
-  - how: shell
-    order: 90
-    script:
-     - sed -i "s/tpm_hash_alg =.*/tpm_hash_alg = sha256/" /etc/keylime.conf
+     - dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 
 discover:
   how: fmf
@@ -32,9 +31,6 @@ discover:
    # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "/functional/.*"
-   # set zeromq as a default revocation notifier and test it
-   - /setup/configure_default_revocation_notifier/zeromq
-   - /functional/basic-attestation-on-localhost
 
 execute:
     how: tmt
