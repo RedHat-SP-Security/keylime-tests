@@ -2,7 +2,7 @@ name: Testing Farm
 
 on:
   workflow_run:
-    workflows: [Register PR]
+    workflows: ["Register PR"]
     types: [completed]
 
 jobs:

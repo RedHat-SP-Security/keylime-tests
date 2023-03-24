@@ -6,6 +6,7 @@ on:
 
 jobs:
   register:
+    name: Register PR
     runs-on: ubuntu-22.04
     steps:
       - name: Save PR info

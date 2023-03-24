@@ -35,3 +35,5 @@ The review can be done by any member of the team. However, it is recommended to 
 The merge itself should be done based on the accepted reviews. It is recommended to let the original requestor to merge the PR as they may want to do some refinements, e.g. squash some commits which were added during the review process.
 
 It is also important to make sure that the _Nitrate_ references are resynced (`tmt tests export --nitrate .`) to update the reflect the change form the previous location (branch) to the final one.
+
+test trigger
