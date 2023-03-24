@@ -2014,6 +2014,48 @@ limeconPrepareVerifierImage() {
 true <<'=cut'
 =pod
 
+=head2 limeconPrepareSystemdImage
+
+Prepare podman image with installed and running.
+
+    limeconPrepareSystemdImage [-f|--file DOCKER_FILE] TAG
+
+=over
+
+=item -f, --file DOCKER_FILE
+
+Parameter specify use of non-default docker file.
+
+=item TAG
+
+Name of image tag.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconPrepareSystemdImage() {
+
+    if [ "$1" == "-f" -o "$1" == "--file" ]; then
+        local DOCKER_FILE=$2
+        shift 2
+    else
+        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.systemd"
+        DOCKER_FILE="${limeLibraryDir}/Dockerfile.systemd"
+    fi
+
+    local TAG=$1
+
+    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_*.pub .
+    podman build -t=$TAG --file $DOCKER_FILE .
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeconRunAgent
 
 Container run via podman with specified parameters.
@@ -2143,6 +2185,47 @@ limeconRunVerifier() {
     local NETWORK=$4
 
     podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_verifier
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconRunSystemd
+
+Container run via podman with specified parameters.
+
+    limeconRunSystemd NAME TAG IP NETWORK
+
+=item NAME
+
+Set name of container.
+
+=item TAG
+
+Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunSystemd() {
+
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+
+    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT localhost/$TAG
 }
 
 true <<'=cut'
