@@ -52,8 +52,8 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Test updateruntimepolicy fails on malformed policy"
-        rlRun -s "keylime_tenant -c updateruntimepolicy --runtime-policy <(echo '{}') --runtime-policy-name list1)" 2
-        # rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
+        rlRun -s "keylime_tenant -c updateruntimepolicy --runtime-policy <(echo '{}') --runtime-policy-name list1" 1
+        rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-checksum"
@@ -163,8 +163,8 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Test addruntimepolicy fails on malformed policy"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy <(echo '{}') --runtime-policy-name bad)" 2
-        # rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy <(echo '{}') --runtime-policy-name bad" 1
+        rlAssertGrep "{'code': 400, 'status': \"Runtime policy is malformatted: 'meta' is a required property\", 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Test addallowlist"
