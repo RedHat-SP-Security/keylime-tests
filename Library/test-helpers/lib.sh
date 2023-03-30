@@ -2101,7 +2101,7 @@ limeconRunRegistrar() {
     local NETWORK=$4
 
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:z localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_registrar
+    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:z localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_registrar
 }
 
 true <<'=cut'
@@ -2142,7 +2142,7 @@ limeconRunVerifier() {
     local IP=$3
     local NETWORK=$4
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_verifier
+    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_verifier
 }
 
 true <<'=cut'
