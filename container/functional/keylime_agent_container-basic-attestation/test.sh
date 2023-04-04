@@ -39,7 +39,7 @@ rlJournalStart
 
         #container image build and preparation
         IMAGE="agent_image"
-        rlRun "limeconPrepareAgentImage ${IMAGE}"
+        rlRun "limeconPrepareImage --cacert /var/lib/keylime/cv_ca/cacert.crt ${limeLibraryDir}/Dockerfile.agent ${IMAGE}"
         TESTDIR_FIRST=$(limeCreateTestDir)
         TESTDIR_SECOND=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_FIRST/good-script.sh && chmod a+x $TESTDIR_FIRST/good-script.sh"
