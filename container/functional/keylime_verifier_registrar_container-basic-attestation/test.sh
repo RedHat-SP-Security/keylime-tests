@@ -32,11 +32,11 @@ rlJournalStart
 
         #build verifier container
         TAG_VERIFIER="verifier_image"
-        rlRun "limeconPrepareVerifierImage ${TAG_VERIFIER}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/Dockerfile.verifier ${TAG_VERIFIER}"
 
         #build registrar container
         TAG_REGISTRAR="registrar_image"
-        rlRun "limeconPrepareRegistrarImage ${TAG_REGISTRAR}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/Dockerfile.registrar ${TAG_REGISTRAR}"
 
         #mandatory for access agent containers to tpm
         rlRun "chmod o+rw /dev/tpmrm0"
@@ -66,7 +66,7 @@ rlJournalStart
         TAG_AGENT="agent_image"
         CONT_AGENT="agent_container"
         rlRun "cp cv_ca/cacert.crt ."
-        rlRun "limeconPrepareAgentImage ${TAG_AGENT}"
+        rlRun "limeconPrepareImage --cacert /var/lib/keylime/cv_ca/cacert.crt ${limeLibraryDir}/Dockerfile.agent ${TAG_AGENT}"
         rlRun "limeUpdateConf agent registrar_ip '\"$IP_REGISTRAR\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 

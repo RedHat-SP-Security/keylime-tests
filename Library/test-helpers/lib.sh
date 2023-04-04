@@ -1877,24 +1877,28 @@ limeconDeleteNetwork() {
 
     local NAME=$1
 
-    podman network rm $NAME
+    podman network rm -f $NAME
 }
 
 true <<'=cut'
 =pod
 
-=head2 limeconPrepareAgentImage
+=head2 limeconPrepareImage
 
-Prepare podman image with keylime agent. Install keylime agent and
-copy CA cert from the host into image and set needed permissions.
+Prepare podman image. Specify docker file and name tag for building images.
+Also set up ssh access for each container.
 
-    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+    limeconPrepareImage [ --cacert CERT_FILE] DOCKER_FILE TAG
 
 =over
 
-=item -f, --file DOCKER_FILE
+=item --cacert CERT_FILE
 
-Parameter specify use of non-default docker file.
+Parameter specify path for cacert file.
+
+=item DOCKER_FILE
+
+Parameter specify use of docker file.
 
 =item TAG
 
@@ -1906,19 +1910,24 @@ Returns 0.
 
 =cut
 
-limeconPrepareAgentImage() {
+limeconPrepareImage() {
 
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
+
+    if [ "$1" == "--cacert" ]; then
+        local CERT_FILE=$2
+        cp $CERT_FILE .
         shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.agent"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.agent"
     fi
 
-    local TAG=$1
+    local DOCKER_FILE=$1
+    local TAG=$2
 
-    cp /var/lib/keylime/cv_ca/cacert.crt .    
+    if [ -z "${DOCKER_FILE}" ] || [ -z "${TAG}" ]; then
+        echo "Docker file or build tag was not specified!"
+        return 1
+    fi
+
+    #set up for ssh access
     ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
     cp /root/.ssh/id_*.pub .
     cp ${limeLibraryDir}/lime_con_start.sh .
@@ -1928,21 +1937,35 @@ limeconPrepareAgentImage() {
 true <<'=cut'
 =pod
 
-=head2 limeconPrepareRegistrarImage
+=head2 limeconRun
 
-Prepare podman image with keylime registrar. Install keylime registrar.
+Container run via podman with specified parameters.
 
-    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+    limeconRun NAME TAG IP NETWORK COMMAND EXTRA_PODMAN_ARGS 
 
-=over
+=item NAME
 
-=item -f, --file DOCKER_FILE
-
-Parameter specify use of non-default docker file.
+Set name of container.
 
 =item TAG
 
 Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=item COMMAND
+
+Specify running command at start of container.
+
+=item EXTRA_PODMAN_ARGS
+
+Specify setup of starting container.
 
 =back
 
@@ -1950,107 +1973,16 @@ Returns 0.
 
 =cut
 
-limeconPrepareRegistrarImage() {
+limeconRun() {
 
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
-        shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.registrar"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.registrar"
-    fi
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+    local COMMAND=$5
+    local EXTRA_PODMAN_ARGS=$6
 
-    local TAG=$1
-
-    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
-    cp /root/.ssh/id_*.pub .
-    cp ${limeLibraryDir}/lime_con_start.sh .
-    podman build -t=$TAG --file $DOCKER_FILE .
-}
-
-true <<'=cut'
-=pod
-
-=head2 limeconPrepareVerifierImage
-
-Prepare podman image with keylime verifier. Install keylime verifier.
-
-    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
-
-=over
-
-=item -f, --file DOCKER_FILE
-
-Parameter specify use of non-default docker file.
-
-=item TAG
-
-Name of image tag.
-
-=back
-
-Returns 0.
-
-=cut
-
-limeconPrepareVerifierImage() {
-
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
-        shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.verifier"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.verifier"
-    fi
-
-    local TAG=$1
-
-    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
-    cp /root/.ssh/id_*.pub .
-    cp ${limeLibraryDir}/lime_con_start.sh .
-    podman build -t=$TAG --file $DOCKER_FILE .
-}
-
-true <<'=cut'
-=pod
-
-=head2 limeconPrepareSystemdImage
-
-Prepare podman image with installed and running.
-
-    limeconPrepareSystemdImage [-f|--file DOCKER_FILE] TAG
-
-=over
-
-=item -f, --file DOCKER_FILE
-
-Parameter specify use of non-default docker file.
-
-=item TAG
-
-Name of image tag.
-
-=back
-
-Returns 0.
-
-=cut
-
-limeconPrepareSystemdImage() {
-
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
-        shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.systemd"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.systemd"
-    fi
-
-    local TAG=$1
-
-    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
-    cp /root/.ssh/id_*.pub .
-    podman build -t=$TAG --file $DOCKER_FILE .
+    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG $COMMAND
 }
 
 true <<'=cut'
@@ -2101,7 +2033,7 @@ limeconRunAgent() {
     local AGENT_FILE=$5
     local TESTDIR=$6
 
-    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_agent
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start /usr/bin/keylime_agent" "--privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0"
 }
 
 true <<'=cut'
@@ -2142,8 +2074,7 @@ limeconRunRegistrar() {
     local IP=$3
     local NETWORK=$4
 
-
-    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:z localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_registrar
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start /usr/bin/keylime_registrar" "--volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:z"
 }
 
 true <<'=cut'
@@ -2184,48 +2115,7 @@ limeconRunVerifier() {
     local IP=$3
     local NETWORK=$4
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/local/bin/lime_con_start /usr/bin/keylime_verifier
-}
-
-true <<'=cut'
-=pod
-
-=head2 limeconRunSystemd
-
-Container run via podman with specified parameters.
-
-    limeconRunSystemd NAME TAG IP NETWORK
-
-=item NAME
-
-Set name of container.
-
-=item TAG
-
-Name of image tag.
-
-=item IP
-
-IP address of container.
-
-=item NETWORK
-
-Name of used podman network.
-
-=back
-
-Returns 0.
-
-=cut
-
-limeconRunSystemd() {
-
-    local NAME=$1
-    local TAG=$2
-    local IP=$3
-    local NETWORK=$4
-
-    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT localhost/$TAG
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start /usr/bin/keylime_verifier" "--volume=/etc/keylime/:/etc/keylime/"
 }
 
 true <<'=cut'
