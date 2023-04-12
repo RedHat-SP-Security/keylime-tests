@@ -1,0 +1,41 @@
+summary:
+  Tests used by Packit/TFT CI on Github to test upstream keylime
+
+environment+:
+  TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
+  KEYLIME_RUST_CODE_COVERAGE: 1
+
+prepare:
+  - how: shell
+    script:
+     - systemctl disable --now dnf-makecache.service || true
+     - systemctl disable --now dnf-makecache.timer || true
+
+discover:
+  how: fmf
+  test: 
+   - /setup/configure_swtpm_device
+   - /setup/install_upstream_keylime
+   - /setup/install_upstream_rust_keylime
+   # change IMA policy to simple and run one attestation scenario
+   # this is to utilize also a different parser
+   - /setup/configure_kernel_ima_module/ima_policy_simple
+   - /functional/basic-attestation-on-localhost
+
+execute:
+    how: tmt
+
+adjust:
+  - when: target_PR_branch is defined and target_PR_branch != main
+    enabled: false
+    because: we want to run this plan only for PRs targeting the main branch
+
+  - when: distro != fedora-37
+    enabled: false
+
+  - when: "distro == fedora-37"
+    prepare+:
+      - how: shell
+        order: 99
+        script:
+          - yum -y downgrade tpm2-tss
