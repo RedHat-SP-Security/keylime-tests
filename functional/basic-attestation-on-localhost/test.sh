@@ -35,7 +35,6 @@ rlJournalStart
             # start tpm emulator
             rlRun "limeStartTPMEmulator"
             rlRun "limeWaitForTPMEmulator"
-            # make sure tpm2-abrmd is running
             rlRun "limeCondStartAbrmd"
             # start ima emulator
             rlRun "limeInstallIMAConfig"

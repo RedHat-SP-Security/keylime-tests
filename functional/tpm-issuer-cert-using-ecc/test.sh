@@ -48,9 +48,7 @@ _EOF"
         # start tpm emulator
         rlRun "limeStartTPMEmulator"
         rlRun "limeWaitForTPMEmulator"
-        # make sure tpm2-abrmd is running
-        rlServiceStart tpm2-abrmd
-        sleep 5
+        rlRun "limeCondStartAbrmd"
         # print EK cert details
         rlRun "tpm2_nvread 0x1c00002 > ekcert-rsa.der"
         rlRun "openssl x509 -inform der -in ekcert-rsa.der -noout -text"
@@ -91,7 +89,7 @@ _EOF"
         rlRun "limeStopIMAEmulator"
         limeLogfileSubmit $(limeIMAEmulatorLogfile)
         rlRun "limeStopTPMEmulator"
-        rlServiceRestore tpm2-abrmd
+        rlRun "limeCondStopAbrmd"
         rlRun "rm -rf ${KEYLIME_CERT_DIR}"
         limeClearData
         limeRestoreConfig

@@ -43,14 +43,10 @@ rlJournalStart
             # start tpm emulator
             rlRun "limeStartTPMEmulator"
             rlRun "limeWaitForTPMEmulator"
-            # make sure tpm2-abrmd is running
-            rlServiceStart tpm2-abrmd
-            sleep 5
+            rlRun "limeCondStartAbrmd"
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
-        else
-            rlServiceStart tpm2-abrmd
         fi
         # prepare /var/lib/keylime/secure tmpfs if note present
         SECDIR=/var/lib/keylime/secure
@@ -111,7 +107,7 @@ rlJournalStart
         limeClearData
         limeRestoreConfig
         rlRun "rlFileRestore"
-        rlServiceRestore tpm2-abrmd
+        rlRun "limeCondStopAbrmd"
         rlRun "rm -rf $TmpDir"
     rlPhaseEnd
 
