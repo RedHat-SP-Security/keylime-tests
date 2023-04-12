@@ -16,9 +16,7 @@ rlJournalStart
         # start tpm emulator
         rlRun "limeStartTPMEmulator"
         rlRun "limeWaitForTPMEmulator"
-        # make sure tpm2-abrmd is running
-        rlServiceStart tpm2-abrmd
-        sleep 5
+        rlRun "limeCondStartAbrmd"
 
         # update config.py to use our fake  binary_bios_measurements
         # for the rust agent this is handled in the /setup/install_upstream_rust_keylime task
@@ -111,7 +109,7 @@ rlJournalStart
         rlRun "limeStopVerifier"
         rlRun "limeStopIMAEmulator"
         rlRun "limeStopTPMEmulator"
-        rlServiceRestore tpm2-abrmd
+        rlRun "limeCondStopAbrmd"
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig

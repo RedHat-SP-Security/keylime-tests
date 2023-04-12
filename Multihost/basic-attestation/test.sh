@@ -257,9 +257,7 @@ Agent() {
             # start tpm emulator
             rlRun "limeStartTPMEmulator"
             rlRun "limeWaitForTPMEmulator"
-            # make sure tpm2-abrmd is running
-            rlServiceStart tpm2-abrmd
-            sleep 5
+            rlRun "limeCondStartAbrmd"
             # start ima emulator
             limeInstallIMAConfig
             rlRun "limeStartIMAEmulator"
@@ -338,7 +336,7 @@ _EOF"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
-            rlServiceRestore tpm2-abrmd
+            rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
         rlRun "rm -f /var/tmp/test_payload_file"
@@ -406,9 +404,7 @@ Agent2() {
             # start tpm emulator
             limeStartTPMEmulator
             rlRun "limeWaitForTPMEmulator"
-            # make sure tpm2-abrmd is running
-            rlServiceStart tpm2-abrmd
-            sleep 5
+            rlRun "limeCondStartAbrmd"
             # start ima emulator
             limeInstallIMAConfig
             limeStartIMAEmulator
@@ -454,7 +450,7 @@ Agent2() {
         if limeTPMEmulated; then
             limeStopIMAEmulator
             limeStopTPMEmulator
-            rlServiceRestore tpm2-abrmd
+            rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
     rlPhaseEnd

@@ -21,9 +21,7 @@ rlJournalStart
             # start tpm emulator
             rlRun "limeStartTPMEmulator"
             rlRun "limeWaitForTPMEmulator"
-            # make sure tpm2-abrmd is running
-            rlServiceStart tpm2-abrmd
-            sleep 5
+            rlRun "limeCondStartAbrmd"
             # start ima emulator
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
@@ -194,7 +192,7 @@ rlJournalStart
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
-            rlServiceRestore tpm2-abrmd
+            rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
         limeClearData
