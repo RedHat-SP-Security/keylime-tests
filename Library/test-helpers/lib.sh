@@ -855,6 +855,58 @@ limeStopTPMEmulator() {
 true <<'=cut'
 =pod
 
+=head2 limeCondStartAbrmd
+
+Start tpm2-abrmd service if swtpm is configured to use socket
+
+    limeCondStartAbrmd
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeCondStartAbrmd() {
+    # do nothing if swtpm is configured as a device
+    if grep -q device $__INTERNAL_limeTmpDir/swtpm_setup &> /dev/null; then
+        rlLogInfo "Not starting tpm2-abrmd, swtpm created TPM device"
+    else
+        rlServiceStart tpm2-abrmd && sleep 5
+    fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeCondStopAbrmd
+
+Stop tpm2-abrmd service when it is running.
+
+    limeCondStopAbrmd
+
+=over
+
+=back
+
+Returns 0 when the stop was successful, non-zero otherwise.
+
+=cut
+
+limeCondStopAbrmd() {
+    # do nothing if swtpm is configured as a device
+    if systemctl is-active tpm2-abrmd 2> /dev/null; then
+        rlServiceStop tpm2-abrmd
+    else
+        rlLogInfo "Not stopping tpm2-abrmd as it was not running."
+    fi
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeCheckRemotePort
 
 Use limeCheckRemotePort to check port on specified ip adress.
@@ -1041,7 +1093,7 @@ true <<'=cut'
 
 =head2 limeWaitForTPMEmulator
 
-Use rlWaitForSocket to wait for the registrar to start.
+Use rlWaitForSocket or /dev/tpm* presence check to wait for the swtpm to start.
 
     limeWaitForTPMEmulator [PORT_NUMBER]
 
@@ -1061,7 +1113,14 @@ limeWaitForTPMEmulator() {
 
     local PORT
     [ -n "$1" ] && PORT=$1 || PORT=2322
-    rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}
+
+
+    # check /dev/tpm* presence if swtpm is configured as a device
+    if grep -q device $__INTERNAL_limeTmpDir/swtpm_setup &> /dev/null; then
+        rlWaitForFile /dev/tpm0 -d 0.5 -t ${limeTIMEOUT}
+    else
+        rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}
+    fi
 
 }
 
