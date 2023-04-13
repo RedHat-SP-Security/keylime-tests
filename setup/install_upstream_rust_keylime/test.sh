@@ -55,6 +55,7 @@ rlJournalStart
         rlRun "make install"
 
         # configure TPM to use sha256
+        rlRun "mkdir -p /etc/keylime/agent.conf.d"
         rlRun 'cat > /etc/keylime/agent.conf.d/tpm_hash_alg.conf <<_EOF
 [agent]
 tpm_hash_alg = "sha256"
