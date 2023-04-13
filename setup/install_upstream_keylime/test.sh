@@ -75,16 +75,10 @@ _EOF'
         rlRun "python3 setup.py install"
 
         # create directory structure in /etc/keylime and copy config files there
-        for comp in "agent" "verifier" "tenant" "registrar" "ca" "logging"; do
+        for comp in "verifier" "tenant" "registrar" "ca" "logging"; do
             rlRun "mkdir -p /etc/keylime/$comp.conf.d"
             rlRun "cp -n config/$comp.conf /etc/keylime/"
         done
-
-        # configure TPM to use sha256
-        rlRun 'cat > /etc/keylime/agent.conf.d/tpm_hash_alg.conf <<_EOF
-[agent]
-tpm_hash_alg = sha256
-_EOF'
 
         # install scripts to /usr/share/keylime
         rlRun "mkdir -p /usr/share/keylime"
