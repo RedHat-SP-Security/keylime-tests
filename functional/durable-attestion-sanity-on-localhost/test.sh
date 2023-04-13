@@ -88,7 +88,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Run keylime offline (durable) attestation - asssuming failure"
-        rlRun -s "keylime_attest"
+        rlRun -s "keylime_attest" 1
         rlAssertGrep "WARNING - File not found in allowlist: /bad-script.sh" $rlRun_LOG
         rlAssertGrep "ERROR - IMA ERRORS: Some entries couldn't be validated." $rlRun_LOG
         rlAssertGrep "keylime.durable_attestation_fetch_and_replay - INFO -.*Agent $AGENT_ID was NOT in \"attested\" state at.*" $rlRun_LOG -E
