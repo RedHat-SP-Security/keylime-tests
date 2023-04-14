@@ -7,6 +7,10 @@
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
+[ -n "$DOCKERFILE_VERIFIER" ] || DOCKERFILE_VERIFIER=Dockerfile.upstream.c9s
+[ -n "$DOCKERFILE_REGISTRAR" ] || DOCKERFILE_REGISTRAR=Dockerfile.upstream.c9s
+[ -n "$DOCKERFILE_AGENT" ] || DOCKERFILE_AGENT=Dockerfile.upstream.c9s
+
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
@@ -32,11 +36,23 @@ rlJournalStart
 
         #build verifier container
         TAG_VERIFIER="verifier_image"
-        rlRun "limeconPrepareVerifierImage ${TAG_VERIFIER}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/${DOCKERFILE_VERIFIER} ${TAG_VERIFIER}"
 
         #build registrar container
         TAG_REGISTRAR="registrar_image"
-        rlRun "limeconPrepareRegistrarImage ${TAG_REGISTRAR}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/${DOCKERFILE_REGISTRAR} ${TAG_REGISTRAR}"
+
+        # if TPM emulator is present
+        if limeTPMEmulated; then
+            # start tpm emulator
+            rlRun "limeStartTPMEmulator"
+            rlRun "limeWaitForTPMEmulator"
+            rlRun "limeCondStartAbrmd"
+            # start ima emulator
+            rlRun "limeInstallIMAConfig"
+            rlRun "limeStartIMAEmulator"
+        fi
+        sleep 5
 
         #mandatory for access agent containers to tpm
         rlRun "chmod o+rw /dev/tpmrm0"
@@ -65,8 +81,7 @@ rlJournalStart
         #setup of agent
         TAG_AGENT="agent_image"
         CONT_AGENT="agent_container"
-        rlRun "cp cv_ca/cacert.crt ."
-        rlRun "limeconPrepareAgentImage ${TAG_AGENT}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/${DOCKERFILE_AGENT} ${TAG_AGENT}"
         rlRun "limeUpdateConf agent registrar_ip '\"$IP_REGISTRAR\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 
@@ -75,14 +90,14 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho This is good-script1' > $TESTDIR/good-script1.sh && chmod a+x $TESTDIR/good-script1.sh"
         rlRun "echo -e '#!/bin/bash\necho This is good-script2' > $TESTDIR/good-script2.sh && chmod a+x $TESTDIR/good-script2.sh"
         # create allowlist and excludelist
-        rlRun "limeCreateTestLists ${TESTDIR}/*"
+        rlRun "limeCreateTestPolicy ${TESTDIR}/*"
 
         rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT $IP_AGENT $CONT_NETWORK_NAME $PWD/confdir_$CONT_AGENT $TESTDIR"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun -s "keylime_tenant -v $IP_VERIFIER  -t $IP_AGENT -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f excludelist.txt -c add"
+        rlRun -s "keylime_tenant -v $IP_VERIFIER  -t $IP_AGENT -u $AGENT_ID --runtime-policy policy.json -f /etc/hosts -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
@@ -106,13 +121,16 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        #possible manage function to stop it all
-        rlRun "limeconStop 'registrar_container'"
-        rlRun "limeconStop 'verifier_container'"
-        rlRun "limeconStop 'agent_container'"
+        limeconSubmitLogs
+        rlRun "limeconStop registrar_container verifier_container agent_container"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
         #set tmp resource manager permission to default state
         rlRun "chmod o-rw /dev/tpmrm0"
+        if limeTPMEmulated; then
+            rlRun "limeStopIMAEmulator"
+            rlRun "limeStopTPMEmulator"
+            rlRun "limeCondStopAbrmd"
+        fi
         limeExtendNextExcludelist $TESTDIR
         limeSubmitCommonLogs
         limeClearData

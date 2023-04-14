@@ -4,6 +4,9 @@ summary:
 environment+:
   TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
   KEYLIME_RUST_CODE_COVERAGE: 1
+  DOCKERFILE_AGENT: Dockerfile.upstream.c9s
+  DOCKERFILE_VERIFIER: Dockerfile.upstream.c9s
+  DOCKERFILE_REGISTRAR: Dockerfile.upstream.c9s
 
 prepare:
   - how: shell
@@ -16,11 +19,12 @@ discover:
   test: 
    - /setup/configure_swtpm_device
    - /setup/install_upstream_keylime
-   - /setup/install_upstream_rust_keylime
+   - /setup/install_rust_keylime_from_copr
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_simple
    - /functional/basic-attestation-on-localhost
+   - "/container/.*"
 
 execute:
     how: tmt
@@ -32,10 +36,3 @@ adjust:
 
   - when: distro != fedora-37
     enabled: false
-
-  - when: "distro == fedora-37"
-    prepare+:
-      - how: shell
-        order: 99
-        script:
-          - yum -y downgrade tpm2-tss

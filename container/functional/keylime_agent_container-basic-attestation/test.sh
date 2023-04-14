@@ -6,6 +6,8 @@
 #tmt -c distro=rhel-9.1 -c agent=rust run plan --default discover -h fmf -t /setup/configure_kernel_ima_module/ima_policy_simple -t /functional/keylime_agent_container-basic-attestation -vv provision --how=connect --guest=testvm --user root prepare execute --how tmt --interactive login finish
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 
+[ -n "$DOCKERFILE_AGENT" ] || DOCKERFILE_AGENT=Dockerfile.upstream.c9s
+
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
@@ -28,6 +30,18 @@ rlJournalStart
         rlRun "limeUpdateConf verifier ip $SERVER_IP"
         rlRun "limeUpdateConf verifier registrar_ip $SERVER_IP"
 
+        # if TPM emulator is present
+        if limeTPMEmulated; then
+            # start tpm emulator
+            rlRun "limeStartTPMEmulator"
+            rlRun "limeWaitForTPMEmulator"
+            rlRun "limeCondStartAbrmd"
+            # start ima emulator
+            rlRun "limeInstallIMAConfig"
+            rlRun "limeStartIMAEmulator"
+        fi
+        sleep 5
+
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
@@ -38,8 +52,9 @@ rlJournalStart
         rlRun "limeUpdateConf agent registrar_ip '\"$SERVER_IP\"'"
 
         #container image build and preparation
+        rlRun "cp -r /var/lib/keylime/cv_ca ."
         IMAGE="agent_image"
-        rlRun "limeconPrepareAgentImage ${IMAGE}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/$DOCKERFILE_AGENT ${IMAGE}"
         TESTDIR_FIRST=$(limeCreateTestDir)
         TESTDIR_SECOND=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_FIRST/good-script.sh && chmod a+x $TESTDIR_FIRST/good-script.sh"
@@ -69,21 +84,19 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID_SECOND}"
 
         # create allowlist and excludelist for each agent
-        rlRun "limeCreateTestLists -e ${TESTDIR_SECOND} ${TESTDIR_FIRST}/*"
-        rlRun "mv allowlist.txt allowlist-cont1.txt"
-        rlRun "mv excludelist.txt excludelist-cont1.txt"
-        rlRun "limeCreateTestLists -e ${TESTDIR_FIRST} ${TESTDIR_SECOND}/*"
-        rlRun "mv allowlist.txt allowlist-cont2.txt"
-        rlRun "mv excludelist.txt excludelist-cont2.txt"
+        rlRun "limeCreateTestPolicy -e ${TESTDIR_SECOND} ${TESTDIR_FIRST}/*"
+        rlRun "mv policy.json policy1.json"
+        rlRun "limeCreateTestPolicy -e ${TESTDIR_FIRST} ${TESTDIR_SECOND}/*"
+        rlRun "mv policy.json policy2.json"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agents"
-        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_FIRST -u $AGENT_ID_FIRST --allowlist allowlist-cont1.txt --exclude excludelist-cont1.txt -f excludelist-cont1.txt -c add"
+        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_FIRST -u $AGENT_ID_FIRST --runtime-policy policy1.json -f /etc/hosts -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID_FIRST'" $rlRun_LOG -E
         #check second agent
-        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_SECOND -u $AGENT_ID_SECOND --allowlist allowlist-cont2.txt --exclude excludelist-cont2.txt -f excludelist-cont2.txt -c add"
+        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_SECOND -u $AGENT_ID_SECOND --runtime-policy policy2.json -f /etc/hosts -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
     rlPhaseEnd
 
@@ -117,12 +130,18 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
+        limeconSubmitLogs
         rlRun "limeconStop 'agent_container.*'"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
         #set tmp resource manager permission to default state
         rlRun "chmod o-rw /dev/tpmrm0"
+        if limeTPMEmulated; then
+            rlRun "limeStopIMAEmulator"
+            rlRun "limeStopTPMEmulator"
+            rlRun "limeCondStopAbrmd"
+        fi
         limeExtendNextExcludelist $TESTDIR_FIRST
         limeExtendNextExcludelist $TESTDIR_SECOND
         rlRun "rm -f $TESTDIR_FIRST/*"
@@ -133,4 +152,3 @@ rlJournalStart
     rlPhaseEnd
 
 rlJournalEnd
-

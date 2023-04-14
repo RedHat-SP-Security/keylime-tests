@@ -3,7 +3,8 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Description: provides basic function for token manipulation
-#   Author: Karel Srot <ksrot@redhat.com>
+#   Authors: Karel Srot <ksrot@redhat.com>
+#            Patrik Koncity <pkoncity@redhat.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
@@ -1946,24 +1947,25 @@ limeconDeleteNetwork() {
 
     local NAME=$1
 
-    podman network rm $NAME
+    podman network rm -f $NAME
 }
 
 true <<'=cut'
 =pod
 
-=head2 limeconPrepareAgentImage
+=head2 limeconPrepareImage
 
-Prepare podman image with keylime agent. Install keylime agent and
-copy CA cert from the host into image and set needed permissions.
+Prepare podman image. Specify docker file and name tag for building images.
+If /var/tmp/keylime_sources is present, it is copied to the container.
+Also the ssh access is set up for the container.
 
-    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+    limeconPrepareImage DOCKER_FILE TAG
 
 =over
 
-=item -f, --file DOCKER_FILE
+=item DOCKER_FILE
 
-Parameter specify use of non-default docker file.
+Parameter specify use of docker file.
 
 =item TAG
 
@@ -1975,40 +1977,69 @@ Returns 0.
 
 =cut
 
-limeconPrepareAgentImage() {
+limeconPrepareImage() {
 
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
-        shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.agent"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.agent"
+    local CMDLINE
+    local ARGS
+
+    local DOCKER_FILE=$1
+    local TAG=$2
+
+    if [ -z "${DOCKER_FILE}" ] || [ -z "${TAG}" ]; then
+        echo "Docker file or build tag was not specified!"
+        return 1
     fi
 
-    local TAG=$1
+    # share /var/tmp/keylime_sources if present
+    if [ -d /var/tmp/keylime_sources ]; then
+        ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
+    fi
 
-    cp /var/lib/keylime/cv_ca/cacert.crt .
-    podman build -t=$TAG --file $DOCKER_FILE .
+    #set up for ssh access
+    ls /root/.ssh/id_*.pub &>/dev/null || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_*.pub .
+    cp ${limeLibraryDir}/lime_con_* .
+
+    CMDLINE="podman build $ARGS -t=$TAG --file $DOCKER_FILE ."
+    echo -e "\nRunning podman:\n$CMDLINE"
+    $CMDLINE
 }
 
 true <<'=cut'
 =pod
 
-=head2 limeconPrepareRegistrarImage
+=head2 limeconRun
 
-Prepare podman image with keylime registrar. Install keylime registrar.
+Container run via podman with specified parameters.
 
-    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
+    limeconRun NAME TAG IP NETWORK COMMAND EXTRA_PODMAN_ARGS
 
-=over
+If cv_ca directory is present in the current directory, it
+will be copied to /var/lib/keylime/cv_ca of the running container.
 
-=item -f, --file DOCKER_FILE
+=item NAME
 
-Parameter specify use of non-default docker file.
+Set name of container.
 
 =item TAG
 
 Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=item COMMAND
+
+Specify running command at start of container.
+
+=item EXTRA_PODMAN_ARGS
+
+Specify setup of starting container.
 
 =back
 
@@ -2016,59 +2047,23 @@ Returns 0.
 
 =cut
 
-limeconPrepareRegistrarImage() {
+limeconRun() {
 
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
-        shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.registrar"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.registrar"
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+    local COMMAND=$5
+    local EXTRA_PODMAN_ARGS=$6
+    local CMDLINE
+
+    if [ -d cv_ca ]; then
+        EXTRA_PODMAN_ARGS="--volume $PWD/cv_ca:/mnt/cv_ca:z $EXTRA_PODMAN_ARGS"
     fi
 
-    local TAG=$1
-
-    podman build -t=$TAG --file $DOCKER_FILE .
-}
-
-true <<'=cut'
-=pod
-
-=head2 limeconPrepareVerifierImage
-
-Prepare podman image with keylime verifier. Install keylime verifier.
-
-    limeconPrepareAgentImage [-f|--file DOCKER_FILE] TAG
-
-=over
-
-=item -f, --file DOCKER_FILE
-
-Parameter specify use of non-default docker file.
-
-=item TAG
-
-Name of image tag.
-
-=back
-
-Returns 0.
-
-=cut
-
-limeconPrepareVerifierImage() {
-
-    if [ "$1" == "-f" -o "$1" == "--file" ]; then
-        local DOCKER_FILE=$2
-        shift 2
-    else
-        echo "Using default docker file: ${limeLibraryDir}/Dockerfile.verifier"
-        DOCKER_FILE="${limeLibraryDir}/Dockerfile.verifier"
-    fi
-
-    local TAG=$1
-
-    podman build -t=$TAG --file $DOCKER_FILE .
+    CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG $COMMAND"
+    echo -e "\nRunning podman:\n$CMDLINE"
+    $CMDLINE
 }
 
 true <<'=cut'
@@ -2119,7 +2114,7 @@ limeconRunAgent() {
     local AGENT_FILE=$5
     local TESTDIR=$6
 
-    podman run -d --name $NAME --net $NETWORK --ip ${IP} --privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0  localhost/$TAG /usr/bin/keylime_agent
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_agent" "--privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0"
 }
 
 true <<'=cut'
@@ -2160,8 +2155,7 @@ limeconRunRegistrar() {
     local IP=$3
     local NETWORK=$4
 
-
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:rw localhost/$TAG /usr/bin/keylime_registrar
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_registrar" "--volume=/etc/keylime/:/etc/keylime/"
 }
 
 true <<'=cut'
@@ -2202,7 +2196,7 @@ limeconRunVerifier() {
     local IP=$3
     local NETWORK=$4
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --volume=/etc/keylime/:/etc/keylime/ localhost/$TAG /usr/bin/keylime_verifier
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_verifier" "--volume=/etc/keylime/:/etc/keylime/"
 }
 
 true <<'=cut'
@@ -2257,7 +2251,7 @@ true <<'=cut'
 Stop container, delete container and set default permission
 for agent container if stopping agent container.
 
-    limeconStop NAMES
+    limeconStop [NAME ...]
 
 =over
 
@@ -2271,10 +2265,43 @@ Returns 0.
 
 limeconStop() {
 
-        local NAMES=$1
-
-        podman ps -a --format "{{.Names}}" | grep -e "^${NAMES}\$" | xargs podman stop | xargs podman rm
+    while [ -n "$1" ]; do
+        podman ps -a --format "{{.Names}}" | grep -e "^$1\$" | xargs podman stop -t 3 | xargs podman rm
+        shift
+    done
 }
+
+true <<'=cut'
+=pod
+
+=head2 limeconSubmitLogs
+
+Submit log of a running (!) container(s).
+
+    limeconStop [NAME1 ...]
+
+=over
+
+=item NAME
+
+Name of the container whose log should be submitted.
+
+Returns 0.
+
+=cut
+
+limeconSubmitLogs() {
+
+    local NAMES
+    [ -n "$1" ] && NAMES="$@" || NAMES=$( podman ps -a --format "{{.Names}}" )
+
+
+    for NAME in ${NAMES}; do
+        podman logs $NAME &> $NAME.log
+        limeLogfileSubmit $NAME.log
+    done
+}
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Initialization
@@ -2344,6 +2371,12 @@ rm -f ${__INTERNAL_limeTPMDetails}
 #   should return 0 only when the library is ready to serve.
 
 limeLibraryLoaded() {
+
+    local PACKAGES="tpm2-tools openssl beakerlib podman nmap"
+
+    echo -e "\nInstall packages required by the library when missing."
+    rpm -q $PACKAGES || yum -y install $PACKAGES
+
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
         # print keylime package versions
@@ -2355,10 +2388,6 @@ limeLibraryLoaded() {
         return 1
     fi
 
-    local PACKAGES="tpm2-tools openssl beakerlib podman nmap"
-
-    echo -e "\nInstall packages required by the library when missing."
-    rpm -q $PACKAGES || yum -y install $PACKAGES
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
