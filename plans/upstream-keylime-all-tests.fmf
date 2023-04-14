@@ -25,8 +25,8 @@ discover:
    - /functional/basic-attestation-on-localhost
    # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
-   - "/functional/.*"
-   - "/compatibility/.*"
+   - "^/functional/.*"
+   - "^/compatibility/.*"
    - /update/basic-attestation-on-localhost/all
    # run upstream test suite
    - /upstream/run_keylime_tests
