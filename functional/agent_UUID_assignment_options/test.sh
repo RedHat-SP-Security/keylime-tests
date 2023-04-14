@@ -62,6 +62,7 @@ rlJournalStart
 
     rlPhaseStartTest "Use ENV variable to set agent UUID"
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c01111"
+        rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
         rlRun "cat > /etc/systemd/system/keylime_agent.service.d/15-uuid.conf <<_EOF
 [Service]
 Environment=\"KEYLIME_AGENT_UUID=\"$AGENT_ID\"\"
