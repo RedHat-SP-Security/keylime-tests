@@ -85,7 +85,7 @@ rlJournalStart
     rlPhaseStartTest "Test deleteruntimepolicy"
         rlRun -s "keylime_tenant -c deleteruntimepolicy --runtime-policy-name list1"
         #rlAssertGrep "{'code': 200, 'status': 'Deleted'" $rlRun_LOG
-        rlRun -s "keylime_tenant -c showruntimepolicy --runtime-policy-name list1"
+        rlRun -s "keylime_tenant -c showruntimepolicy --runtime-policy-name list1" 1
         rlAssertGrep "{'code': 404, 'status': 'Runtime policy list1 not found', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
@@ -116,7 +116,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Try to add --runtime-policy-name that already exists"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy policy.json --runtime-policy-name list2"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy policy.json --runtime-policy-name list2" 1
         rlAssertGrep "{'code': 409, 'status': 'Runtime policy with name list2 already exists', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
@@ -131,7 +131,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Try to delete --runtime-policy-name that does not exist"
-        rlRun -s "keylime_tenant -c deleteruntimepolicy --runtime-policy-name nosuchlist"
+        rlRun -s "keylime_tenant -c deleteruntimepolicy --runtime-policy-name nosuchlist" 1
         rlAssertGrep "{'code': 404, 'status': 'Runtime policy nosuchlist not found', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
@@ -180,7 +180,7 @@ rlJournalStart
     rlPhaseStartTest "Test deleteallowlist"
         rlRun -s "keylime_tenant -c deleteallowlist --allowlist-name list23"
         #rlAssertGrep "{'code': 200, 'status': 'Deleted'" $rlRun_LOG
-        rlRun -s "keylime_tenant -c showallowlist --allowlist-name list23"
+        rlRun -s "keylime_tenant -c showallowlist --allowlist-name list23" 1
         rlAssertGrep "{'code': 404, 'status': 'Runtime policy list23 not found', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
