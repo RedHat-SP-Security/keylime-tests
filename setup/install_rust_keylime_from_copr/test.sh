@@ -26,16 +26,10 @@ _EOF'
         fi
         rlRun "yum -y install keylime-agent-rust"
         rlAssertRpm keylime-agent-rust
-        # download keylime-agent.conf from upstream as it is not present in the RPM package
-        rlRun "curl -o /etc/keylime/keylime-agent.conf https://raw.githubusercontent.com/keylime/rust-keylime/master/keylime-agent.conf"
+        rlAssertExists /etc/keylime/agent.conf
         # prepare directory for drop-in adjustments
         rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
         rlRun "mkdir -p /etc/keylime/agent.conf.d"
-        # configure TPM to use sha256
-        rlRun 'cat > /etc/keylime/agent.conf.d/tpm_hash_alg.conf <<_EOF
-[agent]
-tpm_hash_alg = "sha256"
-_EOF'
     rlPhaseEnd
 
     rlPhaseStartTest "Test installed binaries"
