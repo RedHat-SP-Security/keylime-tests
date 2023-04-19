@@ -52,7 +52,9 @@ the library load.
 
 # we are using hardcoded paths so they are preserved due to reboots
 export __INTERNAL_syncStatusFile=/var/tmp/sync-status
-
+# export SERVERS and CLIENTS variables when defined by tmt
+[ -n "${SERVERS}" ] || export SERVERS=${TMT_ROLE_SERVERS}
+[ -n "${CLIENTS}" ] || export CLIENTS=${TMT_ROLE_CLIENTS}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Initialization / Installation
