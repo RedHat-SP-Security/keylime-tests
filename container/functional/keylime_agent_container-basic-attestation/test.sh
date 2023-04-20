@@ -6,6 +6,8 @@
 #tmt -c distro=rhel-9.1 -c agent=rust run plan --default discover -h fmf -t /setup/configure_kernel_ima_module/ima_policy_simple -t /functional/keylime_agent_container-basic-attestation -vv provision --how=connect --guest=testvm --user root prepare execute --how tmt --interactive login finish
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 
+[ -n "$DOCKERFILE_AGENT" ] || DOCKERFILE_AGENT=Dockerfile.upstream.c9s
+
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
@@ -28,6 +30,18 @@ rlJournalStart
         rlRun "limeUpdateConf verifier ip $SERVER_IP"
         rlRun "limeUpdateConf verifier registrar_ip $SERVER_IP"
 
+        # if TPM emulator is present
+        if limeTPMEmulated; then
+            # start tpm emulator
+            rlRun "limeStartTPMEmulator"
+            rlRun "limeWaitForTPMEmulator"
+            rlRun "limeCondStartAbrmd"
+            # start ima emulator
+            rlRun "limeInstallIMAConfig"
+            rlRun "limeStartIMAEmulator"
+        fi
+        sleep 5
+
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
@@ -38,8 +52,9 @@ rlJournalStart
         rlRun "limeUpdateConf agent registrar_ip '\"$SERVER_IP\"'"
 
         #container image build and preparation
+        rlRun "cp -r /var/lib/keylime/cv_ca ."
         IMAGE="agent_image"
-        rlRun "limeconPrepareImage --cacert /var/lib/keylime/cv_ca/cacert.crt ${limeLibraryDir}/Dockerfile.agent ${IMAGE}"
+        rlRun "limeconPrepareImage ${limeLibraryDir}/$DOCKERFILE_AGENT ${IMAGE}"
         TESTDIR_FIRST=$(limeCreateTestDir)
         TESTDIR_SECOND=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_FIRST/good-script.sh && chmod a+x $TESTDIR_FIRST/good-script.sh"
@@ -117,12 +132,18 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
+        limeconSubmitLogs
         rlRun "limeconStop 'agent_container.*'"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
         #set tmp resource manager permission to default state
         rlRun "chmod o-rw /dev/tpmrm0"
+        if limeTPMEmulated; then
+            rlRun "limeStopIMAEmulator"
+            rlRun "limeStopTPMEmulator"
+            rlRun "limeCondStopAbrmd"
+        fi
         limeExtendNextExcludelist $TESTDIR_FIRST
         limeExtendNextExcludelist $TESTDIR_SECOND
         rlRun "rm -f $TESTDIR_FIRST/*"
