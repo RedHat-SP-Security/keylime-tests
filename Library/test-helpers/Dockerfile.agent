@@ -1,2 +1,9 @@
 FROM quay.io/centos/centos:stream9
-RUN dnf install -y keylime-agent-rust util-linux-core && dnf clean all
+COPY id_*.pub /root/
+COPY lime_con_start.sh /usr/local/bin/lime_con_start
+RUN dnf install -y keylime-agent-rust util-linux-core openssh openssh-server which && \
+  dnf clean all && \
+  ssh-keygen -A && mkdir -p /root/.ssh && \
+  cat /root/id_*.pub > /root/.ssh/authorized_keys && \
+  chmod 700 /root/.ssh/authorized_keys && \
+  chmod a+x /usr/local/bin/lime_con_start
