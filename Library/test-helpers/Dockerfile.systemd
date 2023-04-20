@@ -1,6 +1,9 @@
 FROM quay.io/centos/centos:stream9
-RUN dnf install -y systemd util-linux-core openssh-server && dnf clean all
-RUN ssh-keygen -A && mkdir -p /root/.ssh
 COPY id_*.pub /root/
-RUN cat /root/id_*.pub > /root/.ssh/authorized_keys && chmod 700 /root/.ssh/authorized_keys
+RUN dnf install -y systemd util-linux-core openssh openssh-server && \
+  dnf clean all && \
+  ssh-keygen -A && \
+  mkdir -p /root/.ssh && \
+  cat /root/id_*.pub > /root/.ssh/authorized_keys && \
+  chmod 700 /root/.ssh/authorized_keys
 CMD ["/sbin/init"]

@@ -1883,18 +1883,83 @@ limeconDeleteNetwork() {
 true <<'=cut'
 =pod
 
-=head2 limeconPrepareImage
+=head2 limeconCreateNetwork
 
-Prepare podman image. Specify docker file and name tag for building images.
-Also set up ssh access for each container.
+Create container network.
 
-    limeconPrepareImage [ --cacert CERT_FILE] DOCKER_FILE TAG
+    limeconCreateNetwork NAME SUBNET
 
 =over
 
-=item --cacert CERT_FILE
+=item NAME
 
-Parameter specify path for cacert file.
+Name of container network.
+
+=item SUBNET
+
+Container network subnet in CIDR format, for example 172.18.0.0/16.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconCreateNetwork() {
+
+    local NAME=$1
+    local SUBNET=$2
+
+    if [ -z "${NAME}" ] || [ -z "${SUBNET}" ]; then
+        echo "Network name or network subnet was not specified!"
+        echo "Usage: limeconCreateNetwork \"agent_network\" 172.18.0.0/16"
+        return 1
+    fi
+
+    podman network create --subnet=$SUBNET $NAME
+    podman network inspect $NAME
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconDeleteNetwork
+
+Delete container network.
+
+    limeconDeleteNetwork NAME
+
+=over
+
+=item NAME
+
+Name of the container network.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconDeleteNetwork() {
+
+    local NAME=$1
+
+    podman network rm -f $NAME
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconPrepareImage
+
+Prepare podman image. Specify docker file and name tag for building images.
+If /var/tmp/keylime_sources is present, it is copied to the container.
+Also the ssh access is set up for the container.
+
+    limeconPrepareImage DOCKER_FILE TAG
+
+=over
 
 =item DOCKER_FILE
 
@@ -1912,12 +1977,8 @@ Returns 0.
 
 limeconPrepareImage() {
 
-
-    if [ "$1" == "--cacert" ]; then
-        local CERT_FILE=$2
-        cp $CERT_FILE .
-        shift 2
-    fi
+    local CMDLINE
+    local ARGS
 
     local DOCKER_FILE=$1
     local TAG=$2
@@ -1927,11 +1988,19 @@ limeconPrepareImage() {
         return 1
     fi
 
+    # share /var/tmp/keylime_sources if present
+    if [ -d /var/tmp/keylime_sources ]; then
+        ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
+    fi
+
     #set up for ssh access
-    ls /root/.ssh/id_*.pub || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    ls /root/.ssh/id_*.pub &>/dev/null || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
     cp /root/.ssh/id_*.pub .
-    cp ${limeLibraryDir}/lime_con_start.sh .
-    podman build -t=$TAG --file $DOCKER_FILE .
+    cp ${limeLibraryDir}/lime_con_* .
+
+    CMDLINE="podman build $ARGS -t=$TAG --file $DOCKER_FILE ."
+    echo -e "\nRunning podman:\n$CMDLINE"
+    $CMDLINE
 }
 
 true <<'=cut'
@@ -1941,7 +2010,10 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRun NAME TAG IP NETWORK COMMAND EXTRA_PODMAN_ARGS 
+    limeconRun NAME TAG IP NETWORK COMMAND EXTRA_PODMAN_ARGS
+
+If cv_ca directory is present in the current directory, it
+will be copied to /var/lib/keylime/cv_ca of the running container.
 
 =item NAME
 
@@ -1981,8 +2053,15 @@ limeconRun() {
     local NETWORK=$4
     local COMMAND=$5
     local EXTRA_PODMAN_ARGS=$6
+    local CMDLINE
 
-    podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG $COMMAND
+    if [ -d cv_ca ]; then
+        EXTRA_PODMAN_ARGS="--volume $PWD/cv_ca:/mnt/cv_ca:z $EXTRA_PODMAN_ARGS"
+    fi
+
+    CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG $COMMAND"
+    echo -e "\nRunning podman:\n$CMDLINE"
+    $CMDLINE
 }
 
 true <<'=cut'
@@ -1992,7 +2071,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRunAgent NAME TAG IP NETWORK AGENT_FILE TESTDIR 
+    limeconRunAgent NAME TAG IP NETWORK AGENT_FILE TESTDIR
 
 =item NAME
 
@@ -2033,7 +2112,7 @@ limeconRunAgent() {
     local AGENT_FILE=$5
     local TESTDIR=$6
 
-    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start /usr/bin/keylime_agent" "--privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0"
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_agent" "--privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0"
 }
 
 true <<'=cut'
@@ -2074,7 +2153,7 @@ limeconRunRegistrar() {
     local IP=$3
     local NETWORK=$4
 
-    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start /usr/bin/keylime_registrar" "--volume=/etc/keylime/:/etc/keylime/ --volume=$PWD/cv_ca:/var/lib/keylime/cv_ca:z"
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_registrar" "--volume=/etc/keylime/:/etc/keylime/"
 }
 
 true <<'=cut'
@@ -2115,7 +2194,7 @@ limeconRunVerifier() {
     local IP=$3
     local NETWORK=$4
 
-    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start /usr/bin/keylime_verifier" "--volume=/etc/keylime/:/etc/keylime/"
+    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_verifier" "--volume=/etc/keylime/:/etc/keylime/"
 }
 
 true <<'=cut'
@@ -2167,10 +2246,10 @@ true <<'=cut'
 
 =head2 limeconStop
 
-Stop container, delete container and set default permission 
+Stop container, delete container and set default permission
 for agent container if stopping agent container.
 
-    limeconStop NAMES
+    limeconStop [NAME ...]
 
 =over
 
@@ -2184,9 +2263,41 @@ Returns 0.
 
 limeconStop() {
 
-        local NAMES=$1
+    while [ -n "$1" ]; do
+        podman ps -a --format "{{.Names}}" | grep -e "^$1\$" | xargs podman stop -t 3 | xargs podman rm
+        shift
+    done
+}
 
-        podman ps -a --format "{{.Names}}" | grep -e "^${NAMES}\$" | xargs podman stop -t 3 | xargs podman rm
+true <<'=cut'
+=pod
+
+=head2 limeconSubmitLogs
+
+Submit log of a running (!) container(s).
+
+    limeconStop [NAME1 ...]
+
+=over
+
+=item NAME
+
+Name of the container whose log should be submitted.
+
+Returns 0.
+
+=cut
+
+limeconSubmitLogs() {
+
+    local NAMES
+    [ -n "$1" ] && NAMES="$@" || NAMES=$( podman ps -a --format "{{.Names}}" )
+
+
+    for NAME in ${NAMES}; do
+        podman logs $NAME &> $NAME.log
+        limeLogfileSubmit $NAME.log
+    done
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2257,6 +2368,12 @@ rm -f ${__INTERNAL_limeTPMDetails}
 #   should return 0 only when the library is ready to serve.
 
 limeLibraryLoaded() {
+
+    local PACKAGES="tpm2-tools openssl beakerlib podman nmap"
+
+    echo -e "\nInstall packages required by the library when missing."
+    rpm -q $PACKAGES || yum -y install $PACKAGES
+
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
         # print keylime package versions
@@ -2268,10 +2385,6 @@ limeLibraryLoaded() {
         return 1
     fi
 
-    local PACKAGES="tpm2-tools openssl beakerlib podman nmap"
-
-    echo -e "\nInstall packages required by the library when missing."
-    rpm -q $PACKAGES || yum -y install $PACKAGES
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
