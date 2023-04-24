@@ -34,6 +34,14 @@ _EOF'
 [Service]
 Environment=\"RUST_LOG=keylime_agent=trace\"
 _EOF"
+        # If the TPM_BINARY_MEASUREMENTS env var is set, set the binary
+        # measurements location for the service
+        if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
+            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/30-measured_boot_location.conf <<_EOF
+[Service]
+Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
+_EOF"
+        fi
         rlRun "systemctl daemon-reload"
     rlPhaseEnd
 
