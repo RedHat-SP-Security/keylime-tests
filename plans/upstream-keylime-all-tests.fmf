@@ -5,12 +5,6 @@ environment+:
   TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
   KEYLIME_RUST_CODE_COVERAGE: 1
 
-prepare:
-  - how: shell
-    script:
-     - systemctl disable --now dnf-makecache.service || true
-     - systemctl disable --now dnf-makecache.timer || true
-
 discover:
   how: fmf
   test: 
@@ -36,7 +30,7 @@ discover:
 execute:
     how: tmt
 
-adjust:
+adjust+:
   - when: target_PR_branch is defined and target_PR_branch != main
     enabled: false
     because: we want to run this plan only for PRs targeting the main branch
@@ -44,15 +38,9 @@ adjust:
   - when: distro == centos-stream-9
     prepare+:
       - how: shell
+        order: 30
         script:
-         - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
-
-  - when: distro == centos-stream-8
-    prepare+:
-      - how: shell
-        script:
-          - yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-#          - yum config-manager --set-enabled powertools
+         - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm
 
   # discover step adjustments
   # disable code coverage measurement everywhere except F37 and CS9
