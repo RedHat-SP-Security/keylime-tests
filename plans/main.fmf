@@ -11,3 +11,15 @@ environment:
   # task, not plans using /setup/install_rust_keylime_from_copr
   RUST_KEYLIME_UPSTREAM_URL: "https://github.com/keylime/rust-keylime.git"
   RUST_KEYLIME_UPSTREAM_BRANCH: "master"
+
+prepare:
+  - how: shell
+    script:
+     - systemctl disable --now dnf-makecache.service || true
+     - systemctl disable --now dnf-makecache.timer || true
+     - dnf makecache
+     - dnf update -y tpm2-tss tpm2-tools
+
+adjust:
+  - when: distro == centos-stream-8
+    enabled: 0

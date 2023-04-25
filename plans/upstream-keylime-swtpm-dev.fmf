@@ -8,12 +8,6 @@ environment+:
   DOCKERFILE_VERIFIER: Dockerfile.upstream.c9s
   DOCKERFILE_REGISTRAR: Dockerfile.upstream.c9s
 
-prepare:
-  - how: shell
-    script:
-     - systemctl disable --now dnf-makecache.service || true
-     - systemctl disable --now dnf-makecache.timer || true
-
 discover:
   how: fmf
   test: 
@@ -29,7 +23,7 @@ discover:
 execute:
     how: tmt
 
-adjust:
+adjust+:
   - when: target_PR_branch is defined and target_PR_branch != main
     enabled: false
     because: we want to run this plan only for PRs targeting the main branch
