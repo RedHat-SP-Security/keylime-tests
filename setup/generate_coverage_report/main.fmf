@@ -16,6 +16,6 @@ require:
   - rpm-build
   - rpmdevtools
   - selinux-policy-devel
-duration: 5m
+duration: 10m
 enabled: true
 extra-nitrate: TC#0612775
