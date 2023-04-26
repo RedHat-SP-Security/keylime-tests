@@ -2161,6 +2161,53 @@ limeconRunRegistrar() {
 true <<'=cut'
 =pod
 
+=head2 limeconRunSystemd
+
+Container run via podman with specified parameters.
+
+    limeconRunSystemd NAME TAG IP NETWORK EXTRA_PODMAN_ARGS
+
+=item NAME
+
+Set name of container.
+
+=item TAG
+
+Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=item EXTRA_PODMAN_ARGS
+
+Specify setup of starting container.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunSystemd() {
+
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+    local EXTRA_PODMAN_ARGS=$5
+
+    limeconRun $NAME $TAG $IP $NETWORK "/sbin/init" "${EXTRA_PODMAN_ARGS}"
+
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeconRunVerifier
 
 Container run via podman with specified parameters.
