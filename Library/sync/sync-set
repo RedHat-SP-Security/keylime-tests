@@ -4,7 +4,7 @@
 STATUS_FILE=/var/tmp/sync-status
 SYNC_PROVIDER_PORT=2135
 # save STDIN to TPMFILE
-[ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] || SYNC_DEBUG=false
+[ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] && SYNC_DEBUG=true || SYNC_DEBUG=false
 
 function debug() {
     $SYNC_DEBUG && echo -e $@
