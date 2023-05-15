@@ -22,11 +22,17 @@ adjust:
 /all:
   environment:
     PHASES: all
+  extra-nitrate: TC#0615277
+  id: 295e9dff-4209-4f91-8815-918573868742
 
 /setup:
   environment:
     PHASES: setup
+  extra-nitrate: TC#0615278
+  id: 4727fb86-6e9c-4ed7-9026-efefb6ee5a45
 
 /test:
   environment:
     PHASES: test
+  extra-nitrate: TC#0615279
+  id: 3ec2b3ba-70ec-4710-9613-56de3d9d66c1
