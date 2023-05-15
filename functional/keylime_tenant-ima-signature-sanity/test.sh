@@ -43,6 +43,7 @@ rlJournalStart
         rlRun "cp ${limeIMAPublicKey} ."
         # generate GPG key
         rlRun "gpgconf --kill gpg-agent"
+        rlRun "gpgconf --kill keyboxd"
         rlRun "export GNUPGHOME=${TmpDir}"
         rlRun "cat >gpg.script <<EOF
 %echo Generating a basic OpenPGP key
