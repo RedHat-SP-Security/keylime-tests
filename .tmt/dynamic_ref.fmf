@@ -5,6 +5,9 @@ adjust:
  - when: distro = centos-stream-9
    ref: rhel-9-main
    continue: false
+ - when: distro = rhel-9.2
+   ref: rhel-9.2.0
+   continue: false
  - when: distro = rhel-9.1
    ref: rhel-9.1.0
    continue: false
