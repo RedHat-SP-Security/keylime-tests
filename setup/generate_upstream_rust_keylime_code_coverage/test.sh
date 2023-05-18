@@ -3,7 +3,9 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 
-UPLOAD_URL=https://transfer.sh
+# load functions to handle file upload
+. ../../scripts/upload_service.sh
+UPLOAD_SERVICE=$( uploadServiceFind )
 
 
 rlJournalStart
@@ -25,26 +27,22 @@ rlJournalStart
         rlFileSubmit e2e_coverage.txt
         if [ -f "e2e_coverage.tar.gz" ]; then
             # upload e2e report in tar.gz
-            rlRun -s "curl --upload-file e2e_coverage.tar.gz $UPLOAD_URL"
-            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            URL=$( uploadServiceUpload $UPLOAD_SERVICE e2e_coverage.tar.gz )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
         fi
         if [ -f "e2e_coverage.txt" ]; then
             #upload e2e report in .txt format
-            rlRun -s "curl --upload-file e2e_coverage.txt $UPLOAD_URL"
-            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            URL=$( uploadServiceUpload $UPLOAD_SERVICE e2e_coverage.txt )
             rlLogInfo "e2e_coverage.txt report is available at $URL"
         fi
         if [ -f "upstream_coverage.tar.gz" ]; then
             #upload upstream report in .tar.gz
-            rlRun -s "curl --upload-file upstream_coverage.tar.gz $UPLOAD_URL"
-            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            URL=$( uploadServiceUpload $UPLOAD_SERVICE upstream_coverage.tar.gz )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
             fi
         if [ -f "upstream_coverage.xml" ]; then
             #upload
-            rlRun -s "curl --upload-file upstream_coverage.xml $UPLOAD_URL"
-            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            URL=$( uploadServiceUpload $UPLOAD_SERVICE upstream_coverage.xml )
             rlLogInfo "upstream_coverage.xml report is available at $URL"
         fi
         rlRun "popd"

@@ -4,8 +4,10 @@
 
 # to upload code coverage define UPLOAD_COVERAGE=1
 #UPLOAD_COVERAGE=0
-UPLOAD_URL=https://transfer.sh
-#UPLOAD_URL=https://free.keep.sh
+
+# load functions to handle file upload
+. ../../scripts/upload_service.sh
+UPLOAD_SERVICE=$( uploadServiceFind )
 
 # for proper patch code coverage functioning this script
 # expects these env variables to be set from the outside
@@ -80,18 +82,16 @@ rlJournalStart
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
-        # upload the archive to $UPLOAD_URL
+        # upload the archive to $UPLOAD_SERVICE
         if [ "${UPLOAD_COVERAGE}" == "1" ]; then
             # upload coverage.tar.gz
-            rlRun -s "curl --upload-file coverage.tar.gz $UPLOAD_URL"
-            URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+            URL=$( uploadServiceUpload $UPLOAD_SERVICE coverage.tar.gz )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
             # upload coverage.xml reports
             for REPORT in coverage.packit.xml coverage.testsuite.xml coverage.unittests.xml; do
                 ls coverage/$REPORT
                 if [ -f coverage/$REPORT ]; then
-                    rlRun -s "curl --upload-file coverage/$REPORT $UPLOAD_URL"
-                    URL=$( grep -o 'https:[^"]*' $rlRun_LOG )
+                    URL=$( uploadServiceUpload $UPLOAD_SERVICE coverage/$REPORT )
                     rlLogInfo "$REPORT report is available at $URL"
                 fi
             done
