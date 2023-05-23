@@ -21,6 +21,7 @@ discover:
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "^/functional/.*"
    - "^/compatibility/.*"
+   - "^/regression/.*"
    - /update/basic-attestation-on-localhost/all
    # run upstream test suite
    - /upstream/run_keylime_tests
