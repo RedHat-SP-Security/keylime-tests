@@ -23,6 +23,7 @@ discover:
    - "^/compatibility/.*"
    - "^/regression/.*"
    - /update/basic-attestation-on-localhost/all
+   - "/sanity/.*"
    # run upstream test suite
    - /upstream/run_keylime_tests
    - /setup/generate_coverage_report
