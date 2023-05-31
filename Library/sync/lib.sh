@@ -52,9 +52,28 @@ the library load.
 
 # we are using hardcoded paths so they are preserved due to reboots
 export __INTERNAL_syncStatusFile=/var/tmp/sync-status
+
+# for backvards compatibility define SERVERS and CLIENTS variables using tmt topology
+if [ -n "${TMT_TOPOLOGY_SH}" -a -f ${TMT_TOPOLOGY_SH} ]; then
+    . ${TMT_TOPOLOGY_SH}
+    cat ${TMT_TOPOLOGY_SH}
+    echo
+fi
 # export SERVERS and CLIENTS variables when defined by tmt
-[ -n "${SERVERS}" ] || export SERVERS=${TMT_ROLE_SERVERS}
-[ -n "${CLIENTS}" ] || export CLIENTS=${TMT_ROLE_CLIENTS}
+if [ -z "${SERVERS}" -a -n "${TMT_ROLES[SERVERS]}" ]; then
+    export SERVERS=""
+    for SRV in ${TMT_ROLES[SERVERS]}; do
+        SERVERS="$SERVERS ${TMT_GUESTS[${SRV}.hostname]}"
+    done
+    echo "SERVERS=${SERVERS}"
+fi
+if [ -z "${CLIENTS}" -a -n "${TMT_ROLES[CLIENTS]}" ]; then
+    export CLIENTS=""
+    for SRV in ${TMT_ROLES[CLIENTS]}; do
+        CLIENTS="$CLIENTS ${TMT_GUESTS[${SRV}.hostname]}"
+    done
+    echo "CLIENTS=${CLIENTS}"
+fi
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Initialization / Installation
