@@ -467,16 +467,21 @@ Agent2() {
 # Common script part
 ####################
 
-# assigne custom roles using SERVERS and CLIENTS variables
-export VERIFIER=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
-export REGISTRAR=$( echo "$SERVERS $CLIENTS" | awk '{ print $2 }')
-export AGENT=$( echo "$SERVERS $CLIENTS" | awk '{ print $3 }')
-export AGENT2=$( echo "$SERVERS $CLIENTS" | awk '{ print $4 }')
-
 export TESTSOURCEDIR=`pwd`
 
 rlJournalStart
     rlPhaseStartSetup
+        # import keylime library
+        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
+        rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
+ 
+        # assigne custom roles using SERVERS and CLIENTS variables
+        export VERIFIER=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
+        export REGISTRAR=$( echo "$SERVERS $CLIENTS" | awk '{ print $2 }')
+        export AGENT=$( echo "$SERVERS $CLIENTS" | awk '{ print $3 }')
+        export AGENT2=$( echo "$SERVERS $CLIENTS" | awk '{ print $4 }')
+
         MY_IP=$( hostname -I | awk '{ print $1 }' )
         [ -n "$VERIFIER" ] && export VERIFIER_IP=$( get_IP $VERIFIER )
         [ -n "$REGISTRAR" ] && export REGISTRAR_IP=$( get_IP $REGISTRAR )
@@ -492,12 +497,8 @@ rlJournalStart
         # common setup
         ###############
 
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        # import keylime library
-        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
-        rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
         rlAssertRpm keylime
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         # backup files
         limeBackupConfig
         # load REVOCATION_SCRIPT_TYPE
