@@ -85,13 +85,13 @@ rlJournalStart
         # upload the archive to $UPLOAD_SERVICE
         if [ "${UPLOAD_COVERAGE}" == "1" ]; then
             # upload coverage.tar.gz
-            URL=$( uploadServiceUpload $UPLOAD_SERVICE coverage.tar.gz )
+            URL=$( uploadServiceUpload -v $UPLOAD_SERVICE coverage.tar.gz )
             rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
             # upload coverage.xml reports
             for REPORT in coverage.packit.xml coverage.testsuite.xml coverage.unittests.xml; do
-                ls coverage/$REPORT
+                ls -l coverage/$REPORT
                 if [ -f coverage/$REPORT ]; then
-                    URL=$( uploadServiceUpload $UPLOAD_SERVICE coverage/$REPORT )
+                    URL=$( uploadServiceUpload -v $UPLOAD_SERVICE coverage/$REPORT )
                     rlLogInfo "$REPORT report is available at $URL"
                 fi
             done
