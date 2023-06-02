@@ -6,12 +6,13 @@ declare -A UPLOAD_SERVICES=( \
     [free.keep.sh]="https://free.keep.sh" \
     [oshi.at]="https://oshi.at/?expire=1440" \
     [transfer.sh]="https://transfer.sh" \
+    [temp.sh]="https://temp.sh" \
 )
 
 # returns a list of known service domains
 function uploadServiceList() {
     #echo ${!UPLOAD_SERVICES[@]}
-    echo oshi.at transfer.sh free.keep.sh
+    echo free.keep.sh transfer.sh temp.sh oshi.at
 }
 
 # returns URL for the given service domain
@@ -49,9 +50,19 @@ function uploadServiceParseURL() {
 
 # uploads a file to the given service and prints URL to the downloaded file
 function uploadServiceUpload() {
+    local VERBOSE=false
+    if [ "$1" == "-v" ]; then
+        VERBOSE=true
+        shift
+    fi
     local SERVICE="$1"
     local FILE="$2"
     local NAME=$( basename $FILE )
-    local URL=$( uploadServiceURL $1 )
-    curl -s --upload-file $FILE $URL | uploadServiceParseURL - $1 $NAME
+    local URL=$( uploadServiceURL $SERVICE )
+    local TMP=$( mktemp )
+    curl --retry 5 --upload-file $FILE "$URL" &> $TMP
+    echo -e "\n===curl-out-end===" >> $TMP
+    $VERBOSE && cat $TMP >&2
+    uploadServiceParseURL $TMP $SERVICE $NAME
+    rm -f $TMP
 }
