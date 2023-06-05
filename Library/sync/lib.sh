@@ -54,9 +54,9 @@ the library load.
 export __INTERNAL_syncStatusFile=/var/tmp/sync-status
 
 # for backvards compatibility define SERVERS and CLIENTS variables using tmt topology
-if [ -n "${TMT_TOPOLOGY_SH}" -a -f ${TMT_TOPOLOGY_SH} ]; then
-    . ${TMT_TOPOLOGY_SH}
-    cat ${TMT_TOPOLOGY_SH}
+if [ -n "${TMT_TOPOLOGY_BASH}" -a -f ${TMT_TOPOLOGY_BASH} ]; then
+    . ${TMT_TOPOLOGY_BASH}
+    cat ${TMT_TOPOLOGY_BASH}
     echo
 fi
 # export SERVERS and CLIENTS variables when defined by tmt
