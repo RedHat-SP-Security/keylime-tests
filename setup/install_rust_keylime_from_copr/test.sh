@@ -13,7 +13,7 @@ rlJournalStart
 name=Copr repo for keylime-rust-keylime-master owned by packit
 baseurl=https://download.copr.fedorainfracloud.org/results/packit/keylime-rust-keylime-master/fedora-\$releasever-\$basearch/
 type=rpm-md
-skip_if_unavailable=True
+skip_if_unavailable=False
 gpgcheck=1
 gpgkey=https://download.copr.fedorainfracloud.org/results/packit/keylime-rust-keylime-master/pubkey.gpg
 repo_gpgcheck=0
