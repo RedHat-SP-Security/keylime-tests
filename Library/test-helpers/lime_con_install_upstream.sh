@@ -4,7 +4,30 @@
 yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 
 # install build requires for C9S
-yum -y install which openssh openssh-server git python3-lark-parser python3-packaging python3-typing-extensions python3-pip python3-pyyaml python3-tornado python3-requests python3-sqlalchemy python3-alembic python3-psutil python3-gnupg python3-cryptography libselinux-python3 python3-pyasn1 python3-zmq python3-pyasn1-modules python3-jsonschema tpm2-tools
+yum -y install \
+    git \
+    libselinux-python3 \
+    openssh \
+    openssh-server \
+    python3-alembic \
+    python3-cryptography \
+    python3-gnupg \
+    python3-jinja2 \
+    python3-jsonschema \
+    python3-lark-parser \
+    python3-packaging \
+    python3-pip \
+    python3-psutil \
+    python3-pyasn1 \
+    python3-pyasn1-modules \
+    python3-pyyaml \
+    python3-requests \
+    python3-sqlalchemy \
+    python3-tornado \
+    python3-typing-extensions \
+    python3-zmq \
+    tpm2-tools \
+    which
 
 # if keylime_sources are not present, clone the repo
 if [ ! -f /var/tmp/keylime_sources/setup.py ]; then
