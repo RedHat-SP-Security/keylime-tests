@@ -2060,6 +2060,64 @@ limeconPrepareImage() {
 true <<'=cut'
 =pod
 
+=head2 limeconPullImage
+
+Pull the requested image from the repository and tag with the provided tag.
+
+    limeconPullImage REGISTRY IMAGE [LOCAL_NAME_TAG]
+
+=over
+
+=item REGISTRY
+
+The registry from where the image will be pulled.
+
+=item IMAGE
+
+The image to be pulled from the registry.
+
+=item LOCAL_NAME_TAG
+
+The optional local name and tag to be used. Must be in "name:tag" format.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconPullImage() {
+
+    local CMDLINE
+
+    local REGISTRY=$1
+    local IMAGE=$2
+    local LOCAL_NAME_TAG=$3
+
+    if [ -z "${REGISTRY}" ] || [ -z "${IMAGE}" ]; then
+        echo "Not all parameters were provided!"
+        return 1
+    fi
+
+    CMDLINE="podman pull ${REGISTRY}/${IMAGE}"
+    echo -e "\nRunning podman:\n$CMDLINE"
+    $CMDLINE
+    retval=$?
+    if [ $retval -ne 0 ]; then
+        echo "Could not pull image $REGISTRY/$IMAGE"
+        return $retval
+    fi
+
+    if [ -n "${LOCAL_NAME_TAG}" ]; then
+        CMDLINE="podman tag ${REGISTRY}/${IMAGE} $LOCAL_NAME_TAG"
+        echo -e "\nRunning podman:\n$CMDLINE"
+        $CMDLINE
+    fi
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeconRun
 
 Container run via podman with specified parameters.
