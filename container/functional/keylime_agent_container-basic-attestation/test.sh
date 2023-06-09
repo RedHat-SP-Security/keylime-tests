@@ -6,7 +6,7 @@
 #tmt -c distro=rhel-9.1 -c agent=rust run plan --default discover -h fmf -t /setup/configure_kernel_ima_module/ima_policy_simple -t /functional/keylime_agent_container-basic-attestation -vv provision --how=connect --guest=testvm --user root prepare execute --how tmt --interactive login finish
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 
-[ -n "$DOCKERFILE_AGENT" ] || DOCKERFILE_AGENT=Dockerfile.upstream.c9s
+[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
 
 rlJournalStart
 
@@ -46,21 +46,20 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        
+
         CONT_NETWORK_NAME="agent_network"
-        rlRun "limeconCreateNetwork ${CONT_NETWORK_NAME} 172.18.0.0/16"        
+        rlRun "limeconCreateNetwork ${CONT_NETWORK_NAME} 172.18.0.0/16"
         rlRun "limeUpdateConf agent registrar_ip '\"$SERVER_IP\"'"
 
         #container image build and preparation
         rlRun "cp -r /var/lib/keylime/cv_ca ."
+        rlAssertExists ./cv_ca/cacert.crt
         IMAGE="agent_image"
-        rlRun "limeconPrepareImage ${limeLibraryDir}/$DOCKERFILE_AGENT ${IMAGE}"
+        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"$AGENT_DOCKERFILE") ${IMAGE}"
         TESTDIR_FIRST=$(limeCreateTestDir)
         TESTDIR_SECOND=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_FIRST/good-script.sh && chmod a+x $TESTDIR_FIRST/good-script.sh"
         rlRun "echo -e '#!/bin/bash\necho ok' > $TESTDIR_SECOND/good-script.sh && chmod a+x $TESTDIR_SECOND/good-script.sh"
-        #mandatory for access agent containers to tpm
-        rlRun "chmod o+rw /dev/tpmrm0"
 
         #setup of first agent
         #possible could be automated setup as function together with building
@@ -70,7 +69,7 @@ rlJournalStart
         rlRun "limeconPrepareAgentConfdir $AGENT_ID_FIRST $IP_AGENT_FIRST confdir_$CONT_AGENT_FIRST"
 
         #run of first agent 
-        rlRun "limeconRunAgent $CONT_AGENT_FIRST $IMAGE $IP_AGENT_FIRST $CONT_NETWORK_NAME $PWD/confdir_$CONT_AGENT_FIRST $TESTDIR_FIRST"
+        rlRun "limeconRunAgent $CONT_AGENT_FIRST $IMAGE $IP_AGENT_FIRST $CONT_NETWORK_NAME $TESTDIR_FIRST keylime_agent $PWD/confdir_$CONT_AGENT_FIRST $PWD/cv_ca"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID_FIRST}"
 
         #setup of second agent
@@ -80,7 +79,7 @@ rlJournalStart
         rlRun "limeconPrepareAgentConfdir $AGENT_ID_SECOND $IP_AGENT_SECOND confdir_$CONT_AGENT_SECOND"
 
         #run of second agent
-        rlRun "limeconRunAgent $CONT_AGENT_SECOND $IMAGE $IP_AGENT_SECOND $CONT_NETWORK_NAME $PWD/confdir_$CONT_AGENT_SECOND $TESTDIR_SECOND"
+        rlRun "limeconRunAgent $CONT_AGENT_SECOND $IMAGE $IP_AGENT_SECOND $CONT_NETWORK_NAME $TESTDIR_SECOND keylime_agent $PWD/confdir_$CONT_AGENT_SECOND $PWD/cv_ca"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID_SECOND}"
 
         # create allowlist and excludelist for each agent

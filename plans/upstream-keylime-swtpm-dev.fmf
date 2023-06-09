@@ -4,9 +4,9 @@ summary:
 environment+:
   TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
   KEYLIME_RUST_CODE_COVERAGE: 1
-  DOCKERFILE_AGENT: Dockerfile.upstream.c9s
-  DOCKERFILE_VERIFIER: Dockerfile.upstream.c9s
-  DOCKERFILE_REGISTRAR: Dockerfile.upstream.c9s
+  AGENT_DOCKERFILE: Dockerfile.upstream.c9s
+  VERIFIER_DOCKERFILE: Dockerfile.upstream.c9s
+  REGISTRAR_DOCKERFILE: Dockerfile.upstream.c9s
 
 discover:
   how: fmf

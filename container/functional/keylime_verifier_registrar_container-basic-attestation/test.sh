@@ -7,9 +7,9 @@
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
-[ -n "$DOCKERFILE_VERIFIER" ] || DOCKERFILE_VERIFIER=Dockerfile.upstream.c9s
-[ -n "$DOCKERFILE_REGISTRAR" ] || DOCKERFILE_REGISTRAR=Dockerfile.upstream.c9s
-[ -n "$DOCKERFILE_AGENT" ] || DOCKERFILE_AGENT=Dockerfile.upstream.c9s
+[ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
 
 rlJournalStart
 
@@ -36,11 +36,11 @@ rlJournalStart
 
         #build verifier container
         TAG_VERIFIER="verifier_image"
-        rlRun "limeconPrepareImage ${limeLibraryDir}/${DOCKERFILE_VERIFIER} ${TAG_VERIFIER}"
+        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${VERIFIER_DOCKERFILE}") ${TAG_VERIFIER}"
 
         #build registrar container
         TAG_REGISTRAR="registrar_image"
-        rlRun "limeconPrepareImage ${limeLibraryDir}/${DOCKERFILE_REGISTRAR} ${TAG_REGISTRAR}"
+        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${REGISTRAR_DOCKERFILE}") ${TAG_REGISTRAR}"
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -54,12 +54,9 @@ rlJournalStart
         fi
         sleep 5
 
-        #mandatory for access agent containers to tpm
-        rlRun "chmod o+rw /dev/tpmrm0"
-
         #run verifier container
         CONT_VERIFIER="verifier_container"
-        rlRun "limeconRunVerifier $CONT_VERIFIER $TAG_VERIFIER $IP_VERIFIER $CONT_NETWORK_NAME"
+        rlRun "limeconRunVerifier $CONT_VERIFIER $TAG_VERIFIER $IP_VERIFIER $CONT_NETWORK_NAME keylime_verifier /etc/keylime"
         rlRun "limeWaitForVerifier 8881 $IP_VERIFIER"
         #wait for generating of certs
         sleep 5
@@ -70,7 +67,7 @@ rlJournalStart
 
         #run registrar container
         CONT_REGISTRAR="registrar_container"
-        rlRun "limeconRunRegistrar $CONT_REGISTRAR $TAG_REGISTRAR $IP_REGISTRAR $CONT_NETWORK_NAME"
+        rlRun "limeconRunRegistrar $CONT_REGISTRAR $TAG_REGISTRAR $IP_REGISTRAR $CONT_NETWORK_NAME keylime_registrar /etc/keylime $(realpath ./cv_ca)"
         rlRun "limeWaitForRegistrar 8891 $IP_REGISTRAR"
 
         # tenant
@@ -81,7 +78,7 @@ rlJournalStart
         #setup of agent
         TAG_AGENT="agent_image"
         CONT_AGENT="agent_container"
-        rlRun "limeconPrepareImage ${limeLibraryDir}/${DOCKERFILE_AGENT} ${TAG_AGENT}"
+        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${AGENT_DOCKERFILE}") ${TAG_AGENT}"
         rlRun "limeUpdateConf agent registrar_ip '\"$IP_REGISTRAR\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 
@@ -92,7 +89,7 @@ rlJournalStart
         # create allowlist and excludelist
         rlRun "limeCreateTestPolicy ${TESTDIR}/*"
 
-        rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT $IP_AGENT $CONT_NETWORK_NAME $PWD/confdir_$CONT_AGENT $TESTDIR"
+        rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT $IP_AGENT $CONT_NETWORK_NAME $TESTDIR keylime_agent $PWD/confdir_$CONT_AGENT $(realpath ./cv_ca)"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
 
