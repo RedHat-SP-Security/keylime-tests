@@ -2015,7 +2015,6 @@ true <<'=cut'
 
 Prepare podman image. Specify docker file and name tag for building images.
 If /var/tmp/keylime_sources is present, it is copied to the container.
-Also the ssh access is set up for the container.
 
     limeconPrepareImage DOCKER_FILE TAG
 
@@ -2053,13 +2052,7 @@ limeconPrepareImage() {
         ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
     fi
 
-    #set up for ssh access
-    ls /root/.ssh/id_*.pub &>/dev/null || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
-    cp /root/.ssh/id_*.pub .
-    cp ${limeLibraryDir}/lime_con_* .
-    cp ${limeLibraryDir}/yumrepogen_setup.sh .
-
-    CMDLINE="podman build $ARGS -t=$TAG --file $DOCKER_FILE ."
+    CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE"
     echo -e "\nRunning podman:\n$CMDLINE"
     $CMDLINE
 }
@@ -2071,7 +2064,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRun NAME TAG IP NETWORK COMMAND EXTRA_PODMAN_ARGS
+    limeconRun NAME TAG IP NETWORK EXTRA_PODMAN_ARGS [COMMAND]
 
 If cv_ca directory is present in the current directory, it
 will be copied to /var/lib/keylime/cv_ca of the running container.
@@ -2092,13 +2085,13 @@ IP address of container.
 
 Name of used podman network.
 
-=item COMMAND
-
-Specify running command at start of container.
-
 =item EXTRA_PODMAN_ARGS
 
 Specify setup of starting container.
+
+=item COMMAND
+
+Specify command to run on the container.
 
 =back
 
@@ -2112,13 +2105,9 @@ limeconRun() {
     local TAG=$2
     local IP=$3
     local NETWORK=$4
-    local COMMAND=$5
-    local EXTRA_PODMAN_ARGS=$6
+    local EXTRA_PODMAN_ARGS=$5
+    local COMMAND=$6
     local CMDLINE
-
-    if [ -d cv_ca ]; then
-        EXTRA_PODMAN_ARGS="--volume $PWD/cv_ca:/mnt/cv_ca:z $EXTRA_PODMAN_ARGS"
-    fi
 
     CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG $COMMAND"
     echo -e "\nRunning podman:\n$CMDLINE"
@@ -2132,7 +2121,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRunAgent NAME TAG IP NETWORK AGENT_FILE TESTDIR
+    limeconRunAgent NAME TAG IP NETWORK TESTDIR COMMAND [CONFDIR] [CERTDIR] [PORT] [REV_PORT]
 
 =item NAME
 
@@ -2150,13 +2139,31 @@ IP address of container.
 
 Name of used podman network.
 
-=item AGENT_FILE
-
-Mounted dir with configuration file.
-
 =item TESTDIR
 
-Mounted test dir.
+Local directory to be mounted inside the container.
+
+=item COMMAND
+
+Command to run inside the container.
+
+=item CONFDIR
+
+Local directory containing the agent configuration file.
+
+=item CERTDIR
+
+Local directory containing the trusted ca certificate files.
+
+=item PORT
+
+The host port to map to the port the agent will listen for requests.
+If not provided, no mapping will occur
+
+=item REV_PORT
+
+The host port to map to the port the agent will listen for revocation notifications.
+If not provided, no mapping will occur
 
 =back
 
@@ -2170,10 +2177,37 @@ limeconRunAgent() {
     local TAG=$2
     local IP=$3
     local NETWORK=$4
-    local AGENT_FILE=$5
-    local TESTDIR=$6
+    local TESTDIR=$5
+    local COMMAND=$6
+    local CONFDIR=$7
+    local CERTDIR=$8
+    local PORT=$9
+    local REV_PORT=${10}
 
-    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_agent" "--privileged --volume=${AGENT_FILE}:/etc/keylime/ --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=${TESTDIR}:${TESTDIR}:rw --device=/dev/tpmrm0"
+    if [ -n "$PORT" ]; then
+        ADD_PORT="-p $PORT:9002"
+        PUBLISH_PORTS="-P"
+    fi
+
+    if [ -n "$REV_PORT" ]; then
+        ADD_REV_PORT="-p $REV_PORT:8992"
+        PUBLISH_PORTS="-P"
+    fi
+
+    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --tmpfs /var/lib/keylime/secure --volume=$TESTDIR:$TESTDIR --device=/dev/tpm0 --device=/dev/tpmrm0 -e RUST_LOG=keylime_agent=trace"
+
+    if [ -n "$CONFDIR" ]; then
+        EXTRA_ARGS="--volume=${CONFDIR}:/etc/keylime/:z $EXTRA_ARGS"
+    fi
+
+    if [ -n "$CERTDIR" ]; then
+        EXTRA_ARGS="--volume ${CERTDIR}:/var/lib/keylime/cv_ca/:z $EXTRA_ARGS"
+        # Find out better way to handle this: keylime inside the container needs access to the CA certificate
+        # On rootless container, this could be done with 'podman unshare'
+        podman run --rm --attach stdout $EXTRA_ARGS localhost/agent_image chown -R keylime:keylime /var/lib/keylime/cv_ca
+    fi
+
+    limeconRun $NAME $TAG $IP $NETWORK "$EXTRA_ARGS" $COMMAND
 }
 
 true <<'=cut'
@@ -2183,7 +2217,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRunRegistrar NAME TAG IP NETWORK
+    limeconRunRegistrar NAME TAG IP NETWORK COMMAND [CONFDIR] [CERTDIR] [PORT] [TLS_PORT]
 
 =item NAME
 
@@ -2201,6 +2235,24 @@ IP address of container.
 
 Name of used podman network.
 
+=item COMMAND
+
+Command to run inside the container.
+
+=item CONFDIR
+
+Directory containing the registrar configuration.
+
+=item PORT
+
+The host port to map to the port the registrar will listen for agent registration requests.
+If not provided, no mapping will occur
+
+=item TLS_PORT
+
+The host port to map to the port the registrar will listen for requests.
+If not provided, no mapping will occur
+
 =back
 
 Returns 0.
@@ -2213,8 +2265,33 @@ limeconRunRegistrar() {
     local TAG=$2
     local IP=$3
     local NETWORK=$4
+    local COMMAND=$5
+    local CONFDIR=$6
+    local CERTDIR=$7
+    local PORT=$8
+    local TLS_PORT=$9
 
-    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_registrar" "--volume=/etc/keylime/:/etc/keylime/"
+    if [ -n "$PORT" ]; then
+        ADD_PORT="-p $PORT:8890"
+        PUBLISH_PORTS="-P"
+    fi
+
+    if [ -n "$TLS_PORT" ]; then
+        ADD_TLS_PORT="-p $TLS_PORT:8991"
+        PUBLISH_PORTS="-P"
+    fi
+
+    local EXTRA_ARGS="${ADD_PORT} ${ADD_TLS_PORT} ${PUBLISH_PORTS}"
+
+    if [ -n "$CONFDIR" ]; then
+        EXTRA_ARGS="--volume $CONFDIR:/etc/keylime/:z $EXTRA_ARGS"
+    fi
+
+    if [ -n "$CERTDIR" ]; then
+        EXTRA_ARGS="--volume $CERTDIR:/var/lib/keylime/cv_ca:z $EXTRA_ARGS"
+    fi
+
+    limeconRun $NAME $TAG $IP $NETWORK "$EXTRA_ARGS" $COMMAND
 }
 
 true <<'=cut'
@@ -2271,7 +2348,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRunVerifier NAME TAG IP NETWORK
+    limeconRunVerifier NAME TAG IP NETWORK COMMAND [CONFDIR] [CERTDIR] [PORT]
 
 =item NAME
 
@@ -2289,6 +2366,23 @@ IP address of container.
 
 Name of used podman network.
 
+=item COMMAND
+
+Command to run inside the container.
+
+=item CONFDIR
+
+Directory containing the verifier configuration files.
+
+=item CERTDIR
+
+Local directory containing the certificate files.
+
+=item PORT
+
+The host port to map to the port the verifier will listen for requests.
+If not provided, no mapping will occur
+
 =back
 
 Returns 0.
@@ -2301,8 +2395,27 @@ limeconRunVerifier() {
     local TAG=$2
     local IP=$3
     local NETWORK=$4
+    local COMMAND=$5
+    local CONFDIR=$6
+    local CERTDIR=$7
+    local PORT=$8
 
-    limeconRun $NAME $TAG $IP $NETWORK "/usr/local/bin/lime_con_start keylime_verifier" "--volume=/etc/keylime/:/etc/keylime/"
+    if [ -n "$PORT" ]; then
+        ADD_PORT="-p $PORT:8881"
+        PUBLISH_PORTS="-P"
+    fi
+
+    local EXTRA_ARGS="${ADD_PORT} ${PUBLISH_PORTS}"
+
+    if [ -n "$CONFDIR" ]; then
+        EXTRA_ARGS="--volume=${CONFDIR}:/etc/keylime/:z"
+    fi
+
+    if [ -n "$CERTDIR" ]; then
+        EXTRA_ARGS="--volume ${CERTDIR}:/var/lib/keylime/cv_ca:z $EXTRA_ARGS"
+    fi
+
+    limeconRun $NAME $TAG $IP $NETWORK "$EXTRA_ARGS" $COMMAND
 }
 
 true <<'=cut'
