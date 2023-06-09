@@ -69,11 +69,6 @@ yum -y install keylime-agent-rust
 curl -o /etc/keylime/keylime-agent.conf https://raw.githubusercontent.com/keylime/rust-keylime/master/keylime-agent.conf
 mkdir -p /etc/systemd/system/keylime_agent.service.d
 mkdir -p /etc/keylime/agent.conf.d
-# configure agent to use sha256 in TPM
-cat > /etc/keylime/agent.conf.d/tpm_hash_alg.conf <<_EOF
-[agent]
-tpm_hash_alg = "sha256"
-_EOF
 
 # fix conf file ownership
 useradd keylime
