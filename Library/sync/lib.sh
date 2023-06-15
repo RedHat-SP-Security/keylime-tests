@@ -58,6 +58,10 @@ if [ -n "${TMT_TOPOLOGY_BASH}" -a -f ${TMT_TOPOLOGY_BASH} ]; then
     . ${TMT_TOPOLOGY_BASH}
     cat ${TMT_TOPOLOGY_BASH}
     echo
+else
+    # declare empty associative array so that conditions are properly evaluated
+    declare -A TMT_ROLES
+    declare -A TMT_GUESTS
 fi
 # export SERVERS and CLIENTS variables when defined by tmt
 if [ -z "${SERVERS}" -a -n "${TMT_ROLES[SERVERS]}" ]; then
