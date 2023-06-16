@@ -84,18 +84,9 @@ rlJournalStart
         rlRun "limeUpdateConf registrar server_cert registrar-cert.pem"
         rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # agent
-        if limeIsPythonAgent; then
-            rlRun "limeUpdateConf agent trusted_client_ca '[\"${CERTDIR}/intermediate-cacert.pem\", \"${CERTDIR}/cacert.pem\"]'"
-            rlRun "limeUpdateConf agent server_key agent-key.pem"
-            rlRun "limeUpdateConf agent server_cert agent-cert.pem"
-        else
-            # For rust agent the trusted_client_ca is a single file
-            # See: https://github.com/keylime/rust-keylime/issues/455
-            rlRun "cat ${CERTDIR}/intermediate-cacert.pem ${CERTDIR}/cacert.pem> ${CERTDIR}/cabundle.pem"
-            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cabundle.pem\"'"
-            rlRun "limeUpdateConf agent server_key '\"agent-key.pem\"'"
-            rlRun "limeUpdateConf agent server_cert '\"agent-cert.pem\"'"
-        fi
+        rlRun "limeUpdateConf agent trusted_client_ca '\"['${CERTDIR}/intermediate-cacert.pem', '${CERTDIR}/cacert.pem']\"'"
+        rlRun "limeUpdateConf agent server_key '\"agent-key.pem\"'"
+        rlRun "limeUpdateConf agent server_cert '\"agent-cert.pem\"'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
             rlRun "limeUpdateConf agent enable_revocation_notifications false"
