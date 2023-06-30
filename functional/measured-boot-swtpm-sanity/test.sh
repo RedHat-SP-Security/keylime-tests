@@ -80,7 +80,7 @@ rlJournalStart
         # use installed create_mb_refstate from /usr/share/keylime/scripts
         rlRun "python3 /usr/share/keylime/scripts/create_mb_refstate /var/tmp/binary_bios_measurements mb_refstate2.txt"
         #rlRun "tsseventextend -tpm -if /var/tmp/binary_bios_measurements"
-        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --runtime-policy policy.json -f /etc/hostname -c add --mb_refstate mb_refstate2.txt"
+        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --runtime-policy policy.json -f /etc/hostname -c add --mb_refstate mb_refstate2.txt" 0,1
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Tenant Quote Failed'"
         rlAssertGrep "keylime.tpm - ERROR - For PCR 0 and hash sha256 the boot event log has value '.*' but the agent .*returned '.*'" $(limeVerifierLogfile) -E
     rlPhaseEnd
