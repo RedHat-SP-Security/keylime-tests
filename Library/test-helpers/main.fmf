@@ -6,6 +6,7 @@ test: ./runtest.sh
 framework: beakerlib
 require:
  - openssl
+ - jq
 duration: 5m
 enabled: true
 adjust:
