@@ -620,6 +620,38 @@ limeStopAgent() {
 true <<'=cut'
 =pod
 
+=head2 limeKeylimeTenant
+
+Run the keylime tenant on localhost or in container with specified tenant commands.
+
+    limeKeylimeTenant TENANT_CMD
+
+=over
+
+=item
+
+    TENANT_CMD - Set of commands which tenant run.
+
+=back
+
+Returns 0 when the stop was successful, non-zero otherwise.
+
+=cut
+
+limeKeylimeTenant() {
+
+    local TENANT_CMD=$@
+
+    if [ -n "$limeconKeylimeTenantCmd" ]; then
+        $limeconKeylimeTenantCmd "$TENANT_CMD" "$limeconTenantVolume"
+    else
+        keylime_tenant $TENANT_CMD
+    fi
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeStartIMAEmulator
 
 Start the keylime IMA Emulator.
@@ -1187,7 +1219,7 @@ limeWaitForAgentStatus() {
 
     local START=$SECONDS
     for I in `seq $TIMEOUT`; do
-        timeout $TIMEOUT keylime_tenant -c status -u $UUID &> $OUTPUT
+        limeTimeoutCommand $TIMEOUT "limeKeylimeTenant -c status -u $UUID" &> $OUTPUT
         AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].operational_state")
         if echo "$AGTSTATE" | grep -E -q "$STATUS"; then
             cat $OUTPUT
@@ -1203,7 +1235,6 @@ limeWaitForAgentStatus() {
     rm $OUTPUT
     return 1
 }
-
 
 true <<'=cut'
 =pod
@@ -1240,7 +1271,7 @@ limeWaitForAgentRegistration() {
 
     local START=$SECONDS
     for I in `seq $TIMEOUT`; do
-        timeout $TIMEOUT keylime_tenant -c regstatus -u $UUID &> $OUTPUT
+        limeTimeoutCommand $TIMEOUT "limeKeylimeTenant -c regstatus -u $UUID" &> $OUTPUT
         REGSTATE=$(cat $OUTPUT | grep "^{" | jq -r ".[].operational_state")
         if [ "$REGSTATE" == "Registered" ]; then
             cat $OUTPUT
@@ -1257,6 +1288,45 @@ limeWaitForAgentRegistration() {
     return 1
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeTimeoutCommand
+
+Function stop command via SIGTERM after specified amount of time.
+
+    limeTimeoutCommand TIMEOUT COMMAND
+
+=over
+
+=item
+
+    TIMEOUT - Maximum time in seconds to wait
+
+=item COMMAND
+
+Specify command which have timeout.
+
+=back
+
+=cut
+
+limeTimeoutCommand() {
+    local TIMEOUT="$1";
+    local COMMAND="$2";
+    grep -qP '^\d+$' <<< $TIMEOUT
+
+    (
+        $COMMAND &
+        child=$!
+        trap -- "" SIGTERM
+        (
+                sleep $TIMEOUT
+                kill $child 2> /dev/null
+        ) &
+        wait $child
+    )
+}
 
 # ~~~~~~~~~~~~~~~~~~~~
 #   Install
@@ -2420,6 +2490,65 @@ limeconRunSystemd() {
     local EXTRA_PODMAN_ARGS=$5
 
     limeconRun $NAME $TAG $IP $NETWORK "${EXTRA_PODMAN_ARGS}" "/sbin/init"
+
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconRunTenant
+
+Tenant container run via podman with specified parameters.
+
+    limeconRunTenant NAME TAG IP NETWORK TENANT_CMD MOUNT_DIR
+
+=item NAME
+
+Set name of container.
+
+=item TAG
+
+Name of image tag.
+
+=item IP
+
+IP address of container.
+
+=item NETWORK
+
+Name of used podman network.
+
+=item TENANT_CMD
+
+Keylime tenant command in container
+
+=item MOUNT_DIR
+
+Path of mount dir.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunTenant() {
+
+    local NAME=$1
+    local TAG=$2
+    local IP=$3
+    local NETWORK=$4
+    local TENANT_CMD=$5
+    local MOUNT_DIR=$6
+    local MOUNT_TENANT="--volume=/etc/keylime/:/etc/keylime/"
+
+    if [ -d cv_ca ]; then
+        MOUNT_TENANT="$PWD/cv_ca:/var/lib/keylime/cv_ca/:z $MOUNT_TENANT"
+    fi
+    
+    podman run --volume $MOUNT_DIR --volume $MOUNT_TENANT --name $NAME --net $NETWORK --ip $IP $TAG keylime_tenant $TENANT_CMD
+    sleep 3
+    limeconStop "tenant_container"
 
 }
 
