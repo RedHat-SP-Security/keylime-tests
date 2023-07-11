@@ -27,8 +27,7 @@ yum -y install \
     python3-typing-extensions \
     python3-zmq \
     tpm2-tools \
-    which \
-    jq
+    which
 
 # if keylime_sources are not present, clone the repo
 if [ ! -f /var/tmp/keylime_sources/setup.py ]; then
