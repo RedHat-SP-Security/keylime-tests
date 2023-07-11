@@ -1167,8 +1167,8 @@ limeWaitForAgentStatus() {
 
     for I in `seq $TIMEOUT`; do
         keylime_tenant -c status -u $UUID &> $OUTPUT
-	AGTSTATE=$(cat "$OUTPUT" | grep ^{ | jq -r ".[].operational_state")
-	if [ $AGTSTATE == $STATUS] ; then
+	AGTSTATE=$(cat "$OUTPUT" | grep ^{ | tail -1 | jq -r ".[].operational_state")
+	if echo "$AGTSTATE" | grep -E -q "$STATUS"; then
             cat $OUTPUT
 	    rm $OUTPUT
 	    return 0
