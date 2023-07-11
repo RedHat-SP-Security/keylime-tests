@@ -2430,7 +2430,7 @@ rm -f ${__INTERNAL_limeTPMDetails}
 
 limeLibraryLoaded() {
 
-    local PACKAGES="tpm2-tools openssl beakerlib podman nmap"
+    local PACKAGES="tpm2-tools openssl beakerlib podman nmap jq"
 
     echo -e "\nInstall packages required by the library when missing."
     rpm -q $PACKAGES || yum -y install $PACKAGES
