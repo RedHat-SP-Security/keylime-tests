@@ -1167,7 +1167,7 @@ limeWaitForAgentStatus() {
 
     for I in `seq $TIMEOUT`; do
         keylime_tenant -c status -u $UUID &> $OUTPUT
-	AGTSTATE=$(cat "$OUTPUT" | grep ^{ | tail -1 | jq -r ".[].operational_state")
+	AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].operational_state")
 	if echo "$AGTSTATE" | grep -E -q "$STATUS"; then
             cat $OUTPUT
 	    rm $OUTPUT
@@ -1216,7 +1216,7 @@ limeWaitForAgentRegistration() {
 
     for I in `seq $TIMEOUT`; do
         keylime_tenant -c regstatus -u $UUID &> $OUTPUT
-        REGSTATE=$(cat $OUTPUT | grep ^{ | jq -r ".[].operational_state")
+        REGSTATE=$(cat $OUTPUT | grep "^{" | jq -r ".[].operational_state")
 	if [ $REGSTATE == "Registered" ]; then
             cat $OUTPUT
             rm $OUTPUT
