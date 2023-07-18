@@ -1222,7 +1222,7 @@ limeWaitForAgentRegistration() {
     for I in `seq $TIMEOUT`; do
         timeout $TIMEOUT keylime_tenant -c regstatus -u $UUID &> $OUTPUT
         REGSTATE=$(cat $OUTPUT | grep "^{" | jq -r ".[].operational_state")
-    if [ "$REGSTATE" == "Registered" ]; then
+        if [ "$REGSTATE" == "Registered" ]; then
             cat $OUTPUT
             rm $OUTPUT
             return 0
@@ -2538,7 +2538,7 @@ if ! id ${limeTestUser}; then
 fi
 
 # delete previously existing TPM data
-rm -f ${__INTERNAL_limeTPMDetails}
+rm -f "${__INTERNAL_limeTPMDetails}"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Verification
@@ -2552,10 +2552,10 @@ rm -f ${__INTERNAL_limeTPMDetails}
 
 limeLibraryLoaded() {
 
-    local PACKAGES="tpm2-tools openssl beakerlib podman nmap jq"
+    local PACKAGES=(tpm2-tools openssl beakerlib podman nmap jq)
 
     echo -e "\nInstall packages required by the library when missing."
-    rpm -q $PACKAGES || yum -y install $PACKAGES
+    rpm -q "${PACKAGES[@]}" || yum -y install "${PACKAGES[@]}"
 
     if [ -n "$__INTERNAL_limeTmpDir" ]; then
         rlLogDebug "Library keylime/test-helpers loaded."
