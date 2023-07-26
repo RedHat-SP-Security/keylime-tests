@@ -1101,13 +1101,17 @@ limeWaitForAgentStatus() {
     [ -z "$2" ] && return 4
     [ -n "$3" ] && TIMEOUT=$3
 
+    local START=$SECONDS
     for I in `seq $TIMEOUT`; do
-        keylime_tenant -c status -u $UUID &> $OUTPUT
-	if grep -E -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
+        timeout $TIMEOUT keylime_tenant -c status -u $UUID &> $OUTPUT
+        if grep -E -q "\"operational_state\": \"$STATUS\"" $OUTPUT; then
             cat $OUTPUT
-	    rm $OUTPUT
-	    return 0
-	fi
+            rm $OUTPUT
+            return 0
+        fi
+        if [[ "$((SECONDS - START))" -ge $TIMEOUT ]]; then
+            break
+        fi
         sleep 1
     done
     cat $OUTPUT
@@ -1149,13 +1153,17 @@ limeWaitForAgentRegistration() {
     [ -z "$1" ] && return 3
     [ -n "$2" ] && TIMEOUT=$2
 
+    local START=$SECONDS
     for I in `seq $TIMEOUT`; do
-        keylime_tenant -c regstatus -u $UUID &> $OUTPUT
-	if grep -q "Agent $UUID exists on registrar" $OUTPUT; then
+        timeout $TIMEOUT keylime_tenant -c regstatus -u $UUID &> $OUTPUT
+        if grep -E -q "\"operational_state\": \"Registered\"" $OUTPUT; then
             cat $OUTPUT
-	    rm $OUTPUT
-	    return 0
-	fi
+            rm $OUTPUT
+            return 0
+        fi
+        if [[ "$((SECONDS - START))" -ge $TIMEOUT ]]; then
+            break
+        fi
         sleep 1
     done
     cat $OUTPUT
