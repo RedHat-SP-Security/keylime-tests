@@ -21,6 +21,7 @@ rlJournalStart
     rlPhaseStartSetup "Install TPM emulator"
 
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rlRun "echo socket > $__INTERNAL_limeTmpDir/swtpm_setup"
 
         TPM_EMULATOR="$(limeTPMEmulator)"
         [ "${TPM_EMULATOR}" == "ibmswtpm2" ] && TPM_PKGS="${TPM_PKGS_IBMSWTPM}" || TPM_PKGS="${TPM_PKGS_SWTPM}"
