@@ -11,7 +11,7 @@ test: ./test.sh
 framework: beakerlib
 adjust:
     enabled: false
-    when: distro = fedora
+    when: distro == fedora
 tag:
   - CI-Tier-1
 require:
