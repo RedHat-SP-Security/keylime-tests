@@ -21,6 +21,7 @@ require:
   - bind-utils
   - expect
   - wget
+  - python3-toml
 recommend:
   - keylime
 duration: 10m
