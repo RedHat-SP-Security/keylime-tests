@@ -153,6 +153,8 @@ elif [ -n "${BASELINE_KEYLIME_RPM}" ]; then
 
             rlRun "TmpDir=\$( mktemp -d )"
             rlRun "pushd ${TmpDir}"
+            # remove any previously built keylime artifacts
+            rlRun "rm -rf ~/rpmbuild/BUILD/keylime*"
             rlRun "mkdir sources"
             rlRpmDownload --source ${BASELINE_KEYLIME_RPM}
             rlRun "rpm -i keylime-*src.rpm"
