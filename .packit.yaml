@@ -1,9 +1,12 @@
 jobs:
 - job: tests
   trigger: pull_request
-  metadata:
-    targets:
-    - fedora-stable
-    - centos-stream-8-x86_64
-    - centos-stream-9-x86_64
-    skip_build: true
+  branch: fedora-38
+  targets:
+    - fedora-38
+  skip_build: true
+  tf_extra_params:
+    environments:
+      - tmt:
+          context:
+            target_PR_branch: "fedora-38"
