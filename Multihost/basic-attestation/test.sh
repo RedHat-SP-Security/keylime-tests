@@ -38,6 +38,34 @@
 [ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
 
 
+function assign_server_roles() {
+    if [ -f ${TMT_TOPOLOGY_BASH} ]; then
+        # assign roles based on tmt topology data
+        cat ${TMT_TOPOLOGY_BASH}
+        . ${TMT_TOPOLOGY_BASH}
+
+        export VERIFIER=${TMT_GUESTS["verifier.hostname"]}
+        export REGISTRAR=${TMT_GUESTS["registrar.hostname"]}
+        export AGENT=${TMT_GUESTS["agent.hostname"]}
+        # AGENT2 may not be defined
+        if [ -n "${TMT_GUESTS["agent2.hostname"]}" ]; then
+            export AGENT2=${TMT_GUESTS["agent2.hostname"]}
+        fi
+    elif [ -n "$SERVERS" ]; then
+        # assign roles using SERVERS and CLIENTS variables
+        export VERIFIER=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
+        export REGISTRAR=$( echo "$SERVERS $CLIENTS" | awk '{ print $2 }')
+        export AGENT=$( echo "$SERVERS $CLIENTS" | awk '{ print $3 }')
+        export AGENT2=$( echo "$SERVERS $CLIENTS" | awk '{ print $4 }')
+    fi
+
+    MY_IP=$( hostname -I | awk '{ print $1 }' )
+    [ -n "$VERIFIER" ] && export VERIFIER_IP=$( get_IP $VERIFIER )
+    [ -n "$REGISTRAR" ] && export REGISTRAR_IP=$( get_IP $REGISTRAR )
+    [ -n "${AGENT}" ] && export AGENT_IP=$( get_IP ${AGENT} )
+    [ -n "${AGENT2}" ] && export AGENT2_IP=$( get_IP ${AGENT2} )
+}
+
 function get_IP() {
     if echo $1 | grep -E -q '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'; then
         echo $1
@@ -477,11 +505,13 @@ export TESTSOURCEDIR=`pwd`
 
 rlJournalStart
     rlPhaseStartSetup
-        MY_IP=$( hostname -I | awk '{ print $1 }' )
-        [ -n "$VERIFIER" ] && export VERIFIER_IP=$( get_IP $VERIFIER )
-        [ -n "$REGISTRAR" ] && export REGISTRAR_IP=$( get_IP $REGISTRAR )
-        [ -n "${AGENT}" ] && export AGENT_IP=$( get_IP ${AGENT} )
-        [ -n "${AGENT2}" ] && export AGENT2_IP=$( get_IP ${AGENT2} )
+        # import keylime library
+        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
+        rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
+
+        assign_server_roles
+
         rlLog "VERIFIER: $VERIFIER ${VERIFIER_IP}"
         rlLog "REGISTRAR: $REGISTRAR ${REGISTRAR_IP}"
         rlLog "AGENT: ${AGENT} ${AGENT_IP}"
@@ -492,11 +522,6 @@ rlJournalStart
         # common setup
         ###############
 
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
-        # import keylime library
-        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
-        rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
         rlAssertRpm keylime
         # backup files
         limeBackupConfig
