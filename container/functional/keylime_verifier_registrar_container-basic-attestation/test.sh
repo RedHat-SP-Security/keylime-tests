@@ -7,9 +7,17 @@
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
+# If VERIFIER_IMAGE env var is set, the test will try to pull the image from the
+# registry set in REGISTRY (default quay.io). Otherwise the test will build the
+# verifier image from the Dockerfile set in VERIFIER_DOCKERFILE.
+#
+# The same applies for REGISTRAR_IMAGE and respective REGISTRAR_DOCKERFILE.
+
 [ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
 [ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
 [ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+
+[ -n "$REGISTRY" ] || REGISTRY=quay.io
 
 rlJournalStart
 
@@ -34,13 +42,21 @@ rlJournalStart
         # prepare registrar container
         rlRun "limeUpdateConf registrar ip $IP_REGISTRAR"
 
-        #build verifier container
+        # Pull or build verifier container
         TAG_VERIFIER="verifier_image"
-        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${VERIFIER_DOCKERFILE}") ${TAG_VERIFIER}"
+        if [ -n "$VERIFIER_IMAGE" ]; then
+            rlRun "limeconPullImage $REGISTRY $VERIFIER_IMAGE $TAG_VERIFIER"
+        else
+            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${VERIFIER_DOCKERFILE}") ${TAG_VERIFIER}"
+        fi
 
-        #build registrar container
+        # Pull or build registrar container
         TAG_REGISTRAR="registrar_image"
-        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${REGISTRAR_DOCKERFILE}") ${TAG_REGISTRAR}"
+        if [ -n "$REGISTRAR_IMAGE" ]; then
+            rlRun "limeconPullImage $REGISTRY $REGISTRAR_IMAGE $TAG_REGISTRAR"
+        else
+            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${REGISTRAR_DOCKERFILE}") ${TAG_REGISTRAR}"
+        fi
 
         # if TPM emulator is present
         if limeTPMEmulated; then
