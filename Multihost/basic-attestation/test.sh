@@ -305,6 +305,7 @@ if [ -n "${AGENT2}" ]; then
 
         # first register AGENT2 and confirm it has passed validation
         AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
+        rlRun "cat policy2.json"
         # download Agent2 list
         rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
         # register
@@ -327,6 +328,7 @@ fi
     rlPhaseStartTest "keylime attestation test: Add Agent"
         # register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
+        rlRun "cat policy.json"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
 spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
