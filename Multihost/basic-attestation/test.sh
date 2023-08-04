@@ -523,6 +523,7 @@ rlJournalStart
         ###############
 
         rlAssertRpm keylime
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         # backup files
         limeBackupConfig
         # load REVOCATION_SCRIPT_TYPE
