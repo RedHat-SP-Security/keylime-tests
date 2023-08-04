@@ -1,0 +1,16 @@
+summary: Switch git branch
+description: Changes git branch for the currently running tests
+contact: Karel Srot <ksrot@redhat.com>
+require:
+  - git
+test: ./test.sh
+tag:
+  - setup
+framework: beakerlib
+duration: 3m
+enabled: true
+
+adjust:
+  - when: distro != rhel-9
+    enabled: false
+
