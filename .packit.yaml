@@ -22,6 +22,9 @@ jobs:
       - tmt:
           context:
             target_PR_branch: "rhel-9-main"
+        artifacts:
+          - type: repository-file
+            id: "https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo"
 - job: tests
   trigger: pull_request
   branch: fedora-rawhide
