@@ -2045,7 +2045,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRun NAME TAG IP NETWORK EXTRA_PODMAN_ARGS [COMMAND]
+    limeconRun NAME TAG IP NETWORK EXTRA_PODMAN_ARGS [COMMAND [COMMAND_ARGS]]
 
 If cv_ca directory is present in the current directory, it
 will be copied to /var/lib/keylime/cv_ca of the running container.
@@ -2074,6 +2074,10 @@ Specify setup of starting container.
 
 Specify command to run on the container.
 
+=item COMMAND_ARGS
+
+Specify arguments to pass to the command inside the container.
+
 =back
 
 Returns 0.
@@ -2082,15 +2086,21 @@ Returns 0.
 
 limeconRun() {
 
-    local NAME=$1
-    local TAG=$2
-    local IP=$3
-    local NETWORK=$4
-    local EXTRA_PODMAN_ARGS=$5
-    local COMMAND=$6
+    local NAME="$1"
+    local TAG="$2"
+    local IP="$3"
+    local NETWORK="$4"
+    local EXTRA_PODMAN_ARGS="$5"
+    local COMMAND="$6"
+    local COMMAND_ARGS="$7"
     local CMDLINE
 
-    CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG $COMMAND"
+    if [ -n "${COMMAND}" ]; then
+        CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS --entrypoint $COMMAND localhost/$TAG ${COMMAND_ARGS}"
+    else
+        CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG"
+    fi
+
     echo -e "\nRunning podman:\n$CMDLINE"
     $CMDLINE
 }
