@@ -6,6 +6,7 @@ environment+:
   REGISTRY: quay.io
   VERIFIER_IMAGE: keylime/keylime_verifier:master
   REGISTRAR_IMAGE: keylime/keylime_registrar:master
+  AGENT_IMAGE: keylime/keylime_agent:master
 
 discover:
   how: fmf

@@ -7,9 +7,18 @@ HTTP_SERVER_PORT=8080
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
 [ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
 
+# If VERIFIER_IMAGE env var is set, the test will try to pull the image from the
+# registry set in REGISTRY (default quay.io). Otherwise the test will build the
+# verifier image from the Dockerfile set in VERIFIER_DOCKERFILE.
+#
+# The same applies for REGISTRAR_IMAGE/REGISTRAR_DOCKERFILE and
+# AGENT_IMAGE/AGENT_DOCKERFILE.
+
 [ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
 [ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
 [ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+
+[ -n "$REGISTRY" ] || REGISTRY=quay.io
 
 rlJournalStart
 
@@ -38,13 +47,21 @@ rlJournalStart
         # prepare registrar container
         rlRun "limeUpdateConf registrar ip $IP_REGISTRAR"
 
-        #build verifier container
+        # Pull or build verifier container
         TAG_VERIFIER="verifier_image"
-        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${VERIFIER_DOCKERFILE}") ${TAG_VERIFIER}"
+        if [ -n "$VERIFIER_IMAGE" ]; then
+            rlRun "limeconPullImage $REGISTRY $VERIFIER_IMAGE $TAG_VERIFIER"
+        else
+            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${VERIFIER_DOCKERFILE}") ${TAG_VERIFIER}"
+        fi
 
-        #build registrar container
+        # Pull or build registrar container
         TAG_REGISTRAR="registrar_image"
-        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${REGISTRAR_DOCKERFILE}") ${TAG_REGISTRAR}"
+        if [ -n "$REGISTRAR_IMAGE" ]; then
+            rlRun "limeconPullImage $REGISTRY $REGISTRAR_IMAGE $TAG_REGISTRAR"
+        else
+            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${REGISTRAR_DOCKERFILE}") ${TAG_REGISTRAR}"
+        fi
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -79,10 +96,16 @@ rlJournalStart
         rlRun "limeUpdateConf tenant registrar_ip $IP_REGISTRAR"
 
         #setup of agent
-        TAG_AGENT="agent_image"
         CONT_AGENT="agent_container"
         rlRun "cp cv_ca/cacert.crt ."
-        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${AGENT_DOCKERFILE}") ${TAG_AGENT}"
+
+        # Pull or build agent image
+        TAG_AGENT="agent_image"
+        if [ -n "$AGENT_IMAGE" ]; then
+            rlRun "limeconPullImage $REGISTRY $AGENT_IMAGE $TAG_AGENT"
+        else
+            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"$AGENT_DOCKERFILE") ${TAG_AGENT}"
+        fi
         rlRun "limeUpdateConf agent registrar_ip '\"[$IP_REGISTRAR]\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 
