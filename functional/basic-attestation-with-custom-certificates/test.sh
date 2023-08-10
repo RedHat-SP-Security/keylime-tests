@@ -17,6 +17,11 @@ rlJournalStart
         rlRun 'rlImport "certgen/certgen"' || rlDie "cannot import openssl/certgen library"
         rlAssertRpm keylime
 
+        #seting keylime_port_t label for ssl port
+        if rlIsRHEL '>=9.3' || rlIsFedora '>=38' || rlIsCentOS '>=9';then
+            rlRun "semanage port -a -t keylime_port_t -p tcp $SSL_SERVER_PORT"
+        fi
+
         # generate TLS certificates for all
         # we are going to use 4 certificates
         # verifier = webserver cert used for the verifier server
