@@ -65,7 +65,7 @@ rlJournalStart
         if [ -n "$AGENT_IMAGE" ]; then
             rlRun "limeconPullImage $REGISTRY $AGENT_IMAGE $TAG_AGENT"
         else
-            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"$AGENT_DOCKERFILE") ${TAG_AGENT}"
+            rlRun "limeconPrepareImage ${AGENT_DOCKERFILE} ${TAG_AGENT}"
         fi
         TESTDIR_FIRST=$(limeCreateTestDir)
         TESTDIR_SECOND=$(limeCreateTestDir)

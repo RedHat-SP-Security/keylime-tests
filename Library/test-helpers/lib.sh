@@ -2047,6 +2047,18 @@ limeconPrepareImage() {
         return 1
     fi
 
+    if [ -f "${DOCKER_FILE}" ]; then
+        DOCKER_FILE=$(realpath "$DOCKER_FILE")
+    else
+        DOCKER_FILE=$(realpath "$limeLibraryDir/$DOCKER_FILE")
+        if [ ! -f "${DOCKER_FILE}" ]; then
+            echo "Docker file not found"
+            return 1
+        fi
+    fi
+
+    echo "Using Docker file: ${DOCKER_FILE}"
+
     # share /var/tmp/keylime_sources if present
     if [ -d /var/tmp/keylime_sources ]; then
         ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
