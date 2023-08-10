@@ -2201,7 +2201,7 @@ true <<'=cut'
 
 Container run via podman with specified parameters.
 
-    limeconRunAgent NAME TAG IP NETWORK TESTDIR COMMAND [CONFDIR] [CERTDIR] [PORT] [REV_PORT]
+    limeconRunAgent NAME TAG IP NETWORK TESTDIR COMMAND [CONFDIR] [CERTDIR] [WORKDIR] [PORT] [REV_PORT]
 
 =item NAME
 
@@ -2235,6 +2235,10 @@ Local directory containing the agent configuration file.
 
 Local directory containing the trusted ca certificate files.
 
+=item WORKDIR
+
+Local directory to be used as the agent working directory in the container.
+
 =item PORT
 
 The host port to map to the port the agent will listen for requests.
@@ -2261,8 +2265,9 @@ limeconRunAgent() {
     local COMMAND=$6
     local CONFDIR=$7
     local CERTDIR=$8
-    local PORT=$9
-    local REV_PORT=${10}
+    local WORKDIR=$9
+    local PORT=${10}
+    local REV_PORT=${11}
 
     if [ -n "$PORT" ]; then
         ADD_PORT="-p $PORT:9002"
@@ -2274,7 +2279,7 @@ limeconRunAgent() {
         PUBLISH_PORTS="-P"
     fi
 
-    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --tmpfs /var/lib/keylime/secure --volume=$TESTDIR:$TESTDIR --device=/dev/tpm0 --device=/dev/tpmrm0 -e RUST_LOG=keylime_agent=trace"
+    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=$TESTDIR:$TESTDIR -e RUST_LOG=keylime_agent=trace -e TCTI=device:/dev/tpmrm0"
 
     if [ -n "$CONFDIR" ]; then
         EXTRA_ARGS="--volume=${CONFDIR}:/etc/keylime/:z $EXTRA_ARGS"
@@ -2285,6 +2290,15 @@ limeconRunAgent() {
         # Find out better way to handle this: keylime inside the container needs access to the CA certificate
         # On rootless container, this could be done with 'podman unshare'
         podman run --rm --attach stdout $EXTRA_ARGS --entrypoint chown localhost/agent_image -R keylime:keylime /var/lib/keylime/cv_ca
+    fi
+
+    if [ -n "$WORKDIR" ]; then
+        EXTRA_ARGS="--volume ${WORKDIR}:/var/lib/keylime/:z $EXTRA_ARGS"
+        # Find out better way to handle this: keylime inside the container needs permission to create files in the working directory
+        # On rootless container, this could be done with 'podman unshare'
+        podman run --rm --attach stdout $EXTRA_ARGS --entrypoint chown localhost/agent_image -R keylime:keylime /var/lib/keylime
+    else
+        EXTRA_ARGS="--tmpfs /var/lib/keylime/ $EXTRA_ARGS"
     fi
 
     limeconRun $NAME $TAG $IP $NETWORK "$EXTRA_ARGS" $COMMAND
