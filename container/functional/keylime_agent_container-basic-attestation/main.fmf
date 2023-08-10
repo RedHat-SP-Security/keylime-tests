@@ -25,3 +25,8 @@ duration: 10m
 enabled: true
 id: 3b782552-e418-4b35-86c3-d346cb8b0442
 extra-nitrate: TC#0615276
+
+adjust:
+  - when: swtpm != yes
+    enabled: false
+    because: We need to emulate multiple TPM devices with swtpm

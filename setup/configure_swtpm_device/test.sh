@@ -24,16 +24,25 @@ rlJournalStart
         rlRun "cat > /etc/modules-load.d/tpm_vtpm_proxy.conf <<_EOF
 tpm_vtpm_proxy
 _EOF"
+
+        # find suffix for a new unit file (just in case it already exists)
+        if ls /etc/systemd/system/swtpm*.service 2> /dev/null; then
+            SUFFIX=$(( $(ls /etc/systemd/system/swtpm*.service | wc -l) ))
+        else
+            SUFFIX=""
+        fi
         # create swtpm unit file as it doesn't exist
-        rlRun "cat > /etc/systemd/system/swtpm.service <<_EOF
+        rlRun "mkdir -p /var/lib/tpm"
+        rlRun "SWTPM_DIR=\$( mktemp -d -p /var/lib/tpm swtpmXXX )"
+        rlLogInfo "Creating unit file /etc/systemd/system/swtpm${SUFFIX}.service"
+        rlRun "cat > /etc/systemd/system/swtpm${SUFFIX}.service <<_EOF
 [Unit]
 Description=swtpm TPM Software emulator
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/mkdir -p /var/lib/tpm/swtpm
-ExecStartPre=/usr/bin/swtpm_setup --tpm-state /var/lib/tpm/swtpm --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
-ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=/var/lib/tpm/swtpm  --tpm2
+ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${SWTPM_DIR} --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${SWTPM_DIR} --tpm2
 
 [Install]
 WantedBy=multi-user.target
@@ -50,19 +59,25 @@ _EOF"
         fi
     rlPhaseEnd
 
+    if ls /dev/tpmrm* 2> /dev/null; then
+        NEW_TPM_DEV_NO=$( ls /dev/tpmrm* 2> /dev/null | wc -l )
+    else
+        NEW_TPM_DEV_NO=0
+    fi
+
     rlPhaseStartSetup "Start TPM emulator"
-        rlServiceStart $TPM_EMULATOR
-        rlRun "limeWaitForTPMEmulator"
+        rlServiceStart ${TPM_EMULATOR}${SUFFIX}
+        rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
     rlPhaseEnd
 
     rlPhaseStartTest "Test TPM emulator"
-        rlRun -s "tpm2_pcrread"
+        rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpm${NEW_TPM_DEV_NO} tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartCleanup
         if [ "$RUNNING" == "0" ]; then
-            rlServiceStop $TPM_EMULATOR
+            rlServiceStop $TPM_EMULATOR${SUFFIX}
         fi
     rlPhaseEnd
 

@@ -11,6 +11,8 @@ environment+:
 discover:
   how: fmf
   test: 
+   # we do setup two emulated TPM devices
+   - /setup/configure_swtpm_device
    - /setup/configure_swtpm_device
    - /setup/install_upstream_keylime
    - /setup/install_rust_keylime_from_copr
@@ -18,7 +20,7 @@ discover:
    # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_simple
    - /functional/basic-attestation-on-localhost
-   - "/container/.*"
+   - "^/container/.*"
 
 execute:
     how: tmt
@@ -30,3 +32,11 @@ adjust+:
 
   - when: distro != fedora-37 and distro != centos-stream-9
     enabled: false
+
+  - when: distro == centos-stream-9
+    prepare+:
+      - how: shell
+        order: 30
+        script:
+         - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
+
