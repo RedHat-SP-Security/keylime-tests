@@ -17,6 +17,7 @@ require:
   - yum
   - tpm2-tools
   - python3-toml
+  - policycoreutils-python-utils
 recommend:
   - keylime
 duration: 5m
