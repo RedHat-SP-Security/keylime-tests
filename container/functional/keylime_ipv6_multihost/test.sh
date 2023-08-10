@@ -116,7 +116,9 @@ rlJournalStart
         # create allowlist and excludelist
         rlRun "limeCreateTestPolicy ${TESTDIR}/*"
 
-        rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT '2001:db8:8000::' $CONT_NETWORK_NAME $TESTDIR keylime_agent $PWD/confdir_$CONT_AGENT $(realpath ./cv_ca)"
+        WORKDIR=$( mktemp -d )
+
+        rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT '2001:db8:8000::' $CONT_NETWORK_NAME $TESTDIR keylime_agent $PWD/confdir_$CONT_AGENT $(realpath ./cv_ca) $WORKDIR"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "podman exec -t  $CONT_AGENT chmod a+r /etc/keylime/agent.conf" 
         rlRun "podman exec -t  $CONT_AGENT dnf install -y python3-toml"
@@ -166,6 +168,7 @@ _EOF"
             rlRun "limeCondStopAbrmd"
         fi
         limeExtendNextExcludelist $TESTDIR
+        limeExtendNextExcludelist "$WORKDIR"
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
