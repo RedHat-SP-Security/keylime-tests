@@ -2265,7 +2265,7 @@ limeconRunAgent() {
         EXTRA_ARGS="--volume ${CERTDIR}:/var/lib/keylime/cv_ca/:z $EXTRA_ARGS"
         # Find out better way to handle this: keylime inside the container needs access to the CA certificate
         # On rootless container, this could be done with 'podman unshare'
-        podman run --rm --attach stdout $EXTRA_ARGS localhost/agent_image chown -R keylime:keylime /var/lib/keylime/cv_ca
+        podman run --rm --attach stdout $EXTRA_ARGS --entrypoint chown localhost/agent_image -R keylime:keylime /var/lib/keylime/cv_ca
     fi
 
     limeconRun $NAME $TAG $IP $NETWORK "$EXTRA_ARGS" $COMMAND
