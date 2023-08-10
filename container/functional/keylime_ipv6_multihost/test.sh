@@ -137,8 +137,6 @@ _EOF"
         limeconSubmitLogs
         rlRun "limeconStop registrar_container verifier_container agent_container"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
-        #set tmp resource manager permission to default state
-        rlRun "chmod o-rw /dev/tpmrm0"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
