@@ -4,7 +4,7 @@
 
 #How to run it
 #tmt -c distro=rhel-9.1 -c agent=rust run plan --default discover -h fmf -t /setup/configure_kernel_ima_module/ima_policy_simple -t /functional/keylime_agent_container-basic-attestation -vv provision --how=connect --guest=testvm --user root prepare execute --how tmt --interactive login finish
-#Machine should have /dev/tpm0 or /dev/tpmrm0 device
+#Machine should be configured to emulated /dev/tpm0 and /dev/tpm1 devices with swtpm
 
 [ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
 
@@ -30,16 +30,19 @@ rlJournalStart
         rlRun "limeUpdateConf verifier ip $SERVER_IP"
         rlRun "limeUpdateConf verifier registrar_ip $SERVER_IP"
 
-        # if TPM emulator is present
-        if limeTPMEmulated; then
-            # start tpm emulator
-            rlRun "limeStartTPMEmulator"
-            rlRun "limeWaitForTPMEmulator"
-            rlRun "limeCondStartAbrmd"
-            # start ima emulator
-            rlRun "limeInstallIMAConfig"
-            rlRun "limeStartIMAEmulator"
-        fi
+        # start tpm emulator
+        rlRun "limeStartTPMEmulator"
+        rlRun "limeWaitForTPMEmulator"
+        # start ima emulator
+        rlRun "limeInstallIMAConfig"
+        rlRun "limeStartIMAEmulator"
+        # need to configure tpm device for the second container
+        # start tpm emulator
+        rlRun "limeTPMDevNo=1 limeStartTPMEmulator"
+        rlRun "limeTPMDevNo=1 limeWaitForTPMEmulator"
+        # start ima emulator
+        rlRun "limeTPMDevNo=1 TCTI=device:/dev/tpm1 limeStartIMAEmulator"
+ 
         sleep 5
 
         rlRun "limeStartVerifier"
@@ -79,7 +82,7 @@ rlJournalStart
         rlRun "limeconPrepareAgentConfdir $AGENT_ID_SECOND $IP_AGENT_SECOND confdir_$CONT_AGENT_SECOND"
 
         #run of second agent
-        rlRun "limeconRunAgent $CONT_AGENT_SECOND $IMAGE $IP_AGENT_SECOND $CONT_NETWORK_NAME $TESTDIR_SECOND keylime_agent $PWD/confdir_$CONT_AGENT_SECOND $PWD/cv_ca"
+        rlRun "limeTPMDevNo=1 limeconRunAgent $CONT_AGENT_SECOND $IMAGE $IP_AGENT_SECOND $CONT_NETWORK_NAME $TESTDIR_SECOND keylime_agent $PWD/confdir_$CONT_AGENT_SECOND $PWD/cv_ca"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID_SECOND}"
 
         # create allowlist and excludelist for each agent
@@ -134,13 +137,9 @@ rlJournalStart
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
-        #set tmp resource manager permission to default state
-        rlRun "chmod o-rw /dev/tpmrm0"
-        if limeTPMEmulated; then
-            rlRun "limeStopIMAEmulator"
-            rlRun "limeStopTPMEmulator"
-            rlRun "limeCondStopAbrmd"
-        fi
+        rlRun "limeStopTPMEmulator"
+        rlRun "limeTPMDevNo=1 limeStopTPMEmulator"
+        rlRun "limeStopIMAEmulator"
         limeExtendNextExcludelist $TESTDIR_FIRST
         limeExtendNextExcludelist $TESTDIR_SECOND
         rlRun "rm -f $TESTDIR_FIRST/*"

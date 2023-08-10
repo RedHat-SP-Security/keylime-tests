@@ -31,7 +31,6 @@
 # Include Beaker environment
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-
 true <<'=cut'
 =pod
 
@@ -48,6 +47,7 @@ The library provides shell function to ease keylime test implementation.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 # we are using hardcoded paths so they are preserved due to reboots
 export __INTERNAL_limeTmpDir
@@ -92,6 +92,7 @@ export limeIMACertificateDER=${__INTERNAL_limeIMAKeysDir}/x509_evm.der
 [ -n "$limeTIMEOUT" ] || limeTIMEOUT=20
 export limeTIMEOUT
 
+export limeTPMDevNo=0
 export limeTestUser=limetester
 export limeTestUserUID=11235
 
@@ -354,6 +355,9 @@ __limeGetLogName() {
     local LOGSUFFIX
     [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
+    if [ "$NAME" == "ima_emulator" -a "$limeTPMDevNo" != "0" ]; then
+        LOGNAME=${LOGNAME}.tpm${limeTPMDevNo}
+    fi
     echo ${!LOGNAME}
 }
 
@@ -376,6 +380,7 @@ __limeStartKeylimeService() {
     else
         # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
         RUST_LOG=keylime_agent=trace
+        echo "running: keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &"
         keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &
     fi
 
@@ -628,7 +633,11 @@ Returns 0 when the start was successful, non-zero otherwise.
 
 limeStartIMAEmulator() {
 
-    limeStopIMAEmulator
+    if [ "$1" == "--no-stop" ]; then
+        shift
+    else
+        limeStopIMAEmulator
+    fi
     if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
         #create IMA emulator measurement file
         export LLVM_PROFILE_FILE="${__INTERNAL_limeCoverageDir}/ima_emulator_coverage-%p-%m.profraw"
@@ -709,7 +718,11 @@ __limeStartTPMEmulator_swtpm() {
     __limeStopTPMEmulator_swtpm
     if rpm -q swtpm &> /dev/null; then
         mkdir -p /var/lib/tpm/swtpm
-        rlServiceStart swtpm
+        if [ "$limeTPMDevNo" == "0" ]; then
+            rlServiceStart swtpm
+        else
+            rlServiceStart swtpm${limeTPMDevNo}
+        fi
     fi
 }
 
@@ -792,7 +805,11 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 __limeStopTPMEmulator_swtpm() {
     if rpm -q swtpm &> /dev/null; then
-        rlServiceStop swtpm
+        if [ "$limeTPMDevNo" == "0" ]; then
+            rlServiceStop swtpm
+        else
+            rlServiceStop swtpm${limeTPMDevNo}
+        fi
     fi
 }
 
@@ -1118,7 +1135,7 @@ limeWaitForTPMEmulator() {
 
     # check /dev/tpm* presence if swtpm is configured as a device
     if grep -q device $__INTERNAL_limeTmpDir/swtpm_setup &> /dev/null; then
-        rlWaitForFile /dev/tpm0 -d 0.5 -t ${limeTIMEOUT}
+        rlWaitForFile /dev/tpm${limeTPMDevNo} -d 0.5 -t ${limeTIMEOUT}
     else
         rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}
     fi
@@ -2155,7 +2172,7 @@ limeconRunAgent() {
         PUBLISH_PORTS="-P"
     fi
 
-    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --tmpfs /var/lib/keylime/secure --volume=$TESTDIR:$TESTDIR --device=/dev/tpm0 --device=/dev/tpmrm0 -e RUST_LOG=keylime_agent=trace"
+    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --tmpfs /var/lib/keylime/secure --volume=$TESTDIR:$TESTDIR -e RUST_LOG=keylime_agent=trace -e TCTI=device:/dev/tpmrm${limeTPMDevNo}"
 
     if [ -n "$CONFDIR" ]; then
         EXTRA_ARGS="--volume=${CONFDIR}:/etc/keylime/:z $EXTRA_ARGS"
@@ -2507,7 +2524,7 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
     [ -f $__INTERNAL_limeLogVerifier ] && > $__INTERNAL_limeLogVerifier
     [ -f $l__INTERNAL_imeLogRegistrar ] && > $__INTERNAL_limeLogRegistrar
     [ -f $__INTERNAL_limeLogAgent ] && > $__INTERNAL_limeLogAgent
-    [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator
+    [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator && rm -f ${__INTERNAL_limeLogIMAEmulator}.tpm*
 fi
 
 # prepare coveragerc file
@@ -2588,3 +2605,4 @@ Karel Srot <ksrot@redhat.com>
 =back
 
 =cut
+
