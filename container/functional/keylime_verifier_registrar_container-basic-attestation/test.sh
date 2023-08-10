@@ -47,7 +47,7 @@ rlJournalStart
         if [ -n "$VERIFIER_IMAGE" ]; then
             rlRun "limeconPullImage $REGISTRY $VERIFIER_IMAGE $TAG_VERIFIER"
         else
-            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${VERIFIER_DOCKERFILE}") ${TAG_VERIFIER}"
+            rlRun "limeconPrepareImage ${VERIFIER_DOCKERFILE} ${TAG_VERIFIER}"
         fi
 
         # Pull or build registrar container
@@ -55,7 +55,7 @@ rlJournalStart
         if [ -n "$REGISTRAR_IMAGE" ]; then
             rlRun "limeconPullImage $REGISTRY $REGISTRAR_IMAGE $TAG_REGISTRAR"
         else
-            rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${REGISTRAR_DOCKERFILE}") ${TAG_REGISTRAR}"
+            rlRun "limeconPrepareImage ${REGISTRAR_DOCKERFILE} ${TAG_REGISTRAR}"
         fi
 
         # if TPM emulator is present
@@ -94,7 +94,7 @@ rlJournalStart
         #setup of agent
         TAG_AGENT="agent_image"
         CONT_AGENT="agent_container"
-        rlRun "limeconPrepareImage $(realpath "${limeLibraryDir}"/"${AGENT_DOCKERFILE}") ${TAG_AGENT}"
+        rlRun "limeconPrepareImage ${AGENT_DOCKERFILE} ${TAG_AGENT}"
         rlRun "limeUpdateConf agent registrar_ip '\"$IP_REGISTRAR\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 
