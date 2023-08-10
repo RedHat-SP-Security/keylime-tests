@@ -27,7 +27,7 @@ _EOF"
 
         # find suffix for a new unit file (just in case it already exists)
         if ls /etc/systemd/system/swtpm*.service 2> /dev/null; then
-            SUFFIX=$(( $(ls /etc/systemd/system/swtpm*.service | wc -l) ))
+            SUFFIX=$(( $( find /etc/systemd/system -name "swtpm*.service" | wc -l ) ))
         else
             SUFFIX=""
         fi
@@ -60,7 +60,8 @@ _EOF"
     rlPhaseEnd
 
     if ls /dev/tpmrm* 2> /dev/null; then
-        NEW_TPM_DEV_NO=$( ls /dev/tpmrm* 2> /dev/null | wc -l )
+        # /dev/tpmX numbering starts with 0
+        NEW_TPM_DEV_NO=$( find /dev -name "tpmrm*" | wc -l )
     else
         NEW_TPM_DEV_NO=0
     fi
