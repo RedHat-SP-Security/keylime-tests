@@ -48,7 +48,6 @@ The library provides shell function to ease keylime test implementation.
 #   Variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 # we are using hardcoded paths so they are preserved due to reboots
 export __INTERNAL_limeTmpDir
 [ -n "$__INTERNAL_limeTmpDir" ] || __INTERNAL_limeTmpDir="/var/tmp/limeLib"
@@ -78,7 +77,11 @@ export __INTERNAL_limeCoverageEnabled=false
 [ -n "$COVERAGE" ] && __INTERNAL_limeCoverageEnabled=true
 [ -f "$__INTERNAL_limeCoverageDir/enabled" ] && __INTERNAL_limeCoverageEnabled=true
 
-[ "$limeIGNORE_SYSTEMD" == "1" -o "$limeIGNORE_SYSTEMD" == "true" ] && limeIGNORE_SYSTEMD=true || limeIGNORE_SYSTEMD=false
+if [ "$limeIGNORE_SYSTEMD" == "1" ] || [ "$limeIGNORE_SYSTEMD" == "true" ]; then
+    limeIGNORE_SYSTEMD=true
+else
+    limeIGNORE_SYSTEMD=false
+fi
 
 export __INTERNAL_limeCoverageContext
 
@@ -355,7 +358,7 @@ __limeGetLogName() {
     local LOGSUFFIX
     [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
-    if [ "$NAME" == "ima_emulator" -a "$limeTPMDevNo" != "0" ]; then
+    if [ "$NAME" == "ima_emulator" ] && [ "$limeTPMDevNo" != "0" ]; then
         LOGNAME=${LOGNAME}.tpm${limeTPMDevNo}
     fi
     echo ${!LOGNAME}
@@ -413,7 +416,7 @@ __limeStopKeylimeService() {
     local TAIL=1
 
     # find the tail of the log file
-    [ -f ${LOGFILE} ] && TAIL=$( cat ${LOGFILE} | wc -l )
+    [ -f ${LOGFILE} ] && TAIL=$( wc -l < ${LOGFILE} )
     [ $TAIL -eq 0 ] && TAIL=1
 
     # when there is a unit file, stop service using systemctl
@@ -638,7 +641,7 @@ limeStartIMAEmulator() {
     else
         limeStopIMAEmulator
     fi
-    if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
+    if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" ] || [ "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
         #create IMA emulator measurement file
         export LLVM_PROFILE_FILE="${__INTERNAL_limeCoverageDir}/ima_emulator_coverage-%p-%m.profraw"
     fi
@@ -1317,7 +1320,7 @@ limeInstallIMAConfig() {
         echo "Installing IMA policy from ${FILE}"
         mkdir -p /etc/ima/
         cat ${FILE} > /etc/ima/ima-policy && cat ${FILE} > ${__INTERNAL_limeTmpDir}/installed-ima-policy
-        if [ $(cat /sys/kernel/security/ima/policy | wc -l) -eq 0 ]; then
+        if [ $( wc -l /sys/kernel/security/ima/policy ) -eq 0 ]; then
             cat ${FILE} > /sys/kernel/security/ima/policy
         else
             echo "Warning: IMA policy already configured in /sys/kernel/security/ima/policy"
@@ -1565,7 +1568,7 @@ limeGetRevocationScriptType() {
     local AGENT=$( which keylime_agent )
 
     # follow limeREVOCATION_SCRIPT_TYPE variable if set
-    if [ "${limeREVOCATION_SCRIPT_TYPE}" == "module" -o "${limeREVOCATION_SCRIPT_TYPE}" == "script" ]; then
+    if [ "${limeREVOCATION_SCRIPT_TYPE}" == "module" ] || [ "${limeREVOCATION_SCRIPT_TYPE}" == "script" ]; then
         echo ${limeREVOCATION_SCRIPT_TYPE}
     # for Python agent we use python modules
     elif file ${AGENT} | grep -qi python; then
@@ -1620,7 +1623,7 @@ limeCopyKeylimeFile(){
 
     local OPTION="--install"
 
-    if [ "$1" == "--install" -o "$1" == "--source" ]; then
+    if [ "$1" == "--install" ] || [ "$1" == "--source" ]; then
         OPTION="$1"
         shift
     fi
@@ -1643,7 +1646,7 @@ limeCopyKeylimeFile(){
         echo "Copying ${FILEPATH} to ${DEST}"
         cp ${FILEPATH} ${DEST}
     # source file that was not found on a system will be downloaded
-    elif [ "${OPTION}" == "-s" -o "${OPTION}" == "--source" ]; then
+    elif [ "${OPTION}" == "-s" ] || [ "${OPTION}" == "--source" ]; then
         echo "Downloading https://raw.githubusercontent.com/keylime/keylime/master/${NAME} to ${DEST}"
         pushd ${DEST}
         curl -O https://raw.githubusercontent.com/keylime/keylime/master/${NAME}
@@ -1854,12 +1857,12 @@ limeLogfileSubmit() {
     local SILENT=""
 
 
-    if [ "$1" == "-s" -o "$1" == "--silent" ]; then
+    if [ "$1" == "-s" ] || [ "$1" == "--silent" ]; then
         SILENT="1"
         shift
     fi
 
-    if [ ${STATE} -gt 0 -a -n "$1" -a -z "${SILENT}" ]; then
+    if [ ${STATE} -gt 0 ] && [ -n "$1" ] && [ -z "${SILENT}" ]; then
         cat $1
     fi
     rlFileSubmit $1
@@ -2544,7 +2547,7 @@ _EOF
 # set code coverage context depending on a test
 # create context depending on the test directory by
 # cuting-off the *keylime-tests* (git repo dir) part
-__INTERNAL_limeCoverageContext=$( cat $__INTERNAL_limeLogCurrentTest | sed -e 's#.*keylime-tests[^/]*\(/.*\)#\1#' )
+__INTERNAL_limeCoverageContext=$( sed -e 's#.*keylime-tests[^/]*\(/.*\)#\1#' "$__INTERNAL_limeLogCurrentTest" )
 sed -i "s#context =.*#context = ${__INTERNAL_limeCoverageContext}#" /var/tmp/limeLib/coverage/coveragerc
 # we need to save context to a place where systemd can access it without SELinux complaining
 export COVERAGE_PROCESS_START=/var/tmp/limeLib/coverage/coveragerc
