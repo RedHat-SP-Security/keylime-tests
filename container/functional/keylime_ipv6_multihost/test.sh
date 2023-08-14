@@ -17,6 +17,7 @@ HTTP_SERVER_PORT=8080
 [ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
 [ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
 [ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$WEBHOOK_DOCKERFILE" ] || WEBHOOK_DOCKERFILE=Dockerfile.webhook
 
 [ -n "$REGISTRY" ] || REGISTRY=quay.io
 
@@ -30,14 +31,16 @@ rlJournalStart
         CONT_NETWORK_NAME="container_network"
 
         IP_VERIFIER="2001:db8:4000::"
+        IP_WEBHOOK="2001:db8:5000::"
         IP_REGISTRAR="2001:db8:6000::"
         IP_AGENT="[2001:db8:8000::]"
+
         #create network for containers
         rlRun "limeconCreateNetwork --ipv6 ${CONT_NETWORK_NAME} 2001:0db8:0000:0000:0000:0000:0000:0000/32"
 
         #prepare verifier container
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
-        rlRun "limeUpdateConf revocations webhook_url http://[$IP_VERIFIER]:${HTTP_SERVER_PORT}"
+        rlRun "limeUpdateConf revocations webhook_url http://[$IP_WEBHOOK]:${HTTP_SERVER_PORT}"
 
         rlRun "limeUpdateConf verifier ip $IP_VERIFIER"
         rlRun "limeUpdateConf verifier registrar_ip $IP_REGISTRAR"
@@ -120,13 +123,16 @@ rlJournalStart
 
         rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT '2001:db8:8000::' $CONT_NETWORK_NAME $TESTDIR keylime_agent $PWD/confdir_$CONT_AGENT $(realpath ./cv_ca) $WORKDIR"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        rlRun "podman exec -t  $CONT_AGENT chmod a+r /etc/keylime/agent.conf" 
-        rlRun "podman exec -t  $CONT_AGENT dnf install -y python3-toml"
 
-        HTTP_SERVER_LOG="revocation_log"
-        rlRun "podman exec -t  $CONT_VERIFIER dnf install -y nmap-ncat && touch $HTTP_SERVER_LOG"
-        # start revocation notifier webhook server using ncat
-        rlRun "podman exec -d  $CONT_VERIFIER ncat --no-shutdown -k -l ${HTTP_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${HTTP_SERVER_LOG}"
+        # Prepare webhook image
+        CONT_WEBHOOK=webhook_container
+        TAG_WEBHOOK=webhook_image
+        WEBHOOK_DIR=$( mktemp -d )
+
+        rlRun "limeconPrepareImage ${WEBHOOK_DOCKERFILE} ${TAG_WEBHOOK}"
+
+        # Start the container and make it run indefinitely
+        rlRun "limeconRun $CONT_WEBHOOK $TAG_WEBHOOK $IP_WEBHOOK $CONT_NETWORK_NAME '-v $WEBHOOK_DIR:/var/tmp/webhook:z'"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
@@ -143,7 +149,7 @@ _EOF"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
-        rlRun "podman exec -t $CONT_AGENT ls /var/tmp/test_payload_file"
+        rlRun "ls $WORKDIR/test_payload_file"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
@@ -154,13 +160,13 @@ _EOF"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'A node in the network has been compromised: \[2001:db8:8000::\]'"
-        rlRun "podman exec -t $CONT_AGENT ls /var/tmp/test_payload_file" 2
-        rlRun "podman exec -t  $CONT_VERIFIER cat ${HTTP_SERVER_LOG} | grep revocation "
+        rlRun "ls $WORKDIR/test_payload_file" 2
+        rlRun "grep revocation $WEBHOOK_DIR/revocation_log"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
         limeconSubmitLogs
-        rlRun "limeconStop registrar_container verifier_container agent_container"
+        rlRun "limeconStop $CONT_REGISTRAR $CONT_VERIFIER $CONT_AGENT $CONT_WEBHOOK"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
@@ -169,6 +175,7 @@ _EOF"
         fi
         limeExtendNextExcludelist $TESTDIR
         limeExtendNextExcludelist "$WORKDIR"
+        limeExtendNextExcludelist "$WEBHOOK_DIR"
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
