@@ -39,7 +39,7 @@
 
 
 function assign_server_roles() {
-    if [ -f ${TMT_TOPOLOGY_BASH} ]; then
+    if [ -n "${TMT_TOPOLOGY_BASH}" ] && [ -f ${TMT_TOPOLOGY_BASH} ]; then
         # assign roles based on tmt topology data
         cat ${TMT_TOPOLOGY_BASH}
         . ${TMT_TOPOLOGY_BASH}
