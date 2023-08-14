@@ -305,9 +305,9 @@ if [ -n "${AGENT2}" ]; then
 
         # first register AGENT2 and confirm it has passed validation
         AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
-        rlRun "cat policy2.json"
         # download Agent2 list
         rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
+        rlRun "cat policy2.json"
         # register
         rlRun "cat > script.expect <<_EOF
 set timeout 20
