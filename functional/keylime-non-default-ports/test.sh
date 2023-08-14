@@ -37,6 +37,16 @@ rlJournalStart
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         fi
+
+        #seting keylime_port_t label for non default ports
+        if rlIsRHEL '>=9.3' || rlIsFedora '>=38' || rlIsCentOS '>=9';then
+            rlRun "semanage port -a -t keylime_port_t -p tcp 19002"
+            rlRun "semanage port -a -t keylime_port_t -p tcp 18890"
+            rlRun "semanage port -a -t keylime_port_t -p tcp 18992"
+            rlRun "semanage port -a -t keylime_port_t -p tcp 18891"
+            rlRun "semanage port -a -t keylime_port_t -p tcp 18881"
+        fi
+
         sleep 5
         #set non default ports
         #default port 9002
