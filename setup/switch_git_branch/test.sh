@@ -12,7 +12,8 @@ rlJournalStart
         if [ -z "${SWITCH_TMT_TESTS_BRANCH}" ]; then
             rlLogInfo "No branch provided using SWITCH_TMT_TESTS_BRANCH variable, using autodetection"
             VERSION=$(rpm -q --qf "%{VERSION}" redhat-release)
-            SWITCH_TMT_TESTS_BRANCH=$( git branch | grep "rhel-${VERSION}" | head -1)
+            rlRun -s "git branch -r"
+            SWITCH_TMT_TESTS_BRANCH=$( grep "origin/rhel-${VERSION}" "$rlRun_LOG" | head -1)
             [ -z "$SWITCH_TMT_TESTS_BRANCH" ] && SWITCH_TMT_TESTS_BRANCH="rhel-9-main"
             rlLogInfo "Autodetected branch: $SWITCH_TMT_TESTS_BRANCH"
         fi
