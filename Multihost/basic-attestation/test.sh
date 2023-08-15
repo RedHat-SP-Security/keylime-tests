@@ -36,6 +36,11 @@
 
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
 [ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
+if [ "${USE_ALLOWLIST_FOR_AGENT2}" == "true" -o "${USE_ALLOWLIST_FOR_AGENT2}" == "yes" ]; then
+    USE_ALLOWLIST_FOR_AGENT2=true
+else
+    USE_ALLOWLIST_FOR_AGENT2=false
+fi
 
 
 function assign_server_roles() {
@@ -306,12 +311,19 @@ if [ -n "${AGENT2}" ]; then
         # first register AGENT2 and confirm it has passed validation
         AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
         # download Agent2 list
-        rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
-        rlRun "cat policy2.json"
+        if ${USE_ALLOWLIST_FOR_AGENT2}; then
+            rlRun "wget -O allowlist2.txt 'http://${AGENT2_IP}:8000/allowlist.txt'"
+            rlRun "wget -O excludelist2.txt 'http://${AGENT2_IP}:8000/excludelist.txt'"
+            POLICYPARAMS="--allowlist allowlist2.txt --exclude excludelist2.txt"
+        else
+            rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
+            rlRun "cat policy2.json"
+            POLICYPARAMS="--runtime-policy policy2.json"
+        fi
         # register
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --runtime-policy policy2.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} ${POLICYPARAMS} --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -450,7 +462,7 @@ Agent2() {
 
         # expose lists to Agent
         rlRun "mkdir http"
-        rlRun "cp policy.json http"
+        rlRun "cp policy.json allowlist.txt excludelist.txt http"
         rlRun "pushd http"
         rlRun "python3 -m http.server 8000 &"
         HTTP_PID=$!
