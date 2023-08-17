@@ -1,0 +1,18 @@
+summary: keylime-agent-rust does not correctly override configuration options
+description: |
+    Start agent in debug mode and check that a config option override
+    defined using an environment variable is used.
+contact: Karel Srot <ksrot@redhat.com>
+link:
+  - verifies: https://issues.redhat.com/browse/RHEL-395
+component:
+  - keylime-agent-rust
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+recommend:
+  - keylime
+  - keylime-agent-rust
+duration: 3m
+enabled: true
