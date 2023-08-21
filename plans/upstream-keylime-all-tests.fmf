@@ -42,7 +42,7 @@ adjust+:
       - how: shell
         order: 30
         script:
-         - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm
+         - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
 
   # discover step adjustments
   # disable code coverage measurement everywhere except F37 and CS9
