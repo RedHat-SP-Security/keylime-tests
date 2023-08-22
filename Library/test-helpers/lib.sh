@@ -2621,7 +2621,7 @@ if ! grep -q "^$PWD\$" $__INTERNAL_limeLogCurrentTest; then
     [ -f $__INTERNAL_limeLogVerifier ] && > $__INTERNAL_limeLogVerifier
     [ -f $l__INTERNAL_imeLogRegistrar ] && > $__INTERNAL_limeLogRegistrar
     [ -f $__INTERNAL_limeLogAgent ] && > $__INTERNAL_limeLogAgent
-    [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator && rm -f ${__INTERNAL_limeLogIMAEmulator}.tpm*
+    [ -f $__INTERNAL_limeLogIMAEmulator ] && > $__INTERNAL_limeLogIMAEmulator && rm -f "${__INTERNAL_limeLogIMAEmulator}.tpm"*
 fi
 
 # prepare coveragerc file
