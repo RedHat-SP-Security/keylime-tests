@@ -1,4 +1,4 @@
-summary: Run tests from the rhel-9-main branch on the distribution keylime
+summary: Run tests from the fedora branches on the distribution keylime for fedora
 
 # unfortunately, filtering using adjust doesn't work for plan for context defined
 # in the very same plan. We need to update packit.yaml
@@ -8,19 +8,13 @@ context:
   faked_measured_boot_log: no
 
 adjust+:
- - when: target_PR_branch is defined and target_PR_branch != rhel-9-main
+ - when: target_PR_branch is defined and target_PR_branch != fedora
    enabled: false
-   because: we want to run this plan only for PRs targeting the rhel branch
-
-prepare+:
-  - how: shell
-    order: 30
-    script:
-     - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
+   because: we want to run this plan only for PRs targeting the respective Fedora branch
 
 discover:
   how: fmf
-  test: 
+  test:
    - /setup/configure_tpm_emulator
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
