@@ -1427,7 +1427,7 @@ limeCreateTestLists() {
     bash $limeLibraryDir/create_excludelist.sh excludelist.txt && \
     # make sure the file exists
     touch $__INTERNAL_limeBaseExcludeList && \
-    cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt
+    cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt && \
     echo -e "${EXCLUDE}" >> excludelist.txt
 
 }
