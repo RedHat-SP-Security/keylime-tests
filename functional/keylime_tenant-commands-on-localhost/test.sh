@@ -105,14 +105,14 @@ rlJournalStart
 
     rlPhaseStartTest "-c regdelete"
         rlRun -s "keylime_tenant -c regdelete"
-        rlRun -s "keylime_tenant -c regstatus" 0,1
+        rlRun -s "keylime_tenant -c regstatus" 1
         rlAssertGrep "{\"code\": 404, \"status\": \"Agent $AGENT_ID does not exist on registrar 127.0.0.1 port 8891.\"" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "-c delete"
         rlRun -s "keylime_tenant -c delete"
         rlAssertGrep "(INFO - CV completed deletion of agent $AGENT_ID|INFO - Agent $AGENT_ID deleted from the CV)" $rlRun_LOG -E
-        rlRun -s "keylime_tenant -c cvstatus" 0,1
+        rlRun -s "keylime_tenant -c cvstatus" 1
         rlAssertGrep "Verifier at 127.0.0.1 with Port 8881 does not have agent $AGENT_ID" $rlRun_LOG
     rlPhaseEnd
 
