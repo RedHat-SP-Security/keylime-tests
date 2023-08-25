@@ -39,6 +39,7 @@ while [ $# -gt 0 ]; do
         $ALGO "$1" >> $OUTPUT
     else
         echo "Error: $1 is not a regular file" >&2
+        exit 1
     fi
     shift
 done
