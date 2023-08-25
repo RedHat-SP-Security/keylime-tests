@@ -1461,8 +1461,10 @@ limeCreateTestPolicy() {
     bash $limeLibraryDir/create_excludelist.sh excludelist.txt && \
     # make sure the file exists
     touch $__INTERNAL_limeBaseExcludeList && \
-    cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt
+    cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt && \
     echo -e "${EXCLUDE}" >> excludelist.txt
+
+    [ $? -ne 0 ] && return 1
 
     # create policy.json and create signed policies and keys
     keylime_convert_runtime_policy -a allowlist.txt -e excludelist.txt -o policy.json && \
