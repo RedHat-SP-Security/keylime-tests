@@ -2,10 +2,12 @@ jobs:
 - job: tests
   trigger: pull_request
   targets:
-    - centos-stream-9-x86_64
+    centos-stream-9-x86_64:
+      distros: [RHEL-9.2.0-Nightly]
+  use_internal_tf: True
   skip_build: true
   tf_extra_params:
     environments:
       - tmt:
           context:
-            target_PR_branch: "rhel-9-main"
+            target_PR_branch: "rhel-9.2.0"
