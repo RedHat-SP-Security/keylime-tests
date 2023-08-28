@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream9
+FROM docker.io/redhat/ubi9:9.2
 COPY lime_con_start.sh /usr/local/bin/lime_con_start
 COPY lime_con_install_upstream.sh /usr/local/bin/lime_con_install_upstream
 COPY id_*.pub /root/

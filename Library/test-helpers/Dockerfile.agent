@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream9
+FROM docker.io/redhat/ubi9:9.2
 COPY id_*.pub /root/
 COPY lime_con_start.sh /usr/local/bin/lime_con_start
 RUN dnf install -y keylime-agent-rust util-linux-core openssh openssh-server which && \
