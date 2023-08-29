@@ -15,9 +15,6 @@ rlJournalStart
 
         # update /etc/keylime.conf
         limeBackupConfig
-        rlRun "limeUpdateConf logger_root level DEBUG"
-        rlRun "limeUpdateConf logger_keylime level DEBUG"
-        rlRun "limeUpdateConf handler_consoleHandler level DEBUG"
         # verifier
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
         rlRun "limeUpdateConf revocations webhook_url http://localhost:${HTTP_SERVER_PORT}"
