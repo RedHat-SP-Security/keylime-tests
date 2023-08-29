@@ -17,9 +17,6 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlFileBackup $KEYLIME_UNIT_FILE
-        rlRun "limeUpdateConf logger_root level DEBUG"
-        rlRun "limeUpdateConf logger_keylime level DEBUG"
-        rlRun "limeUpdateConf handler_consoleHandler level DEBUG"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         # if TPM emulator is present

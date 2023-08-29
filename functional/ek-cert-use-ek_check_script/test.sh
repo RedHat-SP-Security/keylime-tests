@@ -12,8 +12,6 @@ rlJournalStart
         rlAssertRpm keylime
         # update /etc/keylime.conf
         limeBackupConfig
-        rlRun "limeUpdateConf logger_keylime level DEBUG"
-        rlRun "limeUpdateConf handler_consoleHandler level DEBUG"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert false"
         # if TPM emulator is present
