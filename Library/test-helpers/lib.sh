@@ -2057,6 +2057,7 @@ limeconPrepareImage() {
     ls /root/.ssh/id_*.pub &>/dev/null || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
     cp /root/.ssh/id_*.pub .
     cp ${limeLibraryDir}/lime_con_* .
+    cp ${limeLibraryDir}/yumrepogen_setup.sh .
 
     CMDLINE="podman build $ARGS -t=$TAG --file $DOCKER_FILE ."
     echo -e "\nRunning podman:\n$CMDLINE"

@@ -1,7 +1,10 @@
 FROM docker.io/redhat/ubi9:9.2
 COPY id_*.pub /root/
 COPY lime_con_start.sh /usr/local/bin/lime_con_start
-RUN dnf install -y keylime-registrar openssh openssh-server which && \
+COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
+RUN \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh && \
+  dnf install -y keylime-registrar openssh openssh-server which && \
   dnf clean all && \
   ssh-keygen -A && mkdir -p /root/.ssh && \
   cat /root/id_*.pub > /root/.ssh/authorized_keys && \
