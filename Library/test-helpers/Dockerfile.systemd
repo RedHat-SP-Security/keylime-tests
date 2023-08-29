@@ -1,6 +1,9 @@
 FROM docker.io/redhat/ubi9:9.2
 COPY id_*.pub /root/
-RUN dnf install -y systemd util-linux-core openssh openssh-server && \
+COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
+RUN \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh && \
+  dnf install -y systemd util-linux-core openssh openssh-server && \
   dnf clean all && \
   ssh-keygen -A && \
   mkdir -p /root/.ssh && \
