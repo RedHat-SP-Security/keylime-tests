@@ -2064,10 +2064,11 @@ limeconPrepareImage() {
         ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
     fi
 
-    # copy lime_con_install_upstream.sh to the current dir just in case it would be needed
-    if grep -q 'lime_con_install_upstream.sh' ${DOCKER_FILE}; then
-        cp ${limeLibraryDir}/lime_con_install_upstream.sh .
-    fi
+    #set up for ssh access
+    ls /root/.ssh/id_*.pub &>/dev/null || ssh-keygen -t rsa -N "" -f /root/.ssh/id_rsa
+    cp /root/.ssh/id_*.pub .
+    cp ${limeLibraryDir}/lime_con_* .
+    cp ${limeLibraryDir}/yumrepogen_setup.sh .
 
     CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE ."
     echo -e "\nRunning podman:\n$CMDLINE"
