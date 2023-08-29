@@ -20,12 +20,12 @@ require:
   - expect
   - gcc
   - git
-  - libarchive-devel
   - openssl-devel
   - rust
-  - tpm2-tss-devel
   - zeromq-devel
 recommend:
   - keylime
+  - libarchive-devel
+  - tpm2-tss-devel
 duration: 20m
 enabled: true
