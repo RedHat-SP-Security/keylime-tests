@@ -28,8 +28,6 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf logger_root level INFO"        
-        rlRun "limeUpdateConf logger_keylime level DEBUG"
-        rlRun "limeUpdateConf handler_consoleHandler level DEBUG"
 
         # disable the need for ek cert for tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
