@@ -2431,7 +2431,7 @@ limeconRunSystemd() {
     local NETWORK=$4
     local EXTRA_PODMAN_ARGS=$5
 
-    limeconRun $NAME $TAG $IP $NETWORK "/sbin/init" "${EXTRA_PODMAN_ARGS}"
+    limeconRun $NAME $TAG $IP $NETWORK "${EXTRA_PODMAN_ARGS}" "/sbin/init"
 
 }
 
