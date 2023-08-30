@@ -2064,7 +2064,7 @@ limeconPrepareImage() {
         ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
     fi
 
-    CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE"
+    CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE ."
     echo -e "\nRunning podman:\n$CMDLINE"
     $CMDLINE
 }
