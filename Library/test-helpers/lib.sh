@@ -2064,6 +2064,11 @@ limeconPrepareImage() {
         ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
     fi
 
+    # copy lime_con_install_upstream.sh to the current dir just in case it would be needed
+    if grep -q 'lime_con_install_upstream.sh' ${DOCKER_FILE}; then
+        cp ${limeLibraryDir}/lime_con_install_upstream.sh .
+    fi
+
     CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE ."
     echo -e "\nRunning podman:\n$CMDLINE"
     $CMDLINE
