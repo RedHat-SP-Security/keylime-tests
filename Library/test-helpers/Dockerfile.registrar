@@ -3,6 +3,7 @@ RUN \
   rm -f /etc/yum.repos.d/centos.repo && \
   curl -o /etc/yum.repos.d/c9s.repo 'https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo' && \
   cat /etc/yum.repos.d/* && \
+  dnf install -y util-linux python3-jinja2 && \
   dnf install -y keylime-registrar which && \
   dnf clean all
 
