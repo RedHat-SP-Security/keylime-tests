@@ -11,6 +11,10 @@ rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        # install recommend devel packages from CRB if missing
+        rpm -q tpm2-tss-devel 2> /dev/null || INSTALL_PKGS="$INSTALL_PKGS tpm2-tss-devel"
+        rpm -q libarchive-devel 2> /dev/null || INSTALL_PKGS="$INSTALL_PKGS libarchive-devel"
+        [ -n "$INSTALL_PKGS" ] && rlRun "yum --enablerepo \*CRB -y install $INSTALL_PKGS"
         rlAssertRpm keylime
 
         # update /etc/keylime.conf
@@ -110,6 +114,8 @@ _EOF"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist "$WORKDIR"
+	# remove recommend packages
+        [ -n "$INSTALL_PKGS" ] && rlRun "yum -y remove $INSTALL_PKGS"
     rlPhaseEnd
 
 rlJournalEnd
