@@ -17,9 +17,15 @@ adjust:
  - when: distro = fedora-rawhide
    ref: fedora-rawhide
    continue: false
+ - when: distro = fedora-37
+   ref: fedora-main
+   continue: false
  - when: distro = fedora-38
    ref: fedora-38
    continue: false
+ - when: distro = fedora-39
+   ref: fedora-39
+   continue: false
  - when: distro = fedora
-   ref: fedora-main
+   ref: fedora-rawhide
    continue: false
