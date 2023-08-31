@@ -11,6 +11,7 @@ discover:
    - /setup/install_upstream_keylime
    - /setup/install_rust_keylime_from_copr
    - /setup/enable_keylime_debug_messages
+   - /setup/inject_SELinux_AVC_check
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "/functional/basic-attestation-.*"
 
