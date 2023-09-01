@@ -83,6 +83,12 @@ fi
 #   Initialization / Installation
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# define XTRA variable if not defined but TMT variables are exposed
+if [ -z "$XTRA" ] && [ -n "$TMT_TREE" ] && [ -n "$TMT_TEST_SERIAL_NUMBER" ]; then
+    XTRA="$(echo $TMT_TREE | sed 's#^.*/run-\([0-9]*\)/.*#\1#')-$TMT_TEST_SERIAL_NUMBER"
+fi
+echo "XTRA=$XTRA"
+
 # double check nmap is installed (requires are not installed with direct library load)
 rpm -q nmap-ncat hostname &> /dev/null || yum -y install nmap-ncat hostname
 
