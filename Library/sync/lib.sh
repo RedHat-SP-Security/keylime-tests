@@ -85,7 +85,7 @@ fi
 
 # define XTRA variable if not defined but TMT variables are exposed
 if [ -z "$XTRA" ] && [ -n "$TMT_TREE" ] && [ -n "$TMT_TEST_SERIAL_NUMBER" ]; then
-    XTRA="$(echo $TMT_TREE | sed 's#^.*/run-\([0-9]*\)/.*#\1#')-$TMT_TEST_SERIAL_NUMBER"
+    export XTRA="$(echo $TMT_TREE | sed 's#^.*/run-\([0-9]*\)/.*#\1#')-$TMT_TEST_SERIAL_NUMBER"
 fi
 echo "XTRA=$XTRA"
 
