@@ -19,6 +19,8 @@ prepare+:
      - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
 
 discover:
+  url: https://github.com/RedHat-SP-Security/keylime-tests.git
+  ref: main
   how: fmf
   test: 
    - /setup/configure_tpm_emulator
