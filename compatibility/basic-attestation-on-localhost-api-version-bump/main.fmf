@@ -22,11 +22,11 @@ require:
   - git
   - openssl-devel
   - rust
-  - zeromq-devel
   - yum
 recommend:
   - keylime
   - libarchive-devel
   - tpm2-tss-devel
+  - zeromq-devel
 duration: 20m
 enabled: true
