@@ -1,29 +1,21 @@
 # Special Project Upstream Testing Repository for the keylime package
 
+There are multiple projects running tests from this repository.
+
 ## componnets
-* keylime
+* [keylime](https://github.com/keylime/keylime)
+* [rust-keylime](https://github.com/keylime/rust-keylime)
+* [keylime_server](https://github.com/linux-system-roles/keylime_server/) Linux system role
 
-The data are structured in flexible metadata format (fmf).
-Individual tests are supposed to be executed either via
-Test management tool (singlehost tests only) or bkr workflow-tomorrow
-via Nitrate.
+The data are structured in the [Flexible metadata format](https://fmf.readthedocs.io/en/stable/).
+Individual tests are supposed to be executed using the [Test management tool](https://tmt.readthedocs.io/en/stable/).
 
-See:
-* https://github.com/psss/tmt
-* https://github.com/psss/fmf
+## Test execution and troubleshooting
+Test execution and troubleshooting is described in detail in the [TESTING](TESTING.md) file.
 
 ## Commit / merge policy
 
-Every important change to tests should undergo a review within a pull request.
-
-### changes without a need of review
-Small, trivial changes may be committed directly to the master branch.
-As a typical trivial change one may consider a metadata update (updated tags, adjust, ..)
-or typo fixes, updated to comments and formating changes.
-
-### changes with a need of review
-#### existing tests
-All changes to the test logic (changes of expected output, expected exit codes) need to be reviewed.
+Every change to tests must be submited as a pull-request and undergo a review and testing.
 
 #### new tests
 It is recommended to push new tests via PR with review as well as a check for covering all the agreed acceptance criteria is more than welcome.
@@ -35,3 +27,4 @@ The review can be done by any member of the team. However, it is recommended to 
 The merge itself should be done based on the accepted reviews. It is recommended to let the original requestor to merge the PR as they may want to do some refinements, e.g. squash some commits which were added during the review process.
 
 It is also important to make sure that the _Nitrate_ references are resynced (`tmt tests export --nitrate .`) to update the reflect the change form the previous location (branch) to the final one.
+
