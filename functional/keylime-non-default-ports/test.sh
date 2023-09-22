@@ -110,6 +110,14 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
+        #remove keylime_port_t label from non default ports
+        if rlIsRHEL '>=9.3' || rlIsFedora '>=38' || rlIsCentOS '>=9';then
+            rlRun "semanage port -d -t keylime_port_t -p tcp 19002"
+            rlRun "semanage port -d -t keylime_port_t -p tcp 18890"
+            rlRun "semanage port -d -t keylime_port_t -p tcp 18992"
+            rlRun "semanage port -d -t keylime_port_t -p tcp 18891"
+            rlRun "semanage port -d -t keylime_port_t -p tcp 18881"
+        fi
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
