@@ -1,7 +1,15 @@
 FROM docker.io/redhat/ubi9:9.2
 COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
 RUN \
-  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh && \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh
+
+# Add user to workaround https://issues.redhat.com/browse/RHEL-7193
+RUN \
+  dnf install -y tpm2-tss && \
+  getent passwd 'keylime' >/dev/null || \
+      useradd -r -G 'tss' -s '/bin/false' -c 'Keylime unprivileged user' 'keylime'
+
+RUN \
   dnf install -y keylime-agent-rust util-linux-core which && \
   dnf clean all
 
