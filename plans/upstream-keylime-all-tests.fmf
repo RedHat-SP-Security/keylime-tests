@@ -45,15 +45,15 @@ adjust+:
          - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
 
   # discover step adjustments
-  # disable code coverage measurement everywhere except F37 and CS9
-  - when: distro != centos-stream-9 and distro != fedora-37
+  # disable code coverage measurement everywhere except F39 and CS9
+  - when: distro != centos-stream-9 and distro != fedora-39
     discover+:
        test-:
          - /setup/enable_keylime_coverage
          - /setup/generate_coverage_report
 
-  # disable code coverage measurement everywhere except F37 and CS9
-  - when: distro != centos-stream-9 and distro != fedora-37
+  # disable code coverage measurement everywhere except F39 and CS9
+  - when: distro != centos-stream-9 and distro != fedora-39
     environment+:
        KEYLIME_RUST_CODE_COVERAGE: 0
     discover+:
