@@ -75,9 +75,6 @@ rlJournalStart
         fi
         sleep 5
 
-        #mandatory for access agent containers to tpm
-        rlRun "chmod o+rw /dev/tpmrm0"
-
         #run verifier container
         CONT_VERIFIER="verifier_container"
         rlRun "limeconRunVerifier $CONT_VERIFIER $TAG_VERIFIER $IP_VERIFIER $CONT_NETWORK_NAME keylime_verifier /etc/keylime"
@@ -142,8 +139,6 @@ rlJournalStart
         limeconSubmitLogs
         rlRun "limeconStop registrar_container verifier_container agent_container"
         rlRun "limeconDeleteNetwork $CONT_NETWORK_NAME"
-        #set tmp resource manager permission to default state
-        rlRun "chmod o-rw /dev/tpmrm0"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
