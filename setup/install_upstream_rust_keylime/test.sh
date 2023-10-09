@@ -30,7 +30,7 @@ rlJournalStart
         [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
 
         # when TPM_BINARY_MEASUREMENTS is defined, change filepath in sources
-        SRC_FILES="src/common.rs src/main.rs keylime-agent/src/common.rs keylime-agent/src/main.rs"
+        SRC_FILES="src/common.rs src/main.rs src/config.rs keylime-agent/src/common.rs keylime-agent/src/main.rs keylime-agent/src/config.rs"
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
             for FILE in ${SRC_FILES}; do
                 [ -f ${FILE} ] && rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' $FILE"
