@@ -29,12 +29,10 @@ rlJournalStart
         [ -f /usr/bin/keylime_agent ] && rlRun "mv /usr/bin/keylime_agent /usr/bin/keylime_agent.backup"
         [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
 
-        # when TPM_BINARY_MEASUREMENTS is defined, change filepath in sources
-        SRC_FILES="src/common.rs src/main.rs keylime-agent/src/common.rs keylime-agent/src/main.rs"
+        # when TPM_BINARY_MEASUREMENTS is defined, compile with testing feature
+        # to allow setting the binary measurements file location
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
-            for FILE in ${SRC_FILES}; do
-                [ -f ${FILE} ] && rlRun "sed -i 's%/sys/kernel/security/tpm0/binary_bios_measurements%${TPM_BINARY_MEASUREMENTS}%' $FILE"
-            done
+            CARGO_FLAGS="--features=testing"
         fi
 
         rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y"
@@ -48,10 +46,9 @@ rlJournalStart
         if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
             RUSTFLAGS='-Cinstrument-coverage'
         fi
-        # remove agent unit file installed by the keylime Python install task (will not be needed in the future)
-        rlRun "rm -f /etc/systemd/system/keylime_agent.service"
+
         #build
-        rlRun "RUSTFLAGS='$RUSTFLAGS' cargo build"
+        rlRun "RUSTFLAGS='$RUSTFLAGS' cargo build ${CARGO_FLAGS}"
         rlRun "make install"
 
         # configure TPM to use sha256
@@ -74,6 +71,16 @@ _EOF'
 [Service]
 Environment=\"RUST_LOG=keylime_agent=trace\"
 _EOF"
+
+        # If the TPM_BINARY_MEASUREMENTS env var is set, set the binary
+        # measurements location for the service
+        if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
+            rlRun "cat > /etc/systemd/system/keylime_agent.service.d/30-measured_boot_location.conf <<_EOF
+[Service]
+Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
+_EOF"
+        fi
+
         if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
             rlRun "touch ${__INTERNAL_limeCoverageDir}/rust_keylime_codecoverage.profraw"
             id keylime && rlRun "chown -R keylime /var/tmp/limeLib && chmod -R g+w /var/tmp/limeLib"
