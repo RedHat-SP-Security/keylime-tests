@@ -1,7 +1,8 @@
 {
   "meta": {
     "version": 1,
-    "generator": 1
+    "generator": 3,
+    "timestamp": "2023-01-01 00:00:00"
   },
   "release": 0,
   "digests": {
