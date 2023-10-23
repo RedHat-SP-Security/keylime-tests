@@ -35,7 +35,6 @@ rlJournalStart
 
         #prepare verifier container
         rlRun "limeUpdateConf verifier ip $IP_VERIFIER"
-        rlRun "limeUpdateConf verifier registrar_ip $IP_REGISTRAR"
         #for log purposes, when agent fail, we need see verifier log, that attestation failed
         rlRun "limeUpdateConf verifier log_destination stream"
 
