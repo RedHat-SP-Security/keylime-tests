@@ -34,7 +34,6 @@ rlJournalStart
 
         #verifier
         rlRun "limeUpdateConf verifier ip $SERVER_IP"
-        rlRun "limeUpdateConf verifier registrar_ip $SERVER_IP"
 
         # start tpm emulator
         rlRun "limeStartTPMEmulator"
