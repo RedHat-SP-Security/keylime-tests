@@ -132,7 +132,6 @@ Verifier() {
 
         # Verifier configuration
         rlRun "limeUpdateConf verifier ip ${VERIFIER_IP}"
-        rlRun "limeUpdateConf verifier registrar_ip ${REGISTRAR_IP}"
         rlRun "limeUpdateConf verifier check_client_cert True"
         rlRun "limeUpdateConf verifier tls_dir ${CERTDIR}"
         rlRun "limeUpdateConf verifier trusted_server_ca '[\"cacert.pem\"]'"
