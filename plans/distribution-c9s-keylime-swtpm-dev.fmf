@@ -19,7 +19,6 @@ environment:
 
 discover:
   url: https://github.com/RedHat-SP-Security/keylime-tests.git
-  ref: main
   how: fmf
   test: 
    # need two TPM devices
