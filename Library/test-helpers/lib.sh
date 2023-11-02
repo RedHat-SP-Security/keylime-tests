@@ -2281,7 +2281,9 @@ limeconRunAgent() {
         # On rootless container, this could be done with 'podman unshare'
         podman run --rm --attach stdout $EXTRA_ARGS --entrypoint chown localhost/agent_image -R keylime:keylime /var/lib/keylime
     else
-        EXTRA_ARGS="--tmpfs /var/lib/keylime/ $EXTRA_ARGS"
+        # Find out better way to handle this: upstream containers have /var/lib/keylime owned by root, also --tmpfs mount changes
+        # directory ownership to root. So we need to set mode=777 to let agent to write there.
+        EXTRA_ARGS="--mount=type=tmpfs,dst=/var/lib/keylime/,tmpfs-mode=777 $EXTRA_ARGS"
     fi
 
     limeconRun $NAME $TAG $IP $NETWORK "$EXTRA_ARGS" $COMMAND
