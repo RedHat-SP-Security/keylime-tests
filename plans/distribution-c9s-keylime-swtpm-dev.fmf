@@ -18,7 +18,6 @@ environment:
   TENANT_DOCKERFILE: Dockerfile.tenant
 
 discover:
-  url: https://github.com/RedHat-SP-Security/keylime-tests.git
   how: fmf
   test: 
    # need two TPM devices
