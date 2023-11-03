@@ -27,12 +27,12 @@ jobs:
             id: "https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo"
 - job: tests
   trigger: pull_request
-  branch: fedora-rawhide
+  branch: fedora-39
   targets:
-    - fedora-rawhide-x86_64
+    - fedora-39-x86_64
   skip_build: true
   tf_extra_params:
     environments:
       - tmt:
           context:
-            target_PR_branch: "fedora-rawhide"
+            target_PR_branch: "fedora-39"
