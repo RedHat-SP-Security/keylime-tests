@@ -24,6 +24,7 @@ discover:
    # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - "^/functional/.*"
+   - "^/regression/.*"
 
 execute:
     how: tmt
