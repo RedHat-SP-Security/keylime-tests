@@ -31,6 +31,7 @@ discover:
    - /setup/configure_kernel_ima_module/ima_policy_signing
    - /setup/inject_SELinux_AVC_check
    - "^/functional/.*"
+   - "^/regression/.*"
 
 execute:
     how: tmt
