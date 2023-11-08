@@ -520,6 +520,10 @@ rlJournalStart
         rlLog "AGENT2: ${AGENT2} ${AGENT2_IP}"
 	rlLog "This system is: $(hostname) ${MY_IP}"
 
+	rlRun "ping -c 3 ${VERIFIER_IP}"
+	rlRun "ping -c 3 ${REGISTRAR_IP}"
+	rlRun "ping -c 3 ${AGENT_IP}"
+
         ###############
         # common setup
         ###############
