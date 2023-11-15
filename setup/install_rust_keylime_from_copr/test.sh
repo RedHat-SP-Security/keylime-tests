@@ -5,7 +5,7 @@
 rlJournalStart
 
     rlPhaseStartTest "Enable repo and install rust keylime RPMs"
-        rpm -q keylime-agent-rust && rlRun "yum -y remove keylime-agent-rust"
+        rpm -q keylime-agent-rust && rlRun "yum -y remove --noautoremove keylime-agent-rust"
         # backup previous config file
         [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
         rlRun 'cat > /etc/yum.repos.d/copr-rust-keylime-master.repo <<_EOF
