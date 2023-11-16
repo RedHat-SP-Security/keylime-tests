@@ -11,7 +11,7 @@ The data are structured in the [Flexible metadata format](https://fmf.readthedoc
 Individual tests are supposed to be executed using the [Test management tool](https://tmt.readthedocs.io/en/stable/).
 
 ## Test execution and troubleshooting
-Test execution and troubleshooting is described in detail in the [TESTING](TESTING.md) file.
+Test execution and troubleshooting is described in detail in [TESTING](TESTING.md) and [TEST_TROUBLESHOOTING.md](TEST_TROUBLESHOOTING.md).
 
 ## Commit / merge policy
 
