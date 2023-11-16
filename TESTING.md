@@ -153,6 +153,12 @@ On every test system:
 For the next test iteration make sure to change `XTRA` to a new value on each test system.
 This variable is necessary for the proper functioning of a sync mechanism.
 
+## Running tests against keylime bits from a fork or a different branch
+
+There are two specific `/setup/` tasks that are used by test plans from `/plans/` directory to install keylime bits. These are `/setup/install_upstream_keylime` and `/setup/install_upstream_rust_keylime` ([example](https://github.com/RedHat-SP-Security/keylime-tests/blob/main/plans/upstream-keylime-all-tests.fmf#L12)). By default, these are pointed to the respective upstream repos and the default branch, however you can point them to a different repo or branch using environment variables. The easiest way is to change values that are defined in the `/plans/main.fmf` file because this file is inherited by all plans. An alternative might be defining the respective environment variables directly on the `tmt` command line using the `--environment NAME=VALUE` parameter.`
+
+Note, there is also a task `/setup/install_rust_keylime_from_copr` that is used by some plans to speed up test execution by installing agent from RPMs. Usage of this task is not compatible with the usage of a custom agent repo and therefore you would have to replace this tasks with `/setup/install_upstream_rust_keylime`.
+
 ## Running CI tests from the upstream keylime project
 
 Clone the keylime source code from the upstream project (or your fork) and change the branch if necessary.
