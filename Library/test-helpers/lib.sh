@@ -2191,9 +2191,9 @@ limeconRun() {
     local CMDLINE
 
     if [ -n "${COMMAND}" ]; then
-        CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS --entrypoint $COMMAND localhost/$TAG ${COMMAND_ARGS}"
+        CMDLINE="podman run -d --name $NAME --net $NETWORK --disable-dns --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS --entrypoint $COMMAND localhost/$TAG ${COMMAND_ARGS}"
     else
-        CMDLINE="podman run -d --name $NAME --net $NETWORK --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG"
+        CMDLINE="podman run -d --name $NAME --net $NETWORK --disable-dns --ip $IP --cap-add CAP_AUDIT_WRITE --cap-add CAP_SYS_CHROOT $EXTRA_PODMAN_ARGS localhost/$TAG"
     fi
 
     echo -e "\nRunning podman:\n$CMDLINE"
