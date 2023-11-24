@@ -2029,7 +2029,7 @@ limeconCreateNetwork() {
         return 1
     fi
 
-    podman network create $VERSION_IP --subnet=$SUBNET $NAME
+    podman network create $VERSION_IP --subnet=$SUBNET $NAME --disable-dns
     podman network inspect $NAME
 }
 
