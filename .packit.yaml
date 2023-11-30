@@ -1,6 +1,7 @@
 jobs:
 - job: tests
   trigger: pull_request
+  identifier: singlehost
   branch: main
   targets:
     #- fedora-branched
@@ -12,6 +13,29 @@ jobs:
       - tmt:
           context:
             target_PR_branch: "main"
+            multihost: "no"
+- job: tests
+  trigger: pull_request
+  identifier: multihost
+  branch: main
+  targets:
+    - centos-stream-9-x86_64
+  skip_build: true
+  env:
+    SYNC_DEBUG: "1"
+  use_internal_tf: True
+  tf_extra_params:
+    test:
+      tmt:
+        name: "/plans/upstream-keylime-multihost"
+    environments:
+      - tmt:
+          context:
+            target_PR_branch: "main"
+            multihost: "yes"
+    settings:
+      pipeline:
+        type: tmt-multihost
 - job: tests
   trigger: pull_request
   branch: rhel-9-main
