@@ -62,6 +62,7 @@ function is_blocked() {
         else
             # read the status file over the network
             debug "reading statuses from $PROVIDER"
+            $SYNC_DEBUG && ping -c 1 $PROVIDER
             ncat --recv-only $PROVIDER $PORT 2> /dev/null > $TMPFILE
         fi
 
@@ -104,7 +105,7 @@ function is_blocked() {
 
 ROUND=1
 DELAYS="1 1 2 3 5 8 13 21"
-echo -n "Checking status - round $ROUND: "
+echo -n "Checking status - round $ROUND - $(date +'%T')"
 
 while is_blocked "$@"; do
     echo "BLOCKED"
@@ -112,7 +113,7 @@ while is_blocked "$@"; do
     DELAYS=${DELAYS#* }  # cut-off current delay for DELAYS list (except the last one)
     sleep $DELAY
     ROUND=$(( $ROUND+1 ))
-    echo -n "Checking status - round $ROUND: "
+    echo -n "Checking status - round $ROUND - $(date +'%T')"
 done
 
 echo "UNBLOCKED"
