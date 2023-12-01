@@ -1,0 +1,12 @@
+summary: Install keylime configuration files
+description: Copies /etc/keylime from the keylime-base RPM package
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+recommend:
+test: ./test.sh
+tag:
+  - setup
+framework: beakerlib
+duration: 3m
+enabled: true
