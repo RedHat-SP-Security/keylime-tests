@@ -5,10 +5,10 @@
 #Machine should have /dev/tpm0 or /dev/tpmrm0 device
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
-[ -n "$DOCKERFILE_VERIFIER" ] || DOCKERFILE_VERIFIER=Dockerfile.upstream.c9s
-[ -n "$DOCKERFILE_REGISTRAR" ] || DOCKERFILE_REGISTRAR=Dockerfile.upstream.c9s
-[ -n "$DOCKERFILE_AGENT" ] || DOCKERFILE_AGENT=Dockerfile.upstream.c9s
-[ -n "$DOCKERFILE_TENANT" ] || DOCKERFILE_TENANT=Dockerfile.upstream.c9s
+[ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$TENANT_DOCKERFILE" ] || TENANT_DOCKERFILE=Dockerfile.upstream.c9s
 
 [ -n "$REGISTRY" ] || REGISTRY=quay.io
 
@@ -60,7 +60,7 @@ rlJournalStart
 
         #build tenant container
         TAG_TENANT="tenant_image"
-        rlRun "limeconPrepareImage ${DOCKERFILE_TENANT} ${TAG_TENANT}"
+        rlRun "limeconPrepareImage ${TENANT_DOCKERFILE} ${TAG_TENANT}"
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -95,7 +95,7 @@ rlJournalStart
         #setup of agent
         TAG_AGENT="agent_image"
         CONT_AGENT="agent_container"
-        rlRun "limeconPrepareImage ${DOCKERFILE_AGENT} ${TAG_AGENT}"
+        rlRun "limeconPrepareImage ${AGENT_DOCKERFILE} ${TAG_AGENT}"
         rlRun "limeUpdateConf agent registrar_ip '\"$IP_REGISTRAR\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 
