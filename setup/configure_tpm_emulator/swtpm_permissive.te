@@ -23,3 +23,7 @@ dontaudit swtpm_t var_lib_t:file { create getattr lock open read rename setattr 
 dontaudit swtpm_t device_t:chr_file { open read write ioctl };
 
 dontaudit init_t swtpm_exec_t:file { execute execute_no_trans map open read };
+
+#need to be reported, related with swtpm setup
+dontaudit keylime_server_t init_t:bpf { map_read map_write };
+dontaudit keylime_agent_t init_t:bpf { map_read map_write };
