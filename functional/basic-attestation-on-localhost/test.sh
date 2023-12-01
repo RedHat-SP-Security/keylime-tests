@@ -12,7 +12,8 @@ rlJournalStart
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
-
+	#just for checking other missing AVC's
+	rlRun "setenforce 0"
         # update /etc/keylime.conf
         limeBackupConfig
         # verifier
