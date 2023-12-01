@@ -13,7 +13,3 @@ require:
 - openssl
 duration: 15m
 enabled: true
-adjust:
-  - when: distro == rhel-8 or distro = centos-stream-8
-    enabled: false
-    because: RHEL-8 has old kernel
