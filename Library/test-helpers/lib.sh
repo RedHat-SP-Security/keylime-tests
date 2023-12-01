@@ -1029,14 +1029,14 @@ limeWaitForKeylimeService() {
     local IP=$3
 
     if [ -z "${IP}" ]; then
-        if ! rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}; then
+        if ! rlWaitForSocket $PORT -d 1 -t ${limeTIMEOUT}; then
             cat $LOGFILE
             return 1
         else
             return 0
         fi
     else
-        rlWaitForCmd "limeCheckRemotePort ${PORT} ${IP}" -m 5 -t ${limeTIMEOUT} -d 1
+        rlWaitForCmd "limeCheckRemotePort ${PORT} ${IP}" -m ${limeTIMEOUT} -t ${limeTIMEOUT} -d 1
     fi
 }
 
@@ -1170,9 +1170,9 @@ limeWaitForTPMEmulator() {
 
     # check /dev/tpm* presence if swtpm is configured as a device
     if grep -q device $__INTERNAL_limeTmpDir/swtpm_setup &> /dev/null; then
-        rlWaitForFile /dev/tpm${limeTPMDevNo} -d 0.5 -t ${limeTIMEOUT}
+        rlWaitForFile /dev/tpm${limeTPMDevNo} -d 1 -t ${limeTIMEOUT}
     else
-        rlWaitForSocket $PORT -d 0.5 -t ${limeTIMEOUT}
+        rlWaitForSocket $PORT -d 1 -t ${limeTIMEOUT}
     fi
 
 }
