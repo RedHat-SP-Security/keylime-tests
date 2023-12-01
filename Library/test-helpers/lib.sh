@@ -1496,7 +1496,7 @@ This is based on an assumption that content used for testing purposes will
 be created under /keylime-tests in a directory with an unique name.
 See limeExtendNextExcludelist and limeCreateTestDir for more details.
 
-    limeCreateTestPolicy [ -e REXEXP ] [FILE] ...
+    limeCreateTestPolicy [ --lists-only ] [ -e REXEXP ] [FILE] ...
 
 =over
 
@@ -1514,6 +1514,12 @@ limeCreateTestPolicy() {
 
     local ALLOW=""
     local EXCLUDE=""
+    local LISTS_ONLY=false
+
+    if [ "$1" == "--lists-only" ]; then
+        LISTS_ONLY=true
+        shift
+    fi
 
     while [ $# -gt 0 ]; do
         if [ "$1" == "-e" ]; then
@@ -1535,6 +1541,8 @@ limeCreateTestPolicy() {
     echo -e "${EXCLUDE}" >> excludelist.txt
 
     [ $? -ne 0 ] && return 1
+
+    $LISTS_ONLY && return
 
     # create policy.json and create signed policies and keys
     keylime_create_policy -a allowlist.txt -e excludelist.txt -o policy.json && \
