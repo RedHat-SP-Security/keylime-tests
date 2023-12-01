@@ -16,7 +16,6 @@ rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-        rlAssertRpm keylime
         # update /etc/keylime.conf
         limeBackupConfig
         CONT_NETWORK_NAME="container_network"
@@ -103,8 +102,9 @@ rlJournalStart
         TESTDIR=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho This is good-script1' > $TESTDIR/good-script1.sh && chmod a+x $TESTDIR/good-script1.sh"
         rlRun "echo -e '#!/bin/bash\necho This is good-script2' > $TESTDIR/good-script2.sh && chmod a+x $TESTDIR/good-script2.sh"
-        # create allowlist and excludelist
-        rlRun "limeCreateTestPolicy ${TESTDIR}/*"
+        # create allowlist and excludelist and generate policy.json using tenant container
+        rlRun "limeCreateTestPolicy --lists-only ${TESTDIR}/*"
+        rlRun "podman run --rm --attach stdout -v $PWD:/root:z tenant_image /bin/bash -c 'cd /root && keylime_create_policy -a allowlist.txt -e excludelist.txt 2> /dev/null' > policy.json"
 
         rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT $IP_AGENT $CONT_NETWORK_NAME $TESTDIR keylime_agent $PWD/confdir_$CONT_AGENT $(realpath ./cv_ca)"
         rlRun -s "limeWaitForAgentRegistration $AGENT_ID"
@@ -150,4 +150,3 @@ rlJournalStart
     rlPhaseEnd
 
 rlJournalEnd
-
