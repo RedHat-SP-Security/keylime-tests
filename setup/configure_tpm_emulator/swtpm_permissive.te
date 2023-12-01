@@ -7,6 +7,8 @@ type unreserved_port_t;
 type var_lib_t;
 type init_t;
 type device_t;
+type keylime_server_t;
+type keylime_agent_t;
 }
 permissive swtpm_t;
 
@@ -25,5 +27,5 @@ dontaudit swtpm_t device_t:chr_file { open read write ioctl };
 dontaudit init_t swtpm_exec_t:file { execute execute_no_trans map open read };
 
 #need to be reported, related with swtpm setup
-dontaudit keylime_server_t init_t:bpf { map_read map_write };
 dontaudit keylime_agent_t init_t:bpf { map_read map_write };
+dontaudit keylime_server_t init_t:bpf { map_read map_write };
