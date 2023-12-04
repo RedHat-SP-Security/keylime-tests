@@ -1,5 +1,5 @@
 context:
-  swtpm: yes
+  swtpm: no
   agent: rust
   faked_measured_boot_log: yes
 
@@ -19,7 +19,3 @@ prepare:
      - systemctl disable --now dnf-makecache.timer || true
      - dnf makecache
      - dnf update -y tpm2-tss tpm2-tools
-
-adjust:
-  - when: distro == centos-stream-8
-    enabled: 0
