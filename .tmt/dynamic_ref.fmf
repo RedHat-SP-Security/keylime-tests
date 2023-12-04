@@ -2,30 +2,33 @@ adjust:
  - when: enforce_keylime_tests_branch is defined
    ref: $@enforce_keylime_tests_branch
    continue: false
- - when: distro = centos-stream-9
+ - when: distro == centos-stream-9
    ref: rhel-9-main
    continue: false
- - when: distro = rhel-9.2
+ - when: distro == rhel-9.2
    ref: rhel-9.2.0
    continue: false
- - when: distro = rhel-9.1
+ - when: distro == rhel-9.1
    ref: rhel-9.1.0
    continue: false
- - when: distro = rhel-9
+ - when: distro == rhel-9
    ref: rhel-9-main
    continue: false
- - when: distro = fedora-rawhide
+ - when: distro == rhel-8 or distro == centos-stream-8
+   ref: rhel-8-main
+   continue: false
+ - when: distro == fedora-rawhide
    ref: fedora-rawhide
    continue: false
- - when: distro = fedora-37
+ - when: distro == fedora-37
    ref: fedora-main
    continue: false
- - when: distro = fedora-38
+ - when: distro == fedora-38
    ref: fedora-38
    continue: false
- - when: distro = fedora-39
+ - when: distro == fedora-39
    ref: fedora-39
    continue: false
- - when: distro = fedora
+ - when: distro == fedora
    ref: fedora-rawhide
    continue: false
