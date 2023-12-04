@@ -1,13 +1,13 @@
 summary:
-  Container tests from the rhel-9-main branch
+  Container tests from the rhel-8-main branch
 
 context:
-  swtpm: yes
+  swtpm: no
   agent: rust
   faked_measured_boot_log: no
 
 adjust+:
- - when: target_PR_branch is defined and target_PR_branch != rhel-9-main
+ - when: target_PR_branch is defined and target_PR_branch != rhel-8-main
    enabled: false
    because: we want to run this plan only for PRs targeting the main branch
 
@@ -20,13 +20,8 @@ environment:
 discover:
   how: fmf
   test: 
-   # need two TPM devices
-   - /setup/configure_swtpm_device
-   - /setup/configure_swtpm_device
-   # change IMA policy to simple and run one attestation scenario
-   # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_simple
-   - /functional/basic-attestation-on-localhost
+   - /setup/install_etc_keylime_conf
    - "/container/.*"
 
 execute:
