@@ -6,6 +6,13 @@ context:
   agent: rust
   faked_measured_boot_log: no
 
+provision:
+  hardware:
+    tpm:
+      version: "2"
+    virtualization:
+      is-virtualized: true
+
 adjust+:
  - when: target_PR_branch is defined and target_PR_branch != rhel-8-main
    enabled: false
