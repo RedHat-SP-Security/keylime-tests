@@ -1,38 +1,14 @@
 jobs:
 - job: tests
   trigger: pull_request
-  branch: main
+  branch: rhel-8-main
   targets:
-    - fedora-branched
-    - centos-stream-9-x86_64
+    centos-stream-8-x86_64:
+      distros: [ "RHEL-8.7.0-Nightly" ]
+  use_internal_tf: True
   skip_build: true
   tf_extra_params:
     environments:
       - tmt:
           context:
-            target_PR_branch: "main"
-- job: tests
-  trigger: pull_request
-  branch: rhel-9-main
-  targets:
-    - centos-stream-9-x86_64
-  skip_build: true
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "rhel-9-main"
-        artifacts:
-          - type: repository-file
-            id: "https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo"
-- job: tests
-  trigger: pull_request
-  branch: fedora-rawhide
-  targets:
-    - fedora-rawhide-x86_64
-  skip_build: true
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "fedora-rawhide"
+            target_PR_branch: "rhel-8-main"
