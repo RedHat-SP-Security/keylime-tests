@@ -2363,7 +2363,9 @@ limeconRunAgent() {
         # Find out better way to handle this: keylime inside the container needs permission to create files in the working directory
         # On rootless container, this could be done with 'podman unshare'
         podman run --rm --attach stdout $EXTRA_ARGS --entrypoint chown localhost/agent_image -R keylime:keylime /var/lib/keylime
-    else
+    # do not use tpmfs mount on RHEL-8
+    # this is a quick fix as it doesn't seem to work correctly
+    elif ! rlIsRHEL 8; then
         # Find out better way to handle this: upstream containers have /var/lib/keylime owned by root, also --tmpfs mount changes
         # directory ownership to root. So we need to set mode=777 to let agent to write there.
         EXTRA_ARGS="--mount=type=tmpfs,dst=/var/lib/keylime/,tmpfs-mode=777 $EXTRA_ARGS"
