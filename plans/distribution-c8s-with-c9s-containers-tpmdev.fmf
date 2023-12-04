@@ -1,6 +1,12 @@
 summary:
   Container tests from the rhel-8-main branch
 
+environment:
+  AGENT_DOCKERFILE: Dockerfile.agent
+  VERIFIER_DOCKERFILE: Dockerfile.verifier
+  REGISTRAR_DOCKERFILE: Dockerfile.registrar
+  TENANT_DOCKERFILE: Dockerfile.tenant
+
 context:
   swtpm: no
   agent: rust
@@ -13,16 +19,13 @@ provision:
     virtualization:
       is-virtualized: true
 
-adjust+:
- - when: target_PR_branch is defined and target_PR_branch != rhel-8-main
-   enabled: false
-   because: we want to run this plan only for PRs targeting the main branch
-
-environment:
-  AGENT_DOCKERFILE: Dockerfile.agent
-  VERIFIER_DOCKERFILE: Dockerfile.verifier
-  REGISTRAR_DOCKERFILE: Dockerfile.registrar
-  TENANT_DOCKERFILE: Dockerfile.tenant
+prepare:
+  - how: shell
+    script:
+     - systemctl disable --now dnf-makecache.service || true
+     - systemctl disable --now dnf-makecache.timer || true
+     - dnf makecache
+     - dnf update -y tpm2-tss tpm2-tools
 
 discover:
   how: fmf
@@ -33,3 +36,8 @@ discover:
 
 execute:
     how: tmt
+
+adjust:
+ - when: target_PR_branch is defined and target_PR_branch != rhel-8-main
+   enabled: false
+   because: we want to run this plan only for PRs targeting the main branch
