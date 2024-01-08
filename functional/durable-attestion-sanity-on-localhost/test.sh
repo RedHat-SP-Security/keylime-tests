@@ -63,6 +63,7 @@ rlJournalStart
         rlRun "python3 /usr/share/keylime/scripts/create_mb_refstate /var/tmp/binary_bios_measurements mb_refstate.txt"
 
         # create allowlist and excludelist
+        TESTDIR=$(limeCreateTestDir)
         limeCreateTestPolicy
     rlPhaseEnd
 
@@ -87,7 +88,7 @@ rlJournalStart
 
     rlPhaseStartTest "Run keylime offline (durable) attestation - asssuming failure"
         rlRun -s "keylime_attest" 1
-        rlAssertGrep "WARNING - File not found in allowlist: /bad-script.sh" $rlRun_LOG
+        rlAssertGrep "WARNING - File not found in allowlist: ${TESTDIR}/bad-script.sh" $rlRun_LOG
         rlAssertGrep "ERROR - IMA ERRORS: Some entries couldn't be validated." $rlRun_LOG
         rlAssertGrep "keylime.durable_attestation_fetch_and_replay - INFO -.*Agent $AGENT_ID was NOT in \"attested\" state at.*" $rlRun_LOG -E
     rlPhaseEnd
@@ -104,6 +105,7 @@ rlJournalStart
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
+        limeExtendNextExcludelist "$TESTDIR"
     rlPhaseEnd
 
 rlJournalEnd
