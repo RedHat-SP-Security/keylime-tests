@@ -56,6 +56,7 @@ function assign_server_roles() {
         if [ -n "${TMT_GUESTS["agent2.hostname"]}" ]; then
             export AGENT2=${TMT_GUESTS["agent2.hostname"]}
         fi
+        MY_IP="${TMT_GUEST['hostname']}"
     elif [ -n "$SERVERS" ]; then
         # assign roles using SERVERS and CLIENTS variables
         export VERIFIER=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
@@ -64,7 +65,6 @@ function assign_server_roles() {
         export AGENT2=$( echo "$SERVERS $CLIENTS" | awk '{ print $4 }')
     fi
 
-    MY_IP="${TMT_GUEST['hostname']}"
     [ -z "$MY_IP" ] && MY_IP=$( hostname -I | awk '{ print $1 }' )
     [ -n "$VERIFIER" ] && export VERIFIER_IP=$( get_IP $VERIFIER )
     [ -n "$REGISTRAR" ] && export REGISTRAR_IP=$( get_IP $REGISTRAR )
