@@ -32,7 +32,7 @@ rlJournalStart
 
     rlPhaseStartSetup "Install tpm2-openssl to generate csrs with TPM keys"
         rlRun "dnf -y install autoconf automake libtool m4 autoconf-archive"
-        rlRun "wget -c ${TPM2_OPENSSL} -O - | tar -xz"
+        rlRun "wget -c ${TPM2_OPENSSL} -q -O - | tar -xz"
         rlRun "cd tpm2-openssl-1.2.0"
         rlRun "./configure"
         rlRun "make"
