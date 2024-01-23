@@ -42,7 +42,7 @@ rlJournalStart
 	for i in `seq 20`; do
           rlRun "limeStartVerifier"
           rlRun "limeWaitForVerifier"
-	  rlRun "sytemctl stop keylime_verifier"
+	  rlRun "systemctl stop keylime_verifier"
 	  sleep 2
 	  rlRun "rm -rf /var/lib/keylime/cv_ca"
 	done
