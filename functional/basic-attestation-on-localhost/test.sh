@@ -39,8 +39,15 @@ rlJournalStart
         fi
         sleep 5
         # start keylime_verifier
-        rlRun "limeStartVerifier"
-        rlRun "limeWaitForVerifier"
+	for i in `seq 20`; do
+          rlRun "limeStartVerifier"
+          rlRun "limeWaitForVerifier"
+	  rlRun "sytemctl stop keylime_verifier"
+	  sleep 2
+	  rlRun "rm -rf /var/lib/keylime/cv_ca"
+	done
+          rlRun "limeStartVerifier"
+          rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         rlRun "limeStartAgent"
