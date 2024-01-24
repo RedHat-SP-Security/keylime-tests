@@ -39,12 +39,15 @@ rlJournalStart
         fi
         sleep 5
         # start keylime_verifier
+	rlFileBackup /var/lib/keylime
 	for i in `seq 20`; do
           rlRun "limeStartVerifier"
           rlRun "limeWaitForVerifier"
 	  rlRun "systemctl stop keylime_verifier"
 	  sleep 2
-	  rlRun "rm -rf /var/lib/keylime/cv_ca"
+	  rlRun "rm -rf /var/lib/keylime/"
+	  rlFileRestore
+	  find /usr/lib/python3.9/site-packages/keylime -name '*.pyc' -exec rm {} \;
 	done
           rlRun "limeStartVerifier"
           rlRun "limeWaitForVerifier"
