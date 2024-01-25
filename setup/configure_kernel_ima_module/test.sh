@@ -58,6 +58,9 @@ rlJournalStart
             rlRun "touch ${TESTFILE} && cat ${TESTFILE} && rm ${TESTFILE}"
             rlRun "grep ${TESTFILE} /sys/kernel/security/ima/ascii_runtime_measurements"
         fi
+        # wait 1 minute to let system load to settle down a bit
+	SEC=60
+        rlRun "sleep $SEC" 0 "Wait $SEC seconds to let system load to settle down"
     rlPhaseEnd
   fi
 
