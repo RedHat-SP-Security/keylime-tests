@@ -50,7 +50,7 @@ StartLimitBurst=5
 [Service]
 Group=keylime
 User=keylime
-ExecStart=/usr/bin/strace -f -o /var/tmp/strace.log /usr/bin/keylime_verifier
+ExecStart=/usr/bin/strace -f --timestamps=time -o /var/tmp/strace.log /usr/bin/keylime_verifier
 Restart=on-failure
 TimeoutSec=60s
 RestartSec=120s
@@ -58,7 +58,7 @@ RestartSec=120s
 [Install]
 WantedBy=default.target
 _EOF"
-        rlRun "systemctl restart"
+        rlRun "systemctl daemon-reload"
         # start keylime_verifier
 	rlFileBackup /var/lib/keylime
 	#for i in `seq 3`; do
