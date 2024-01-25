@@ -38,7 +38,7 @@ rlJournalStart
             rlRun "limeStartIMAEmulator"
         fi
         sleep 5
-	rlRun "yum -y install strace"
+	rlRun "systemctl status network.target"
 	rlRun "cat > /etc/systemd/system/keylime_verifier.service <<_EOF
 [Unit]
 Description=The Keylime verifier
@@ -61,17 +61,9 @@ _EOF"
         rlRun "systemctl daemon-reload"
         # start keylime_verifier
 	rlFileBackup /var/lib/keylime
-	#for i in `seq 3`; do
           rlRun "limeStartVerifier"
           rlRun "limeWaitForVerifier"
-	  rlRun "systemctl stop keylime_verifier"
-	  sleep 2
-	  rlRun "rm -rf /var/lib/keylime/"
-	  rlFileRestore
-	  find /usr/lib/python3.9/site-packages/keylime -name '*.pyc' -exec rm {} \;
-#	done
-          rlRun "limeStartVerifier"
-          rlRun "limeWaitForVerifier"
+	  rlRun "journalctl -u keylime_verifier"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

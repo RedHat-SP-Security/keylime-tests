@@ -20,6 +20,7 @@ require:
   - expect
   - nmap-ncat
   - python3-toml
+  - strace
 recommend:
   - keylime
 duration: 10m
