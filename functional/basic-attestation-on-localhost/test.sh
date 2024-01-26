@@ -62,10 +62,13 @@ _EOF"
         # start keylime_verifier
 	rlFileBackup /var/lib/keylime
 	  top -b -n 1
+	  iostat -d -x -t
           rlRun "limeStartVerifier"
 	  top -b -n 1
+	  iostat -d -x -t
           rlRun "limeWaitForVerifier"
 	  top -b -n 1
+	  iostat -d -x -t
 	  rlRun "journalctl -u keylime_verifier"
     rlPhaseEnd
 

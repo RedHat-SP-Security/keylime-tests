@@ -21,6 +21,7 @@ require:
   - nmap-ncat
   - python3-toml
   - strace
+  - sysstat
 recommend:
   - keylime
 duration: 10m
