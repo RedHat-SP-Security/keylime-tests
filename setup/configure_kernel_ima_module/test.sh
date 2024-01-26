@@ -58,6 +58,12 @@ rlJournalStart
             rlRun "touch ${TESTFILE} && cat ${TESTFILE} && rm ${TESTFILE}"
             rlRun "grep ${TESTFILE} /sys/kernel/security/ima/ascii_runtime_measurements"
         fi
+
+	# wait a couple of seconds to minimize system load during subsequent test execution
+	rlRun "iostat -d -x -t" 0 "Check IO stats"
+	rlRun "sleep 30"
+	rlRun "iostat -d -x -t" 0 "Check IO stats again"
+
     rlPhaseEnd
   fi
 
