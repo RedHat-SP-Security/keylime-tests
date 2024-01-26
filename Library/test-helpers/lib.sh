@@ -995,6 +995,44 @@ function limeCheckRemotePort() {
 true <<'=cut'
 =pod
 
+=head2 limeWaitForRemotePort
+
+Use rlWaitForRemotePort to wait for the services to start or if it's remote,
+
+    limeWaitForRemotePort PORT_NUMBER [IP]
+
+=over
+
+=item
+
+    PORT - Port number to wait for.
+
+=item
+
+    IP - IP adress to wait for.
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeWaitForRemotePort() {
+
+    local PORT=$1
+    local IP=$2
+
+    if [ -z "${IP}" ]; then
+        rlWaitForSocket $PORT -d 1 -t ${limeTIMEOUT}
+    else
+        rlWaitForCmd "limeCheckRemotePort ${PORT} ${IP}" -m ${limeTIMEOUT} -t ${limeTIMEOUT} -d 1
+    fi
+}
+
+
+true <<'=cut'
+=pod
+
 =head2 limeWaitForKeylimeService
 
 Use rlWaitForSocket to wait for the services to start or if it's remote,
@@ -1006,7 +1044,8 @@ use limeCheckRemotePort for check open ports.
 
 =item
 
-    LOGFILE - Filepath to a log file.
+    LOGFILE - Filepath to a local service log file that will be printed
+              in case of an error.
 
 =item
 
@@ -1028,15 +1067,13 @@ limeWaitForKeylimeService() {
     local PORT=$2
     local IP=$3
 
-    if [ -z "${IP}" ]; then
-        if ! rlWaitForSocket $PORT -d 1 -t ${limeTIMEOUT}; then
+    if ! limeWaitForRemotePort $PORT $IP; then
+        if [ -z "${IP}" ]; then
             cat $LOGFILE
-            return 1
-        else
-            return 0
         fi
+        return 1
     else
-        rlWaitForCmd "limeCheckRemotePort ${PORT} ${IP}" -m ${limeTIMEOUT} -t ${limeTIMEOUT} -d 1
+        return 0
     fi
 }
 
