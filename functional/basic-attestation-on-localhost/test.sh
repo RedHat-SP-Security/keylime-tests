@@ -61,8 +61,11 @@ _EOF"
         rlRun "systemctl daemon-reload"
         # start keylime_verifier
 	rlFileBackup /var/lib/keylime
+	  top -b -n 1
           rlRun "limeStartVerifier"
+	  top -b -n 1
           rlRun "limeWaitForVerifier"
+	  top -b -n 1
 	  rlRun "journalctl -u keylime_verifier"
     rlPhaseEnd
 
