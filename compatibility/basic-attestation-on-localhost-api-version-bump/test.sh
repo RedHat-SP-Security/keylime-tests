@@ -57,6 +57,12 @@ rlJournalStart
         # Workaround regression on proc-macro2 build with nightly compiler:
         # See: https://github.com/rust-lang/rust/issues/113152
         rlRun "cargo update -p proc-macro2 --precise 1.0.66"
+        # Workaround regression on ahash build with nightly compiler by
+        # updating to version 0.8.7. To update ahash, it is necessary to first
+        # update actix-web and serde:
+        rlRun "cargo update -p actix-web --precise 4.4.1"
+        rlRun "cargo update -p serde --precise 1.0.188"
+        rlRun "cargo update -p ahash --precise 0.8.7"
         # Replace agent binary
         rlRun "cargo build && cp ./target/debug/keylime_agent /usr/bin/keylime_agent"
         rlRun "popd"
