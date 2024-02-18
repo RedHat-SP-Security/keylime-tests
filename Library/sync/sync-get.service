@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/ncat -l -k -e '/usr/bin/cat /var/tmp/sync-status' --send-only 2134
+ExecStart=/usr/bin/ncat -l -k -e '/usr/bin/tail -n SYNC_STATUS_REPORT_SIZE /var/tmp/sync-status' --send-only 2134
 TimeoutStopSec=5
 Restart=always
 RestartSec=5s

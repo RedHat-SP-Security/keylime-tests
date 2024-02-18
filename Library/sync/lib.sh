@@ -52,6 +52,8 @@ the library load.
 
 # we are using hardcoded paths so they are preserved due to reboots
 export __INTERNAL_syncStatusFile=/var/tmp/sync-status
+# limit the reported sync status to 100 lines by default
+[ -n "${SYNC_STATUS_REPORT_SIZE}" ] || SYNC_STATUS_REPORT_SIZE=100
 
 # for backvards compatibility define SERVERS and CLIENTS variables using tmt topology
 if [ -n "${TMT_TOPOLOGY_BASH}" -a -f ${TMT_TOPOLOGY_BASH} ]; then
@@ -104,7 +106,7 @@ which sync-block &> /dev/null || cp $syncLibraryDir/sync-block /usr/local/bin &&
 
 # install and enable and start sync-get service
 if ! systemctl is-active sync-get; then
-    cp $syncLibraryDir/sync-get.service /etc/systemd/system/
+    sed "s/SYNC_STATUS_REPORT_SIZE/${SYNC_STATUS_REPORT_SIZE}/g" "$syncLibraryDir/sync-get.service" > /etc/systemd/system/sync-get.service
     systemctl daemon-reload
     systemctl --now enable sync-get &> /dev/null
     sleep 1

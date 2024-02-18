@@ -3,6 +3,7 @@
 # get the script location
 DIR=$( dirname $0 )
 STATUS_FILE=/var/tmp/sync-status
+[ -n "${SYNC_STATUS_REPORT_SIZE}" ] || SYNC_STATUS_REPORT_SIZE=100
 
 touch $STATUS_FILE
 
@@ -21,7 +22,8 @@ which sync-save &> /dev/null || cp $DIR/sync-save /usr/local/bin && chmod a+x /u
 
 # now install unit files and (re)start services
 for SERVICE in sync-get.service sync-save.service; do
-    cp "$DIR/$SERVICE" /etc/systemd/system
+    # substitute actual SYNC_STATUS_REPORT_SIZE value in a service file
+    sed "s/SYNC_STATUS_REPORT_SIZE/${SYNC_STATUS_REPORT_SIZE}/g" "$DIR/$SERVICE" > /etc/systemd/system/$SERVICE
     systemctl daemon-reload
     systemctl stop $SERVICE &> /dev/null
     systemctl --now enable $SERVICE &> /dev/null
