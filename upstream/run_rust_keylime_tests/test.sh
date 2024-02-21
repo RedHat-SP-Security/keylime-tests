@@ -35,7 +35,7 @@ rlJournalStart
     if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
         rlPhaseStartTest "Run cargo tests and measure code coverage"
             #run cargo tarpaulin code coverage
-            rlRun "cargo tarpaulin --verbose --target-dir target/tarpaulin --workspace --exclude-files 'target/*' --ignore-panics --ignore-tests --out Xml --out Html --all-features --engine llvm"
+            rlRun "cargo tarpaulin --verbose --target-dir target/tarpaulin --workspace --exclude-files 'target/*' --ignore-panics --ignore-tests --out Xml --out Html --all-features"
             rlRun "tar -czf upstream_coverage.tar.gz tarpaulin-report.html"
             rlRun "mv cobertura.xml upstream_coverage.xml"
             rlFileSubmit upstream_coverage.xml
