@@ -5,8 +5,8 @@ context:
 
 # modify defaults below to point upstream keylime URL to a different repo and branch
 environment:
-  KEYLIME_UPSTREAM_URL: "https://github.com/keylime/keylime.git"
-  KEYLIME_UPSTREAM_BRANCH: "master"
+  KEYLIME_UPSTREAM_URL: "https://github.com/THS-on/keylime.git"
+  KEYLIME_UPSTREAM_BRANCH: "feature/optional-payload"
   # variables below impact only plans that use /setup/install_upstream_rust_keylime
   # task, not plans using /setup/install_rust_keylime_from_copr
   RUST_KEYLIME_UPSTREAM_URL: "https://github.com/keylime/rust-keylime.git"
