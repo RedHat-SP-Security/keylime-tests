@@ -70,26 +70,26 @@ EOF"
 
     rlPhaseStartTest "Verify IMA key using a locally stored GPG signature"
         rlRun "gpg --verify signature-gpg-genuine.sig ${limeIMAPublicKey}"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key ${limeIMAPublicKey} --signature-verification-key-sig signature-gpg-genuine.sig --signature-verification-key-sig-key gpg-key.pub -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json --sign_verification_key ${limeIMAPublicKey} --signature-verification-key-sig signature-gpg-genuine.sig --signature-verification-key-sig-key gpg-key.pub -c add"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "Test that IMA key verification using GPG signature fails for an invalid signature of key"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key ${limeIMAPublicKey} --signature-verification-key-sig signature-gpg-fake.sig --signature-verification-key-sig-key gpg-key.pub -c update" 1
+        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json --sign_verification_key ${limeIMAPublicKey} --signature-verification-key-sig signature-gpg-fake.sig --signature-verification-key-sig-key gpg-key.pub -c update" 1
         rlAssertGrep "WARNING - Unable to verify signature" $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Verify IMA key using a downloaded GPG signature and key"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --signature-verification-key-url 'http://localhost:8000/x509_evm.pem' --signature-verification-key-sig-url 'http://localhost:8000/signature-gpg-genuine.sig' --signature-verification-key-sig-url-key gpg-key.pub -c update"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json --signature-verification-key-url 'http://localhost:8000/x509_evm.pem' --signature-verification-key-sig-url 'http://localhost:8000/signature-gpg-genuine.sig' --signature-verification-key-sig-url-key gpg-key.pub -c update"
         rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "Test that IMA key verification using downloaded GPG signature fails for an invalid signature of key"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --signature-verification-key-url 'http://localhost:8000/x509_evm.pem' --signature-verification-key-sig-url 'http://localhost:8000/signature-gpg-fake.sig' --signature-verification-key-sig-url-key gpg-key.pub -c update" 1
+        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json --signature-verification-key-url 'http://localhost:8000/x509_evm.pem' --signature-verification-key-sig-url 'http://localhost:8000/signature-gpg-fake.sig' --signature-verification-key-sig-url-key gpg-key.pub -c update" 1
         rlAssertGrep "WARNING - Unable to verify signature" $rlRun_LOG
     rlPhaseEnd
 

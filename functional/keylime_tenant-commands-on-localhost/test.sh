@@ -37,7 +37,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "-c add"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
     rlPhaseEnd
 
