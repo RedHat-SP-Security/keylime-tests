@@ -89,7 +89,7 @@ fi
 if [ -z "$XTRA" ] && [ -n "$TMT_TREE" ] && [ -n "$TMT_TEST_SERIAL_NUMBER" ]; then
     # tmt is using run-XXX while Testing Farm uses work-multihostXYZ
     # and TF through Packit uses something like work-upstream-keylime-multihostXYZ
-    __INTERNAL_syncRunID=$( echo $TMT_TREE | sed 's#^.*/\(run-[0-9]*\)/.*#\1#' | sed 's#^.*/\(work-[^/]*multihost[^/]*\)/.*#\1#' )
+    __INTERNAL_syncRunID=$( echo $TMT_TREE | sed 's#^.*/\(run-[0-9]*\)/.*#\1#' | sed 's#^.*/\(work-[^/]*\)/.*#\1#' )
     export XTRA="$__INTERNAL_syncRunID-$TMT_TEST_SERIAL_NUMBER"
 fi
 echo "XTRA=$XTRA"
