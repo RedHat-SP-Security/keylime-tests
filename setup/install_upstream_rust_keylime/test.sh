@@ -37,7 +37,9 @@ rlJournalStart
 
         rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y"
         rlRun "source /root/.cargo/env"
-        rlRun "rustup default nightly"
+        # This pinned version allows generated instrumented code for tarpaulin
+        # to generate code coverage measurements
+        rlRun "rustup default 1.74.1"
         rlRun "rustup component add llvm-tools-preview"
         sleep 3
         #install parser for code coverage files
