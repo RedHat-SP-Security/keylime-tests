@@ -73,7 +73,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Test addruntimepolicy providing --runtime-policy-url with x509-signed DSSE policy"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list7 --runtime-policy-url 'http://localhost:8000/policy-dsse-x509.json' --runtime-policy-checksum ${CHECKSUM_DSSE_X509}"
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list7 --runtime-policy-sig-key dsse-x509-pubkey.pub --runtime-policy-url 'http://localhost:8000/policy-dsse-x509.json' --runtime-policy-checksum ${CHECKSUM_DSSE_X509}"
         rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" $rlRun_LOG
     rlPhaseEnd
 
@@ -152,7 +152,7 @@ rlJournalStart
 
     rlPhaseStartTest "Test addruntimepolicy not matching DSSE policy with embedded x509 cert"
         rlRun "sed 's/0/1/' policy-dsse-x509.json > policy-dsse-x509-bad.json"
-        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list23 --runtime-policy policy-dsse-x509-bad.json" 1
+        rlRun -s "keylime_tenant -c addruntimepolicy --runtime-policy-name list23 --runtime-policy policy-dsse-x509-bad.json --runtime-policy-sig-key dsse-x509-pubkey.pub" 1
         rlAssertGrep "failed DSSE signature verification" $rlRun_LOG
     rlPhaseEnd
 
