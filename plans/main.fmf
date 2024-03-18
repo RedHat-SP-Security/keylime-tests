@@ -19,6 +19,8 @@ prepare:
      - systemctl disable --now dnf-makecache.timer || true
      - dnf makecache
      - dnf update -y tpm2-tss tpm2-tools
+     # replace sdubby with grubby, bz#2269992
+     - rpm -q sdubby && dnf swap -y sdubby grubby || true
 
 adjust:
   - when: distro == centos-stream-8
