@@ -20,7 +20,6 @@ require:
   - rpm-build
   - rpm-sign
   - gawk
-  - expect
   - gnupg2
   - rng-tools
 # do not install rpm-plugin-ima so we won't install RHEL packages with signatures
