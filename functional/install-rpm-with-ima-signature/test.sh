@@ -55,6 +55,7 @@ rlJournalStart
         # start rngd to provide more random data
         pidof rngd && ENTROPY=false || ENTROPY=true
         $ENTROPY && rlRun "rngd -r /dev/urandom -o /dev/random" 0 "Start rngd to generate random numbers"
+        rlFileBackup /etc/hostname # just to have some backup
         [ -d /root/.gnupg ] && rlFileBackup --clean /root/.gnupg /etc/hosts
 
         # create gpg key for rpm signing
@@ -83,24 +84,13 @@ EOF
         rlRun -s "rpmbuild -bb -D 'destdir ${TESTDIR}' ${TEST_SRC_DIR}/rpm-ima-sign-test.spec"
         RPM_PATH=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
         # generage GPG key for RPM signing
-        # create expect script for signing packages
-        cat > sign.exp <<EOF
-#!/usr/bin/expect -f
-spawn rpmsign --addsign --signfiles --fskpath=${limeIMAPrivateKey} ${RPM_PATH}
-expect {
-    "Enter pass phrase: " {
-        send -- "abc\r"
-    }
-    "Passphrase: " {
-        send -- "abc\r"
-    }
-}
-expect eof
-EOF
         # add gpg key to rpm macros
         [ -f ~/.rpmmacros ] && rlFileBackup ~/.rpmmacros
-        echo "%_gpg_name Lime Tester (with simple passphrase) <lime@foo.bar>" > ~/.rpmmacros
-        rlRun "expect sign.exp"
+        rlRun "cat > ~/.rpmmacros <<_EOF
+%_gpg_name Lime Tester (with simple passphrase) <lime@foo.bar>
+%_gpg_sign_cmd_extra_args --pinentry-mode loopback --passphrase abc
+_EOF"
+        rlRun "rpmsign --addsign --signfiles --fskpath=${limeIMAPrivateKey} ${RPM_PATH}"
         # we are installing rpm plugin here so it won't be applied when installing ordinary RHEL packages (with signatures)
         rlRun "yum -y install rpm-plugin-ima"
     rlPhaseEnd
@@ -145,6 +135,8 @@ EOF
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
+        rlRun "gpgconf --kill gpg-agent"
+        rlRun "gpgconf --kill keyboxd"
         rlFileRestore
         limeExtendNextExcludelist ${TESTDIR}
         #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
