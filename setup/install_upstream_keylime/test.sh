@@ -66,9 +66,8 @@ _EOF'
             git status
             git log -n 10 --oneline
         fi
-        # clear files that could be present from previous installation and be disruptive
-        # in particular db migration files
-        rlRun "rm -rf build/lib/keylime/migrations"
+        # remove previously created build directory if exists
+        rlRun "rm -rf build"
         [ -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations ] && rlRun "rm -rf /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations"
         [ -d /etc/keylime ] && rlRun "mv /etc/keylime /etc/keylime.backup$$" && "rm -rf /etc/keylime"
         rlRun "mkdir -p /etc/keylime && chmod 700 /etc/keylime"
