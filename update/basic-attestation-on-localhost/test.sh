@@ -16,7 +16,7 @@ rlJournalStart
 
 
 # setup phase
-if echo ${PHASES} | egrep -qi '(setup|all)'; then
+if echo ${PHASES} | grep -E -qi '(setup|all)'; then
 
     rlPhaseStartSetup "Do the keylime setup"
 
@@ -58,14 +58,14 @@ if echo ${PHASES} | egrep -qi '(setup|all)'; then
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
 
         # submit logs if we won't do it during the test or cleanup phase
-	echo ${PHASES} | egrep -qi '(cleanup|test)' || limeSubmitCommonLogs
+	echo ${PHASES} | grep -E -qi '(cleanup|test)' || limeSubmitCommonLogs
 
     rlPhaseEnd
 
 fi
 
 # test phase
-if echo ${PHASES} | egrep -qi '(test|all)'; then
+if echo ${PHASES} | grep -E -qi '(test|all)'; then
 
     rlPhaseStartTest "Running allowed scripts should not affect attestation"
         # Ensure keylime services are running
@@ -82,7 +82,7 @@ if echo ${PHASES} | egrep -qi '(test|all)'; then
 fi
 
 # cleanup phase
-if echo ${PHASES} | egrep -qi '(cleanup|all)'; then
+if echo ${PHASES} | grep -E -qi '(cleanup|all)'; then
 
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"
