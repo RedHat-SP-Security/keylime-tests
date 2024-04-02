@@ -1427,7 +1427,7 @@ limeInstallIMAConfig() {
         echo "Installing IMA policy from ${FILE}"
         mkdir -p /etc/ima/
         cat ${FILE} > /etc/ima/ima-policy && cat ${FILE} > ${__INTERNAL_limeTmpDir}/installed-ima-policy
-        if [ $( wc -l /sys/kernel/security/ima/policy ) -eq 0 ]; then
+        if [ $( wc -l < /sys/kernel/security/ima/policy ) -eq 0 ]; then
             cat ${FILE} > /sys/kernel/security/ima/policy
         else
             echo "Warning: IMA policy already configured in /sys/kernel/security/ima/policy"
