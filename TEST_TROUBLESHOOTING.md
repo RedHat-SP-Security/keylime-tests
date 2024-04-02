@@ -40,6 +40,10 @@ Then check wheter "usual suspects" are near the end of the list. These are: tpm2
 
 Also, you can check for specific package builds directly in [Koji](https://koji.fedoraproject.org/koji/search).
 
+### Checking that keylime files are matching
+
+This could be worth doing in case you are running tests locally and observing unexpected behavior, especially if tests running in Testing Farm through Packit act differently. On a test system keylime gets installed either from the `/var/tmp/keylime_sources` (if exists, it should match the content of the current working directory on a system where `tmt` has been executed) or from a Git repository specified by `KEYLIME_UPSTREAM_URL` and `KEYLIME_UPSTREAM_BRANCH` variables. On a test system verify that these sources are correct and matches files installed in `/usr/local/lib/python*/site-packages/keylime-*`. Also, check [setup/install_upstream_keylime/test.sh](setup/install_upstream_keylime/test.sh) for more details.
+
 ## Agent registration failures
 
 TBD
