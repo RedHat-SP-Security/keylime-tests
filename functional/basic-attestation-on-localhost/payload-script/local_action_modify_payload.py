@@ -3,7 +3,10 @@
 import os
 import sys
 import json
-import toml
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 json_file = sys.argv[1]
 with open(json_file, 'r') as f:
@@ -14,8 +17,8 @@ if input_json.get("type", "") != "revocation":
 
 event_uuid = input_json.get("agent_id", "event_uuid")
 event_ip = input_json.get("ip", "event_ip")
-with open("/etc/keylime/agent.conf", "r") as f:
-    my_uuid = toml.load(f)["agent"]["uuid"].strip('\"')
+with open("/etc/keylime/agent.conf", "rb") as f:
+    my_uuid = tomllib.load(f)["agent"]["uuid"].strip('\"')
 
 print("A node in the network has been compromised:", event_ip)
 print("my UUID: %s, event UUID: %s" % (my_uuid, event_uuid))

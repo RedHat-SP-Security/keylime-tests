@@ -2,6 +2,9 @@ adjust:
  - when: enforce_keylime_tests_branch is defined
    ref: $@enforce_keylime_tests_branch
    continue: false
+ - when: distro == rhel-10
+   ref: main
+   continue: false
  - when: distro == centos-stream-9
    ref: rhel-9-main
    continue: false

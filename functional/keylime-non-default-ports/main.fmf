@@ -16,10 +16,10 @@ require:
   - expect
   - yum
   - tpm2-tools
-  - python3-toml
   - policycoreutils-python-utils
 recommend:
   - keylime
+  - python3-tomli
 duration: 5m
 extra-nitrate: TC#0614415
 id: 9f0f853d-9b93-45e9-8057-339b2315d1bc

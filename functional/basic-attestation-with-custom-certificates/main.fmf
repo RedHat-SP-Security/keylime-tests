@@ -21,10 +21,10 @@ require:
 - expect
 - openssl
 - nmap-ncat
-- python3-toml
 - policycoreutils-python-utils
 recommend:
 - keylime
+- python3-tomli
 duration: 15m
 enabled: true
 extra-nitrate: TC#0611725
