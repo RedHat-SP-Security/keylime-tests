@@ -11,7 +11,7 @@ framework: beakerlib
 require:
   - yum
   - tpm2-tools 
-  - xxd
+  - /usr/bin/xxd
 recommend:
   - keylime
 duration: 5m
