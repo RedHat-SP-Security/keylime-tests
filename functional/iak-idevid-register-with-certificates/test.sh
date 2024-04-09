@@ -28,21 +28,28 @@ rlJournalStart
             rlRun "limeWaitForTPMEmulator"
             rlRun "limeCondStartAbrmd"
         fi
+        # start verifier so it generates TLS certs for the registrar
+        if [ ! -d /var/lib/keylime/cv_ca ]; then
+            rlRun "limeStartVerifier"
+            rlRun "limeWaitForVerifier"
+            rlRun "limeStopVerifier"
+        fi
     rlPhaseEnd
 
-    rlPhaseStartSetup "Install tpm2-openssl to generate csrs with TPM keys"
-        rlRun "dnf -y install autoconf automake libtool m4 autoconf-archive openssl-devel tpm2-tss-devel"
-        rlRun "wget -c ${TPM2_OPENSSL} -q -O - | tar -xz"
-        rlRun "cd tpm2-openssl-1.2.0"
-        rlRun "./configure"
-        rlRun "make"
-        rlRun "make install"
-        #rlRun "make check"
-        rlRun "cd .."
-    rlPhaseEnd
+    if ! rpm -q tpm2-openssl; then
+        rlPhaseStartSetup "Build and install tpm2-openssl to generate csrs with TPM keys"
+            rlRun "dnf -y install autoconf automake libtool m4 autoconf-archive openssl-devel tpm2-tss-devel"
+            rlRun "wget -c ${TPM2_OPENSSL} -q -O - | tar -xz"
+            rlRun "cd tpm2-openssl-1.2.0"
+            rlRun "./configure"
+            rlRun "make"
+            rlRun "make install"
+            #rlRun "make check"
+            rlRun "cd .."
+        rlPhaseEnd
+    fi
 
     rlPhaseStartSetup "Create CA"
-        
         rlRun "mkdir -p ca/intermediate && cp ${TESTDIR}/root.cnf ca/ && cp ${TESTDIR}/intermediate.cnf ca/intermediate/"
         # Update config files with correct path
         rlRun "sed -i \"/dir               = ca/c dir = ${TMPDIR}/ca\" ca/root.cnf"
