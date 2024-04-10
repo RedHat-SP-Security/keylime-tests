@@ -34,7 +34,7 @@ enabled_metadata=1
 priority=999
 _EOF'
             EXTRA_PKGS="python3-pip"
-            EXTRA_DNF_ARGS="--enablerepo epel"
+            rlIsRHEL '<10' && EXTRA_DNF_ARGS="--enablerepo epel" || EXTRA_DNF_ARGS=""
             EXTRA_PIP_PKGS="packaging lark-parser typing_extensions"
         elif rlIsRHEL 9 || rlIsCentOS 9; then
             EXTRA_PKGS+=" python3-typing-extensions"
