@@ -14,8 +14,11 @@ rlJournalStart
         # install recommend devel packages from CRB if missing
         rpm -q tpm2-tss-devel 2> /dev/null || INSTALL_PKGS="$INSTALL_PKGS tpm2-tss-devel"
         rpm -q libarchive-devel 2> /dev/null || INSTALL_PKGS="$INSTALL_PKGS libarchive-devel"
-        rpm -q zeromq-devel 2> /dev/null || INSTALL_PKGS="$INSTALL_PKGS zeromq-devel"
-        [ -n "$INSTALL_PKGS" ] && rlRun "dnf --enablerepo \*CRB --enablerepo epel -y install $INSTALL_PKGS"
+        if ! rpm -q zeromq-devel 2> /dev/null; then
+            rlIsRHEL '<10' && INSTALL_PKGS="$INSTALL_PKGS zeromq-devel"
+        fi
+        rlIsRHEL '<10' && EPEL_ARG="--enablerepo epel" || EPEL_ARG=""
+        [ -n "$INSTALL_PKGS" ] && rlRun "dnf --enablerepo \*CRB $EPEL_ARG -y install $INSTALL_PKGS"
         rlAssertRpm keylime
 
         # update /etc/keylime.conf
