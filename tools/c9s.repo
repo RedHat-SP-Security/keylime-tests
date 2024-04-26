@@ -1,17 +1,17 @@
 [C9S-BaseOS]
 name=C9S-BaseOS
-baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/BaseOS/x86_64/os/
+baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/BaseOS/$arch/os/
 enabled=1
 gpgcheck=0
 
 [C9S-AppStream]
 name=C9S-AppStream
-baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/AppStream/x86_64/os/
+baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/AppStream/$arch/os/
 enabled=1
 gpgcheck=0
 
 [C9S-CRB]
 name=C9S-CRB
-baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/CRB/x86_64/os/
+baseurl=https://composes.stream.centos.org/production/latest-CentOS-Stream/compose/CRB/$arch/os/
 enabled=0
 gpgcheck=0
