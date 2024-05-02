@@ -130,7 +130,7 @@ def get_patch_coverage(patch_path, db_path):
 
             if line.startswith('@@ '):
                 # indicator of patch start
-                line_no = int(re.sub(r'.*\+([0-9]+),.*', r'\1', line)) - 1
+                line_no = int(re.sub(r'.*\+([0-9]+).*', r'\1', line)) - 1
                 print_line(line)
                 code_change = True
 
