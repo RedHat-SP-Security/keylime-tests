@@ -13,7 +13,6 @@ require:
  - openssl-devel
  - gcc
  - tpm2-tss-devel
- - zeromq-devel
  - libarchive-devel
  - clang-devel
  - rpm-build
