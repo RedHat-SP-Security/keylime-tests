@@ -141,7 +141,7 @@ rlJournalStart
         rlRun "limeStartAgent"
         # Agent can now register with IDevID and IAK getting verified
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        rlAssertGrep "IDevID created" "$(limeAgentLogfile)"
+        rlAssertGrep "(IDevID created|Recreating IDevID)" "$(limeAgentLogfile)" -E
         rlAssertGrep "AK certified with IAK" "$(limeAgentLogfile)"
         # Check the registrar used the IDevID and IAK code block
         rlAssertGrep "INFO - IDevID and IAK received" "$(limeRegistrarLogfile)"
