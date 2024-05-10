@@ -40,6 +40,9 @@ rlJournalStart
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
+
+        OLD_VERSION="$(grep "Supported older API versions: " "$(limeVerifierLogfile)" | grep -o -E '[0-9]+\.[0-9]+' | tail -1)"
+
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         # create allowlist and excludelist
@@ -48,29 +51,24 @@ rlJournalStart
         WORKDIR=$( mktemp -d -p "/var/tmp" )
     rlPhaseEnd
 
-    rlPhaseStartTest "Compile old keylime agent"
+    rlPhaseStartTest "Compile keylime agent with old API version"
         # Store a backup of the installed binary
         rlRun "rlFileBackup --namespace agent /usr/bin/keylime_agent"
         rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
         rlRun "pushd ${WORKDIR}/rust-keylime"
-        rlRun "git checkout v0.2.1"
-        # Workaround regression on proc-macro2 build with nightly compiler:
-        # See: https://github.com/rust-lang/rust/issues/113152
-        rlRun "cargo update -p proc-macro2 --precise 1.0.66"
-        # Workaround regression on ahash build with nightly compiler by
-        # updating to version 0.8.7. To update ahash, it is necessary to first
-        # update actix-web and serde:
-        rlRun "cargo update -p actix-web --precise 4.4.1"
-        rlRun "cargo update -p serde --precise 1.0.188"
-        rlRun "cargo update -p ahash --precise 0.8.7"
+        rlRun "sed -i -E \"s/(^.*API_VERSION.*v)([0-9]+\.[0-9]+)/\1$OLD_VERSION/\" keylime-agent/src/common.rs"
+        rlRun "git diff"
         # Replace agent binary
-        rlRun "cargo build && cp ./target/debug/keylime_agent /usr/bin/keylime_agent"
+        rlRun "cargo build"
+        rlRun "limeStopAgent"
+        rlRun "cp ./target/debug/keylime_agent /usr/bin/keylime_agent"
         rlRun "popd"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent with old API version"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+        rlAssertGrep "Starting server with API version v${OLD_VERSION}" "$(limeAgentLogfile)" -E
         rlRun "cat > script.expect <<_EOF
 set timeout 20
 spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --cert default -c add
@@ -84,6 +82,7 @@ _EOF"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
     rlPhaseEnd
 
+
     rlPhaseStartTest "Verify that API version is automatically bumped"
         rlRun "limeStopAgent"
         rlRun "rlFileRestore --namespace agent"
@@ -96,11 +95,10 @@ _EOF"
 
     rlPhaseStartTest "Verify that API version downgrade is not allowed"
         rlRun "limeStopAgent"
-        rlRun "rlFileBackup --namespace agent /usr/bin/keylime_agent"
         rlRun "cp ${WORKDIR}/rust-keylime/target/debug/keylime_agent /usr/bin/keylime_agent"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        rlAssertGrep "WARNING - Agent $AGENT_ID API version 2.0 is lower or equal to previous version" "$(limeVerifierLogfile)"
+        rlAssertGrep "WARNING - Agent $AGENT_ID API version $OLD_VERSION is lower or equal to previous version" "$(limeVerifierLogfile)"
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" "$(limeVerifierLogfile)"
     rlPhaseEnd
 
