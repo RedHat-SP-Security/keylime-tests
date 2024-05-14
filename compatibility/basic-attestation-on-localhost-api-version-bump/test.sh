@@ -56,7 +56,7 @@ rlJournalStart
         rlRun "rlFileBackup --namespace agent /usr/bin/keylime_agent"
         rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
         rlRun "pushd ${WORKDIR}/rust-keylime"
-        rlRun "git checkout v0.2.1"
+        rlRun "git checkout v0.2.5"
         # Workaround regression on proc-macro2 build with nightly compiler:
         # See: https://github.com/rust-lang/rust/issues/113152
         rlRun "cargo update -p proc-macro2 --precise 1.0.66"
