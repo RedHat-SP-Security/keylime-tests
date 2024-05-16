@@ -40,9 +40,6 @@ rlJournalStart
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
-
-        OLD_VERSION="$(grep "Supported older API versions: " "$(limeVerifierLogfile)" | grep -o -E '[0-9]+\.[0-9]+' | tail -1)"
-
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         # create allowlist and excludelist
@@ -56,6 +53,12 @@ rlJournalStart
         rlRun "rlFileBackup --namespace agent /usr/bin/keylime_agent"
         rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
         rlRun "pushd ${WORKDIR}/rust-keylime"
+
+        # Get a supported version older than the current
+        CURRENT_VERSION="$(grep -E '(^.*API_VERSION.*v)([0-9]+\.[0-9]+)' keylime-agent/src/common.rs | grep -o -E '[0-9]+\.[0-9]+')"
+        OLD_VERSION="$(grep -o -E "Supported older API versions: .*" "$(limeVerifierLogfile)" | grep -o -E '[0-9]+\.[0-9]+' | sed -n "1,/^$CURRENT_VERSION\$/ p" | grep -v "^$CURRENT_VERSION\$" | tail -1)"
+
+        # Replace the API version to fake an older version
         rlRun "sed -i -E \"s/(^.*API_VERSION.*v)([0-9]+\.[0-9]+)/\1$OLD_VERSION/\" keylime-agent/src/common.rs"
         rlRun "git diff"
         # Replace agent binary
