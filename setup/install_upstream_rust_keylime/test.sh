@@ -35,17 +35,13 @@ rlJournalStart
             CARGO_FLAGS="--features=testing"
         fi
 
-        rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain none -y"
-        rlRun "source /root/.cargo/env"
-        # This pinned version allows generated instrumented code for tarpaulin
-        # to generate code coverage measurements
-        rlRun "rustup default 1.74.1"
-        rlRun "rustup component add llvm-tools-preview"
-        sleep 3
-        #install parser for code coverage files
-        rlRun "cargo install grcov"
-        # -Z is deprecated, use -C
         if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
+            rlRun "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable -y"
+            rlRun "source /root/.cargo/env"
+            rlRun "rustup component add llvm-tools-preview"
+            #install parser for code coverage files
+            rlRun "cargo install grcov"
+            # -Z is deprecated, use -C
             RUSTFLAGS='-Cinstrument-coverage'
         fi
 

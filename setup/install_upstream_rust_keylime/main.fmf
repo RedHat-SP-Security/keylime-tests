@@ -8,14 +8,15 @@ tag:
  - setup
 framework: beakerlib
 require:
- - git
- - yum
- - openssl-devel
- - gcc
- - tpm2-tss-devel
- - libarchive-devel
+ - cargo
  - clang-devel
+ - gcc
+ - git
+ - libarchive-devel
+ - openssl-devel
  - rpm-build
+ - tpm2-tss-devel
+ - yum
 duration: 20m
 enabled: true
 extra-nitrate: TC#0613570
