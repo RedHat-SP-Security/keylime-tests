@@ -121,7 +121,8 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        rlRun "rpm -e rpm-plugin-ima"
+        # removal could fail if rpm-plugin-ima is required by another package
+        rlRun "rpm -e rpm-plugin-ima" 0,1
         rlRun "popd"
         rlRun "rpm -e rpm-ima-sign-test"
         rlRun "limeStopAgent"
