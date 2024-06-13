@@ -1,0 +1,23 @@
+summary:  Test persisted IAK and IDevID credentials that are protected with hex passwords
+description: |
+    Generate iak and idevid certs, persist keys within the TPM
+    Also uses a hex password for the TPM itself
+    Check that the agent can access and load these keys iusing their handles and passwords
+    Register using the certs, verifying AK with IAK
+contact: Isaac Matthews <isaac@hpe.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - tpm2-tools 
+  - /usr/bin/xxd
+recommend:
+  - keylime
+  - tpm2-openssl
+duration: 5m
+enabled: true
+adjust:
+  - when: distro < fedora-39 or distro = centos-stream-9
+    enabled: false
