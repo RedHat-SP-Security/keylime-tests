@@ -1,5 +1,5 @@
 summary:
-  Container tests from the rhel-9-main branch
+  Container tests from the rhel-10-main branch
 
 context:
   swtpm: yes
@@ -7,7 +7,7 @@ context:
   faked_measured_boot_log: no
 
 adjust+:
- - when: target_PR_branch is defined and target_PR_branch != rhel-9-main
+ - when: target_PR_branch is defined and target_PR_branch != rhel-10-main
    enabled: false
    because: we want to run this plan only for PRs targeting the main branch
 
