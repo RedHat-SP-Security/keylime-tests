@@ -4,8 +4,7 @@
 
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
 [ -n "${REVOCATION_NOTIFIER}" ] || REVOCATION_NOTIFIER=agent
-SSL_SERVER_PORT=8980
-CERT_DIR="/var/lib/keylime/ca"
+WEBHOOK_SERVER_PORT=8980
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 MY_IP=127.0.0.1
 HOSTNAME=$( hostname )
@@ -19,15 +18,16 @@ rlJournalStart
 
         #seting keylime_port_t label for ssl port
         if rlIsRHEL '>=9.3' || rlIsFedora '>=38' || rlIsCentOS '>=9';then
-            rlRun "semanage port -a -t keylime_port_t -p tcp $SSL_SERVER_PORT"
+            rlRun "semanage port -a -t keylime_port_t -p tcp $WEBHOOK_SERVER_PORT"
         fi
 
         # generate TLS certificates for all
-        # we are going to use 4 certificates
+        # we are going to use 5 certificates
         # verifier = webserver cert used for the verifier server
         # verifier-client = webclient cert used for the verifier's connection to registrar server
         # registrar = webserver cert used for the registrar server
         # tenant = webclient cert used (twice) by the tenant, running on AGENT server
+        # webhook = webserver cert used for the revocation notification webhook
         # btw, we could live with just one key instead of generating multiple keys.. but that's just how openssl/certgen works
         rlRun "x509KeyGen ca" 0 "Generating Root CA RSA key pair"
         rlRun "x509KeyGen intermediate-ca" 0 "Generating Intermediate CA RSA key pair"
@@ -35,6 +35,7 @@ rlJournalStart
         rlRun "x509KeyGen verifier-client" 0 "Generating verifier-client RSA key pair"
         rlRun "x509KeyGen registrar" 0 "Generating registrar RSA key pair"
         rlRun "x509KeyGen tenant" 0 "Generating tenant RSA key pair"
+        rlRun "x509KeyGen webhook" 0 "Generating webhook RSA key pair"
         #rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
         rlRun "x509SelfSign ca" 0 "Selfsigning Root CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our Root CA key"
@@ -42,6 +43,7 @@ rlJournalStart
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with intermediate CA key"
+        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' webhook" 0 "Signing webhook certificate with intermediate CA key"
         #rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
 
         # copy verifier certificates to proper location
@@ -57,6 +59,8 @@ rlJournalStart
         rlRun "cp $(x509Key registrar) $CERTDIR/registrar-key.pem"
         rlRun "cp $(x509Cert tenant) $CERTDIR/tenant-cert.pem"
         rlRun "cp $(x509Key tenant) $CERTDIR/tenant-key.pem"
+        rlRun "cp $(x509Cert webhook) $CERTDIR/webhook-cert.pem"
+        rlRun "cp $(x509Key webhook) $CERTDIR/webhook-key.pem"
         #rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
         #rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
         # assign cert ownership to keylime user if it exists
@@ -75,7 +79,7 @@ rlJournalStart
         rlRun "limeUpdateConf verifier client_key ${CERTDIR}/verifier-client-key.pem"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
         rlRun "limeUpdateConf agent enable_revocation_notifications true"
-        rlRun "limeUpdateConf revocations webhook_url https://localhost:${SSL_SERVER_PORT}"
+        rlRun "limeUpdateConf revocations webhook_url https://localhost:${WEBHOOK_SERVER_PORT}"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
@@ -116,35 +120,15 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
-        # generate certificate for the SSL SERVER
-        rlRun "cat > script.expect <<_EOF
-set timeout 20
-spawn keylime_ca -c init -d /var/lib/keylime/ca
-expect \"Please enter the password to decrypt your keystore:\"
-send \"keylime\n\"
-expect eof
-_EOF"
-        rlRun "expect script.expect"
-        rlAssertExists ${CERT_DIR}/cacert.crt
-        rlRun "cat > script.expect <<_EOF
-set timeout 20
-spawn keylime_ca -c create -n localhost -d /var/lib/keylime/ca
-expect \"Please enter the password to decrypt your keystore:\"
-send \"keylime\n\"
-expect eof
-_EOF"
-        rlRun "expect script.expect"
-        rlAssertExists ${CERT_DIR}/localhost-cert.crt
-        # add cacert.crt to system-wide trust store
-        rlRun "cp $CERT_DIR/cacert.crt /etc/pki/ca-trust/source/anchors/keylime-ca.crt"
-        rlRun "update-ca-trust"
-        SSL_SERVER_LOG=$( mktemp )
-        # start revocation notifier webhook server using openssl s_server
-        # alternatively, we can start ncat --ssl as server, though it didn't work reliably
-        # we also need to feed it with sleep so that stdin won't be closed for s_server
-        rlRun "sleep 500 | openssl s_server -cert ${CERT_DIR}/localhost-cert.crt -key ${CERT_DIR}/localhost-private.pem -port ${SSL_SERVER_PORT} &> ${SSL_SERVER_LOG} &"
-        #rlRun "ncat --ssl --ssl-cert ${CERT_DIR}/localhost-cert.crt --ssl-key ${CERT_DIR}/localhost-private.pem --no-shutdown -k -l ${SSL_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${SSL_SERVER_LOG} &"
-        SSL_SERVER_PID=$!
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            WEBHOOK_SERVER_LOG=$( mktemp )
+            # start revocation notifier webhook server using openssl s_server
+            # alternatively, we can start ncat --ssl as server, though it didn't work reliably
+            # we also need to feed it with sleep so that stdin won't be closed for s_server
+            rlRun "sleep 500 | openssl s_server -debug -cert ${CERTDIR}/webhook-cert.pem -key ${CERTDIR}/webhook-key.pem -port ${WEBHOOK_SERVER_PORT} &> ${WEBHOOK_SERVER_LOG} &"
+            #rlRun "ncat --ssl --ssl-cert ${CERTDIR}/localhost-cert.crt --ssl-key ${CERTDIR}/localhost-private.pem --no-shutdown -k -l ${WEBHOOK_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${WEBHOOK_SERVER_LOG} &"
+            WEBHOOK_SERVER_PID=$!
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
@@ -177,16 +161,19 @@ _EOF"
             rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
             rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
             rlAssertNotExists /var/tmp/test_payload_file
-            cat ${SSL_SERVER_LOG}
-            rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${SSL_SERVER_LOG} -i
-            rlAssertNotGrep ERROR ${SSL_SERVER_LOG} -i
+            cat ${WEBHOOK_SERVER_LOG}
+            rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${WEBHOOK_SERVER_LOG} -i
+            rlAssertNotGrep ERROR ${WEBHOOK_SERVER_LOG} -i
         fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        rlRun "kill ${SSL_SERVER_PID}"
-        rlRun "pkill -f 'sleep 500'"
-        rlRun "rm ${SSL_SERVER_LOG}"
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "kill ${WEBHOOK_SERVER_PID}"
+            rlRun "pkill -f 'sleep 500'"
+            limeLogfileSubmit "${WEBHOOK_SERVER_LOG}"
+            rlRun "rm ${WEBHOOK_SERVER_LOG}"
+        fi
         rlRun "rm -f /var/tmp/test_payload_file"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
@@ -197,8 +184,6 @@ _EOF"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
-        rlRun "rm /etc/pki/ca-trust/source/anchors/keylime-ca.crt"
-        rlRun "update-ca-trust"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
