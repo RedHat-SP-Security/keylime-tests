@@ -33,7 +33,7 @@ rlJournalStart
         IP_VERIFIER="2001:db8:4000::"
         IP_WEBHOOK="2001:db8:5000::"
         IP_REGISTRAR="2001:db8:6000::"
-        IP_AGENT="[2001:db8:8000::]"
+        IP_AGENT="2001:db8:8000::"
 
         #create network for containers
         rlRun "limeconCreateNetwork --ipv6 ${CONT_NETWORK_NAME} 2001:0db8:0000:0000:0000:0000:0000:0000/32"
@@ -108,7 +108,7 @@ rlJournalStart
         else
             rlRun "limeconPrepareImage ${AGENT_DOCKERFILE} ${TAG_AGENT}"
         fi
-        rlRun "limeUpdateConf agent registrar_ip '\"[$IP_REGISTRAR]\"'"
+        rlRun "limeUpdateConf agent registrar_ip '\"$IP_REGISTRAR\"'"
         rlRun "limeconPrepareAgentConfdir $AGENT_ID $IP_AGENT confdir_$CONT_AGENT"
 
         # create some scripts
@@ -139,7 +139,7 @@ rlJournalStart
         rlRun "echo $REVOCATION_SCRIPT_TYPE"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v $IP_VERIFIER -t \[2001:db8:8000::\] -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v $IP_VERIFIER -t 2001:db8:8000:: -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -158,7 +158,7 @@ _EOF"
         rlRun "podman logs $CONT_VERIFIER | grep \"keylime.verifier - WARNING - Agent d432fbb3-d2f1-4a97-9ef7-75bd81c00000 failed, stopping polling\""
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'Executing revocation action local_action_modify_payload'"
-        rlRun "podman logs $CONT_AGENT 2>&1 | grep 'A node in the network has been compromised: \[2001:db8:8000::\]'"
+        rlRun "podman logs $CONT_AGENT 2>&1 | grep 'A node in the network has been compromised: 2001:db8:8000::'"
         rlRun "ls $WORKDIR/test_payload_file" 2
         rlRun "grep revocation $WEBHOOK_DIR/revocation_log"
     rlPhaseEnd
