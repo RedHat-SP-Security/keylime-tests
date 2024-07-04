@@ -5,8 +5,9 @@ jobs:
   branch: main
   targets:
     #- fedora-branched
-    - fedora-all
-    - centos-stream-9-x86_64
+    - fedora-40
+    - fedora-rawhide
+    #- centos-stream-9-x86_64
     - centos-stream-10-x86_64
   skip_build: true
   tf_extra_params:
