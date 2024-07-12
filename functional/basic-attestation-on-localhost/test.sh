@@ -4,7 +4,7 @@
 
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
 [ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
-HTTP_SERVER_PORT=8080
+WEBHOOK_PORT=8080
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
 rlJournalStart
@@ -17,7 +17,7 @@ rlJournalStart
         limeBackupConfig
         # verifier
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
-        rlRun "limeUpdateConf revocations webhook_url http://localhost:${HTTP_SERVER_PORT}"
+        rlRun "limeUpdateConf revocations webhook_url https://localhost:${WEBHOOK_PORT}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         fi
@@ -51,10 +51,16 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho This is good-script2' > $TESTDIR/good-script2.sh && chmod a+x $TESTDIR/good-script2.sh"
         # create allowlist and excludelist
         rlRun "limeCreateTestPolicy ${TESTDIR}/*"
-        HTTP_SERVER_LOG=$( mktemp )
-        # start revocation notifier webhook server using ncat
-        rlRun "ncat --no-shutdown -k -l ${HTTP_SERVER_PORT} -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o ${HTTP_SERVER_LOG} &"
-        HTTP_SERVER_PID=$!
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            WEBHOOK_LOG=$( mktemp )
+            WEBHOOK_CERT="/var/lib/keylime/cv_ca/server-cert.crt"
+            WEBHOOK_KEY="/var/lib/keylime/cv_ca/server-private.pem"
+            rlAssertExists "${WEBHOOK_CERT}"
+            rlAssertExists "${WEBHOOK_KEY}"
+            # start revocation notifier webhook server
+            rlRun "sleep 500 | openssl s_server -cert ${WEBHOOK_CERT} -key ${WEBHOOK_KEY} -port ${WEBHOOK_PORT} &> ${WEBHOOK_LOG} &"
+            WEBHOOK_PID=$!
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
@@ -96,15 +102,19 @@ _EOF"
             rlRun "tail -20 $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
             rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
             rlAssertNotExists /var/tmp/test_payload_file
-            cat ${HTTP_SERVER_LOG}
-            rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${HTTP_SERVER_LOG} -i
-            rlAssertNotGrep ERROR ${HTTP_SERVER_LOG} -i
+            cat ${WEBHOOK_LOG}
+            rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${WEBHOOK_LOG} -i
+            rlAssertNotGrep ERROR ${WEBHOOK_LOG} -i
         fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        rlRun "kill ${HTTP_SERVER_PID}"
-        rlRun "rm ${HTTP_SERVER_LOG}"
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "kill ${WEBHOOK_PID}"
+            rlRun "pkill -f 'sleep 500'"
+            limeLogfileSubmit "${WEBHOOK_LOG}"
+            rlRun "rm ${WEBHOOK_LOG}"
+        fi
         rlRun "rm -f /var/tmp/test_payload_file"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
