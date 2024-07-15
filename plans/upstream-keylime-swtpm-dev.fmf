@@ -12,6 +12,7 @@ discover:
   how: fmf
   test: 
    # we do setup two emulated TPM devices
+   - /setup/apply_workarounds
    - /setup/configure_swtpm_device
    - /setup/configure_swtpm_device
    - /setup/install_upstream_keylime

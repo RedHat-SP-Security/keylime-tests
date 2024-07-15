@@ -8,6 +8,7 @@ environment+:
 discover:
   how: fmf
   test: 
+   - /setup/apply_workarounds
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
    - /setup/install_upstream_rust_keylime

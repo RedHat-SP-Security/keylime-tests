@@ -1,0 +1,12 @@
+summary: Apply workarounds for known issues
+description: Workaround various known bugs causing test errors
+contact: Karel Srot <ksrot@redhat.com>
+test: ./test.sh
+tag:
+- setup
+framework: beakerlib
+require:
+- yum
+- tpm2-abrmd-selinux
+duration: 10m
+enabled: true
