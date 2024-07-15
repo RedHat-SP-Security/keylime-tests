@@ -104,11 +104,12 @@ _EOF"
             # now we need to build custom selinux module making swtpm_t a permissive domain
             # since the policy module shipped with swtpm package doesn't seem to work
             # see https://github.com/stefanberger/swtpm/issues/632 for more details
-            if ! semodule -l | grep -q swtpm_permissive; then
-                rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
-                rlAssertExists swtpm_permissive.pp
-                rlRun "semodule -i swtpm_permissive.pp"
+            if semodule -l | grep -q swtpm_permissive; then
+                rlRun "semodule -r swtpm_permissive"
             fi
+            rlRun "make -f /usr/share/selinux/devel/Makefile swtpm_permissive.pp"
+            rlAssertExists swtpm_permissive.pp
+            rlRun "semodule -i swtpm_permissive.pp"
         fi
         # allow tpm2-abrmd to connect to swtpm port
         rlRun "setsebool -P tabrmd_connect_all_unreserved on"
