@@ -137,6 +137,7 @@ rlJournalStart
 
     rlPhaseStartTest "Successful registration - IDevID and IAK certs verified, and IAK verifies AK"
         # Add CA to store
+        rlRun "mkdir -p $TPM_CERTS"
         rlRun "cp ./ca/certs/klca-chain.cert.pem $TPM_CERTS/"
         rlRun "limeStartAgent"
         # Agent can now register with IDevID and IAK getting verified
