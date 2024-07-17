@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # enable epel repo
-yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+#yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 
 # install build requires for C9S
 yum -y install \
@@ -11,7 +11,7 @@ yum -y install \
     openssh-server \
     python3-alembic \
     python3-cryptography \
-    python3-gnupg \
+    python-gpg \
     python3-jinja2 \
     python3-jsonschema \
     python3-lark-parser \
@@ -22,10 +22,10 @@ yum -y install \
     python3-pyasn1-modules \
     python3-pyyaml \
     python3-requests \
+    python3-setuptools \
     python3-sqlalchemy \
     python3-tornado \
     python3-typing-extensions \
-    python3-zmq \
     tpm2-tools \
     which
 

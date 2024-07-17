@@ -14,9 +14,9 @@ HTTP_SERVER_PORT=8080
 # The same applies for REGISTRAR_IMAGE/REGISTRAR_DOCKERFILE and
 # AGENT_IMAGE/AGENT_DOCKERFILE.
 
-[ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
-[ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
-[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c10s
+[ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c10s
+[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c10s
 [ -n "$WEBHOOK_DOCKERFILE" ] || WEBHOOK_DOCKERFILE=Dockerfile.webhook
 
 [ -n "$REGISTRY" ] || REGISTRY=quay.io

@@ -13,9 +13,9 @@ AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 #
 # The same applies for REGISTRAR_IMAGE and respective REGISTRAR_DOCKERFILE.
 
-[ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c9s
-[ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c9s
-[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$VERIFIER_DOCKERFILE" ] || VERIFIER_DOCKERFILE=Dockerfile.upstream.c10s
+[ -n "$REGISTRAR_DOCKERFILE" ] || REGISTRAR_DOCKERFILE=Dockerfile.upstream.c10s
+[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c10s
 
 [ -n "$REGISTRY" ] || REGISTRY=quay.io
 

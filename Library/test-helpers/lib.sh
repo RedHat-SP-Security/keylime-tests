@@ -2164,7 +2164,7 @@ limeconPrepareImage() {
 
     # copy lime_con_install_upstream.sh to the current dir just in case it would be needed
     if grep -q 'lime_con_install_upstream.sh' ${DOCKER_FILE}; then
-        cp ${limeLibraryDir}/lime_con_install_upstream.sh .
+        cp -n ${limeLibraryDir}/lime_con_install_upstream.sh .
     fi
 
     CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE ."

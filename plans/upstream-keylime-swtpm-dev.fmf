@@ -4,9 +4,9 @@ summary:
 environment+:
   TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
   KEYLIME_RUST_CODE_COVERAGE: 1
-  AGENT_DOCKERFILE: Dockerfile.upstream.c9s
-  VERIFIER_DOCKERFILE: Dockerfile.upstream.c9s
-  REGISTRAR_DOCKERFILE: Dockerfile.upstream.c9s
+  AGENT_DOCKERFILE: Dockerfile.upstream.c10s
+  VERIFIER_DOCKERFILE: Dockerfile.upstream.c10s
+  REGISTRAR_DOCKERFILE: Dockerfile.upstream.c10s
 
 discover:
   how: fmf
@@ -32,7 +32,7 @@ adjust+:
     enabled: false
     because: we want to run this plan only for PRs targeting the main branch
 
-  - when: distro != fedora-39 and distro != centos-stream-9
+  - when: distro != fedora-39 and distro != centos-stream-10
     enabled: false
 
   - when: distro == centos-stream-9
