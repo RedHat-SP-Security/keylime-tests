@@ -9,10 +9,11 @@ tag:
 framework: beakerlib
 require:
 - yum
-- swtpm
-- swtpm-tools
 - tpm2-tss
 - tpm2-tools
 - selinux-policy-devel
+recommend:
+- swtpm
+- swtpm-tools
 duration: 5m
 enabled: true
