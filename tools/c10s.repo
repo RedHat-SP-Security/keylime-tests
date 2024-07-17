@@ -1,0 +1,17 @@
+[C10S-BaseOS]
+name=C10S-BaseOS
+baseurl=https://composes.stream.centos.org/stream-10/development/latest-CentOS-Stream/compose/BaseOS/$arch/os/
+enabled=1
+gpgcheck=0
+
+[C10S-AppStream]
+name=C10S-AppStream
+baseurl=https://composes.stream.centos.org/stream-10/development/latest-CentOS-Stream/compose/AppStream/$arch/os/
+enabled=1
+gpgcheck=0
+
+[C10S-CRB]
+name=C10S-CRB
+baseurl=https://composes.stream.centos.org/stream-10/development/latest-CentOS-Stream/compose/CRB/$arch/os/
+enabled=0
+gpgcheck=0
