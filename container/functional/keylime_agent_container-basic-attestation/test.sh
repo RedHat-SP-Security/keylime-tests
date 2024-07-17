@@ -10,7 +10,7 @@
 # registry set in REGISTRY (default quay.io). Otherwise, the test builds the
 # agent image from the Dockerfile set in AGENT_DOCKERFILE.
 
-[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c9s
+[ -n "$AGENT_DOCKERFILE" ] || AGENT_DOCKERFILE=Dockerfile.upstream.c10s
 
 [ -n "$REGISTRY" ] || REGISTRY=quay.io
 
