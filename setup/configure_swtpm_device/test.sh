@@ -17,6 +17,7 @@ rlJournalStart
     rlPhaseStartSetup "Install TPM emulator"
 
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rpm -q swtpm swtpm-tools || rlRun 'dnf -y install swtpm swtpm-tools'
         rlRun "echo device > $__INTERNAL_limeTmpDir/swtpm_setup"
 
         # load the kernel module
