@@ -21,6 +21,7 @@ prepare+:
 discover:
   how: fmf
   test: 
+   - /setup/apply_workarounds
    - /setup/configure_tpm_emulator
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser

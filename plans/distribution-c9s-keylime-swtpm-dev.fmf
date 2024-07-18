@@ -20,6 +20,7 @@ environment:
 discover:
   how: fmf
   test: 
+   - /setup/apply_workarounds
    # need two TPM devices
    - /setup/configure_swtpm_device
    - /setup/configure_swtpm_device
