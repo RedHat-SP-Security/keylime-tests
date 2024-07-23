@@ -1,7 +1,7 @@
 FROM registry.access.redhat.com/ubi9/ubi-minimal
 
 RUN microdnf makecache && \
-    microdnf install -y nmap-ncat && \
+    microdnf install -y openssl && \
     microdnf clean all && \
     rm -rf /var/cache/dnf/*
 
@@ -9,4 +9,4 @@ ENV WEBHOOK_SERVER_PORT 8080
 
 EXPOSE $WEBHOOK_SERVER_PORT
 
-CMD ["/usr/bin/bash", "-c", "/usr/bin/ncat --no-shutdown -k -l -c '/usr/bin/sleep 3 && echo HTTP/1.1 200 OK' -o /var/tmp/webhook/revocation_log $WEBHOOK_SERVER_PORT"]
+CMD ["/usr/bin/bash", "-c", "openssl s_server -debug -cert /var/tmp/webhook/server-cert.crt -key /var/tmp/webhook/server-private.pem -CAfile /var/tmp/webhook/cacert.crt -port ${WEBHOOK_SERVER_PORT} &> /var/tmp/webhook/revocation_log"]
