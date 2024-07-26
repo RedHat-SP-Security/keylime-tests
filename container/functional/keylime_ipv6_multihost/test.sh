@@ -170,7 +170,7 @@ _EOF"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'A node in the network has been compromised: \[2001:db8:8000::\]'"
         rlRun "ls $WORKDIR/test_payload_file" 2
-        rlRun "grep revocation $WEBHOOK_DIR/revocation_log"
+        rlRun "grep revocation $WEBHOOK_DIR/revocation_log || (cat $WEBHOOK_DIR/revocation_log && exit 1)"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
