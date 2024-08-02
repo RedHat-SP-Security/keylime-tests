@@ -19,7 +19,7 @@ jobs:
   identifier: multihost
   branch: main
   targets:
-    - centos-stream-9-x86_64
+    - centos-stream-10-x86_64
   skip_build: true
   env:
     SYNC_DEBUG: "1"
