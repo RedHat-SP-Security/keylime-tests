@@ -148,6 +148,11 @@ Verifier() {
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         fi
 
+	# FIXME: expose verifier.conf so that tenant can download it
+	# this is a keylime issue which we need to workaroun ATM
+	# https://github.com/keylime/keylime/issues/1541#issuecomment-2221267087
+	rlIsRHELLike 9 || rlRun "cp /etc/keylime/verifier.conf http"
+
         # Delete other components configuration files
         for comp in agent registrar tenant; do
             rlRun "rm -rf /etc/keylime/$comp.conf*"
@@ -284,6 +289,12 @@ Agent() {
         for comp in verifier registrar; do
             rlRun "rm -rf /etc/keylime/$comp.conf*"
         done
+
+
+	# FIXME: expose verifier.conf so that tenant can download it
+	# this is a keylime issue which we need to workaroun ATM
+	# https://github.com/keylime/keylime/issues/1541#issuecomment-2221267087
+        rlIsRHELLike 9 || rlRun "wget -O /etc/keylime/verifier.conf 'http://$VERIFIER:8000/verifier.conf'"
 
         # if TPM emulator is present
         if limeTPMEmulated; then
