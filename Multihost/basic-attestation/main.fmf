@@ -24,6 +24,7 @@ require:
 recommend:
   - keylime
   - python3-tomli
+  - python3-toml
 duration: 30m
 enabled: true
 extra-nitrate: TC#0611986
