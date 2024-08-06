@@ -11,7 +11,7 @@ except ImportError:
     try:
         import tomli as tomllib
     except ImportError:
-        import toml
+        import toml as tomllib
 
 json_file = sys.argv[1]
 with open(json_file, 'r') as f:
