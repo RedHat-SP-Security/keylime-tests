@@ -3,7 +3,15 @@
 import os
 import sys
 import json
-import toml
+# need to do multiple attempts since we might be delivering
+# payload scripts to old RHELs
+try:
+    import tomllib
+except ImportError:
+    try:
+        import tomli as tomllib
+    except ImportError:
+        import toml
 
 json_file = sys.argv[1]
 with open(json_file, 'r') as f:
