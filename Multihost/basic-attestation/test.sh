@@ -343,8 +343,7 @@ _EOF"
         rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
-        rlRun -s "keylime_tenant -c status -u ${AGENT2_ID}"
-        rlAssertGrep '"operational_state": "Get Quote"' $rlRun_LOG
+        rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
     rlPhaseEnd
 fi
 
