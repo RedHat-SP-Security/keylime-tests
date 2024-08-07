@@ -40,7 +40,7 @@ rlJournalStart
 
         #prepare verifier container
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
-        rlRun "limeUpdateConf revocations webhook_url http://[$IP_WEBHOOK]:${HTTP_SERVER_PORT}"
+        rlRun "limeUpdateConf revocations webhook_url https://[$IP_WEBHOOK]:${HTTP_SERVER_PORT}"
 
         rlRun "limeUpdateConf verifier ip $IP_VERIFIER"
         #for log purposes, when agent fail, we need see verifier log, that attestation failed
@@ -128,6 +128,16 @@ rlJournalStart
         TAG_WEBHOOK=webhook_image
         WEBHOOK_DIR=$( mktemp -d )
 
+        # Make sure that required files exist
+        rlAssertExists ./cv_ca/server-cert.crt
+        rlAssertExists ./cv_ca/server-private.pem
+        rlAssertExists ./cv_ca/cacert.crt
+
+        # Copy key and file to be used by the webhook server
+        rlRun "cp ./cv_ca/server-cert.crt ${WEBHOOK_DIR}"
+        rlRun "cp ./cv_ca/server-private.pem ${WEBHOOK_DIR}"
+        rlRun "cp ./cv_ca/cacert.crt ${WEBHOOK_DIR}"
+
         rlRun "limeconPrepareImage ${WEBHOOK_DOCKERFILE} ${TAG_WEBHOOK}"
 
         # Start the container and make it run indefinitely
@@ -160,7 +170,7 @@ _EOF"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'A node in the network has been compromised: \[2001:db8:8000::\]'"
         rlRun "ls $WORKDIR/test_payload_file" 2
-        rlRun "grep revocation $WEBHOOK_DIR/revocation_log"
+        rlRun "grep revocation $WEBHOOK_DIR/revocation_log || (cat $WEBHOOK_DIR/revocation_log && exit 1)"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
