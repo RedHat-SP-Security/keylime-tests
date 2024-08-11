@@ -1,0 +1,34 @@
+summary:
+  Upgrade test used for CUT testing
+
+provision:
+  - name: keylime
+    role: keylime
+  - name: agent
+    role: agent
+
+discover:
+  - name: agent_setup
+    how: fmf
+    where:
+      - agent
+    test:
+      - /setup/configure_tpm_emulator
+      - /setup/configure_kernel_ima_module/ima_policy_signing
+  - name: attestation_test
+    how: fmf
+    test:
+      #- /setup/enable_keylime_debug_messages
+      - /Multihost/upgrade/basic-attestation/all
+
+execute:
+  how: tmt
+
+adjust+:
+  - when: target_PR_branch is defined and target_PR_branch != rhel-9-main
+    enabled: false
+    because: we want to run this plan only for PRs targeting the main branch
+
+  - when: multihost is not defined or multihost != yes
+    enabled: false
+    because: we want to run this plan only in the multihost pipeline

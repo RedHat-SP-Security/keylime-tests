@@ -27,7 +27,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        name: "/plans/upstream-keylime-multihost"
+        name: "/plans/upstream-keylime-multihost.*"
     environments:
       - tmt:
           context:
@@ -65,7 +65,7 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        name: "/plans/distribution-c9s-keylime-multihost"
+        name: "/plans/distribution-c9s-keylime-multihost.*"
     environments:
       - tmt:
           context:
