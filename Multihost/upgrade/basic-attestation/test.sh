@@ -146,6 +146,7 @@ KeylimeSetup() {
         rlRun "sync-set KEYLIME_SETUP_DONE"
         rlRun "sync-block AGENT_SETUP_DONE ${AGENT_IP}" 0 "Waiting for the Agent to finish setup"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+        rlRun "kill $HTTP_PID"
     rlPhaseEnd
 
     rlPhaseStartTest "Add Agent"
@@ -158,16 +159,42 @@ KeylimeSetup() {
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlRun "sync-set AGENT_ADDED"
+        limeSubmitCommonLogs
     rlPhaseEnd
+}
 
-    rlPhaseStartCleanup "Verifier cleanup"
-        rlRun "kill $HTTP_PID"
+KeylimeStop() {
+    rlPhaseStartTest "Stop keylime"
         rlRun "limeStopVerifier"
         rlRun "limeStopRegistrar"
         limeSubmitCommonLogs
     rlPhaseEnd
 }
 
+KeylimeStart() {
+    rlPhaseStartTest "Start keylime"
+        rlRun "limeStartVerifier"
+        rlRun "limeWaitForVerifier"
+        rlRun "limeStartRegistrar"
+        rlRun "limeWaitForRegistrar"
+        limeSubmitCommonLogs
+    rlPhaseEnd
+}
+
+KeylimeTest() {
+    rlPhaseStartTest "Agent attestation"
+        rlRun -s "keylime_tenant -c cvlist"
+        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun -s "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+	ATTEST_COUNT1=$( grep -Eo '"last_successful_attestation": [0-9]*' $rlRun_LOG | cut -d ':' -f 2)
+	rlRun "sleep 60"
+        rlRun -s "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+	ATTEST_COUNT2=$( grep -Eo '"last_successful_attestation": [0-9]*' $rlRun_LOG | cut -d ':' -f 2)
+	rlAssertGreater "last_successful_attestation counter should have increased" ${ATTEST_COUNT2} ${ATTEST_COUNT1}
+        rlRun "sync-set KEYLIME_ATTESTATION_DONE"
+        limeSubmitCommonLogs
+    rlPhaseEnd
+}
 
 AgentSetup() {
     rlPhaseStartSetup "Agent setup"
@@ -224,10 +251,22 @@ AgentSetup() {
 
         rlRun "sync-set AGENT_SETUP_DONE"
         rlRun "sync-block AGENT_ADDED ${KEYLIME_IP}" 0 "Waiting for the keylime to add agent"
-    rlPhaseEnd
-
-    rlPhaseStartCleanup "Agent cleanup"
         rlRun "kill $HTTP_PID"
+        limeSubmitCommonLogs
+    rlPhaseEnd
+}
+
+
+AgentTest() {
+    rlPhaseStartTest "Confirm that the agent is running"
+        rlRun "systemctl status keylime_agent"
+        rlRun "sync-block KEYLIME_ATTESTATION_DONE ${KEYLIME_IP}"
+        limeSubmitCommonLogs
+    rlPhaseEnd
+}
+
+AgentCleanup() {
+    rlPhaseStartTest "Agent cleanup"
         rlRun "limeStopAgent"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
@@ -266,31 +305,65 @@ rlJournalStart
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
         rlAssertRpm keylime
-        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         # backup files
         limeBackupConfig
-        rlRun "pushd $TmpDir"
     rlPhaseEnd
 
     if echo " $HOSTNAME $MY_IP " | grep -q " ${KEYLIME_IP} "; then
-        KeylimeSetup
+        MY_ROLE=keylime
     elif echo " $HOSTNAME $MY_IP " | grep -q " ${AGENT_IP} "; then
-        AgentSetup
+        MY_ROLE=agent
     else
         rlPhaseStartTest
             rlFail "Unknown role"
         rlPhaseEnd
     fi
 
-    rlPhaseStartCleanup
-        rlRun "popd"
-        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
-        #################
-        # common cleanup
-        #################
-        limeClearData
-        limeRestoreConfig
-    rlPhaseEnd
+    # clear $PHASES if IN_PLACE_UPGRADE is specified
+
+    [ -n "$IN_PLACE_UPGRADE" ] && PHASES=""
+    echo IN_PLACE_UPGRADE=$IN_PLACE_UPGRADE
+    echo PHASES=$PHASES
+
+    # run pre-reboot phase (setup), except when running post-upgrade phase
+    if [ -n "$IN_PLACE_UPGRADE" -a "$IN_PLACE_UPGRADE" != "new" ] || echo "${PHASES}" | grep -Eqi '(setup|all)'; then
+        if [ "$MY_ROLE" == keylime ]; then
+            KeylimeSetup
+	    KeylimeStop
+	fi
+        if [ "$MY_ROLE" == agent ]; then
+            AgentSetup
+	fi
+    fi
+
+    # run post-reboot phase (test), except when running pre-upgrade phase
+    if [ -n "$IN_PLACE_UPGRADE" -a "$IN_PLACE_UPGRADE" != "old" ] || echo "${PHASES}" | grep -Eqi '(test|all)'; then
+        if [ "$MY_ROLE" == keylime ]; then
+            KeylimeStart
+            KeylimeTest
+	fi
+        if [ "$MY_ROLE" == agent ]; then
+            AgentTest
+	fi
+    fi
+
+    # run cleanup only when run as a standalone test
+    if [ -z "$IN_PLACE_UPGRADE" ] && echo "${PHASES}" | grep -Eqi '(cleanup|all)'; then
+        if [ "$MY_ROLE" == keylime ]; then
+            KeylimeStop
+	fi
+        if [ "$MY_ROLE" == agent ]; then
+            AgentCleanup
+	fi
+
+        rlPhaseStartCleanup
+            #################
+            # common cleanup
+            #################
+            limeClearData
+            limeRestoreConfig
+        rlPhaseEnd
+    fi
 
 rlJournalPrintText
 rlJournalEnd
