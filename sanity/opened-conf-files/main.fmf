@@ -1,0 +1,18 @@
+summary: Checks configuration files opened during service start
+description: |
+    Running all services on localhost.
+    Starts verifier, registrar, agent.
+    Checks which config files are being loaded during service start.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+recommend:
+  - keylime
+duration: 5m
+enabled: true
