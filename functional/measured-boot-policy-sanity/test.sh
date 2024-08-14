@@ -9,8 +9,6 @@ rlJournalStart
     rlPhaseStartSetup "Do the keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
-        rlRun -s "mokutil --sb-state"
-        rlAssertGrep "SecureBoot enabled" $rlRun_LOG || rlDie "SecureBoot is not enabled"
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert False"
@@ -29,6 +27,9 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Try adding agent with PRC15 configured in tpm_policy"
+        # do not die if SecureBoot not enabled but make sure the test fails
+        rlRun -s "mokutil --sb-state"
+        rlAssertGrep "SecureBoot enabled" $rlRun_LOG || rlFail "SecureBoot is not enabled"
         TPM_POLICY='{"15":["0000000000000000000000000000000000000000","0000000000000000000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"]}'
         rlRun "echo '{}' > mb_refstate.txt"
         rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '${TPM_POLICY}' --runtime-policy policy.json -f /etc/hostname -c add --mb_refstate mb_refstate.txt" 1
