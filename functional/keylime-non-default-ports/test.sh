@@ -4,7 +4,7 @@
 
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
 [ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
-HTTP_SERVER_PORT=8080
+WEBHOOK_PORT=8080
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
 rlJournalStart
@@ -17,7 +17,7 @@ rlJournalStart
         limeBackupConfig
         # verifier
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\",\"webhook\"]'"
-        rlRun "limeUpdateConf revocations webhook_url http://localhost:${HTTP_SERVER_PORT}"
+        rlRun "limeUpdateConf revocations webhook_url https://localhost:${WEBHOOK_PORT}"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         fi
@@ -73,6 +73,14 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            # start revocation notification webhook server
+            WEBHOOK_LOG=$( mktemp )
+            WEBHOOK_CERT="/var/lib/keylime/cv_ca/server-cert.crt"
+            WEBHOOK_KEY="/var/lib/keylime/cv_ca/server-private.pem"
+            rlRun "sleep 500 | openssl s_server -cert ${WEBHOOK_CERT} -key ${WEBHOOK_KEY} -port ${WEBHOOK_PORT} &> ${WEBHOOK_LOG} &"
+            WEBHOOK_PID=$!
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
@@ -110,6 +118,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+            rlRun "kill ${WEBHOOK_PID}"
+            rlRun "pkill -f 'sleep 500'"
+            limeLogfileSubmit "${WEBHOOK_LOG}"
+            rlRun "rm ${WEBHOOK_LOG}"
+        fi
         #remove keylime_port_t label from non default ports
         if rlIsRHEL '>=9.3' || rlIsFedora '>=38' || rlIsCentOS '>=9';then
             rlRun "semanage port -d -t keylime_port_t -p tcp 19002"
