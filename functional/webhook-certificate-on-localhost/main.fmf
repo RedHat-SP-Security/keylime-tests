@@ -1,0 +1,30 @@
+summary: Test webhook certificate configuration on localhost
+description: |
+    Running all services on localhost.
+    Uses custom generated TLS certificates with an intermediate CA in the chain.
+    For each of: valid certificates, invalid certificates, and no certificates
+      - Configure webhook to receive revocation notification.
+      - Starts verifier, registrar, agent.
+      - Enroll agent to be monitored by verifier using tenant.
+      - Does changes on a system and verifies that system has failed attestation.
+      - Confirms that the configured webhook_notifier receives revocation
+        notification or fail as expected.
+contact: Anderson Toshiyuki Sasaki <ansasaki@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - expect
+  - library(openssl/certgen)
+  - nmap-ncat
+  - openssl
+  - policycoreutils-python-utils
+  - yum
+recommend:
+  - keylime
+  - python3-tomli
+duration: 5m
+enabled: true
