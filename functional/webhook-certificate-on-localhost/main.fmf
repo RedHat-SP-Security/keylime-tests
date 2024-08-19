@@ -2,7 +2,8 @@ summary: Test webhook certificate configuration on localhost
 description: |
     Running all services on localhost.
     Uses custom generated TLS certificates with an intermediate CA in the chain.
-    For each of: valid certificates, invalid certificates, and no certificates
+    For each of: valid certificates, invalid certificates, no certificates, and
+    certificates in system-wide store:
       - Configure webhook to receive revocation notification.
       - Starts verifier, registrar, agent.
       - Enroll agent to be monitored by verifier using tenant.
@@ -19,7 +20,6 @@ tag:
 require:
   - expect
   - library(openssl/certgen)
-  - nmap-ncat
   - openssl
   - policycoreutils-python-utils
   - yum
