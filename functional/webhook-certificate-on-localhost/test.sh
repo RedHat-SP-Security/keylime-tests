@@ -13,9 +13,9 @@ rlJournalStart
         rlRun 'rlImport "certgen/certgen"' || rlDie "cannot import openssl/certgen library"
         rlAssertRpm keylime
 
-        #seting keylime_port_t label for ssl port
+        #seting keylime_port_t label for ssl ports
         if rlIsRHEL '>=9.3' || rlIsFedora '>=38' || rlIsCentOS '>=9';then
-            for port in 8890 8891 8892; do
+            for port in 8890 8891 8892 8980 8981 8982 8983; do
                 rlRun "semanage port -a -t keylime_port_t -p tcp $port" 0,1
             done
         fi
@@ -116,8 +116,22 @@ rlJournalStart
         limeCreateTestPolicy
     rlPhaseEnd
 
-    for i in "good-webhook good 8980 none" "bad-webhook bad 8981 CERTIFICATE_VERIFY_FAILED" "none bad 8982 SSLError"; do
+    for i in "good-webhook good 8980 none" "bad-webhook bad 8981 CERTIFICATE_VERIFY_FAILED" "none bad 8982 SSLError" "installed good 8983 none"; do
         read -r WEBHOOK EXPECTED_RESULT WEBHOOK_SERVER_PORT EXPECTED_ERROR <<< "${i}"
+
+        # This case is to test that the verifier is including the system-wide
+        # installed certificates when verifying the revocation notification
+        # webhook certificate
+        if [ "${WEBHOOK}" = "installed" ]; then
+            rlPhaseStartTest "Install CA certificate on system-wide store, and run on port ${WEBHOOK_SERVER_PORT}"
+                rlRun "limeUpdateConf revocations webhook_url https://localhost:${WEBHOOK_SERVER_PORT}"
+                # Install the "bad" CA certificate on system-wide trust store
+                rlRun "cp $(x509Cert bad-ca) /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
+                rlRun "update-ca-trust"
+                # Use the "bad" revocation notification webhook certificate
+                WEBHOOK="bad-webhook"
+            rlPhaseEnd
+        fi
 
         rlPhaseStartTest "Start webhook with '${WEBHOOK}' certificate on port ${WEBHOOK_SERVER_PORT}"
             # Configure webhook URL and start verifier
@@ -136,10 +150,9 @@ rlJournalStart
         rlPhaseEnd
 
         rlPhaseStartTest "Add keylime agent (WEBHOOK=${WEBHOOK})"
-            REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
             rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --include payload-script --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -198,13 +211,15 @@ _EOF"
         rlRun "rm -f /var/tmp/test_payload_file"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
-        rlRun "limeStopVerifier"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
+        # Cleanup the trust store
+        rlRun "rm /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
+        rlRun "update-ca-trust"
         limeClearData
         limeRestoreConfig
     rlPhaseEnd
