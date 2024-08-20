@@ -1621,7 +1621,7 @@ limeCreateTestPolicy() {
     $LISTS_ONLY && return
 
     # create policy.json and create signed policies and keys
-    keylime_create_policy -a allowlist.txt -e excludelist.txt -o policy.json && \
+    keylime_policy create runtime --allowlist allowlist.txt --exclude-list excludelist.txt --output policy.json && \
     keylime_sign_runtime_policy -r policy.json -p dsse-ecdsa-privkey.key -b ecdsa -o policy-dsse-ecdsa.json && \
     keylime_sign_runtime_policy -r policy.json -p dsse-x509-privkey.key -b x509 -o policy-dsse-x509.json && \
     openssl ec -in dsse-ecdsa-privkey.key -pubout -out dsse-ecdsa-pubkey.pub && \
