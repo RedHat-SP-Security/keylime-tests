@@ -30,6 +30,7 @@ rlJournalStart
         # webhook = webserver cert used for the revocation notification webhook
         # btw, we could live with just one key instead of generating multiple keys.. but that's just how openssl/certgen works
         rlRun "x509KeyGen ca" 0 "Generating Root CA RSA key pair"
+        rlRun "x509KeyGen ca-webhook" 0 "Generating Root CA RSA key pair for webhook server"
         rlRun "x509KeyGen intermediate-ca" 0 "Generating Intermediate CA RSA key pair"
         rlRun "x509KeyGen verifier" 0 "Generating verifier RSA key pair"
         rlRun "x509KeyGen verifier-client" 0 "Generating verifier-client RSA key pair"
@@ -43,7 +44,7 @@ rlJournalStart
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with intermediate CA key"
-        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' webhook" 0 "Signing webhook certificate with intermediate CA key"
+        rlRun "x509CertSign --CA ca-webhook --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' webhook" 0 "Signing webhook certificate with ca-webhook CA key"
         #rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
 
         # copy verifier certificates to proper location
@@ -120,6 +121,9 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
+        # add ca-webhook CA cert to system-wide trust store
+        rlRun "cp $(x509Cert ca-webhook) /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
+        rlRun "update-ca-trust"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             WEBHOOK_SERVER_LOG=$( mktemp )
             # start revocation notifier webhook server using openssl s_server
@@ -184,6 +188,8 @@ _EOF"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
+        rlRun "rm /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
+        rlRun "update-ca-trust"
         limeClearData
         limeRestoreConfig
         limeExtendNextExcludelist $TESTDIR
