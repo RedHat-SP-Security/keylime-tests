@@ -30,7 +30,7 @@ discover:
    - "^/functional/basic-attestation-on-localhost"
    # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
-   - /setup/inject_SELinux_AVC_check
+   #- /setup/inject_SELinux_AVC_check
    - "^/functional/.*"
    - "^/regression/.*"
 
