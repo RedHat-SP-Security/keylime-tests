@@ -22,7 +22,7 @@ discover:
    - /setup/configure_kernel_ima_module/ima_policy_simple
    - /setup/inject_SELinux_AVC_check
    - /functional/basic-attestation-on-localhost
-   - "^/container/.*"
+   - /functional/basic-attestation-with-custom-certificates
 
 execute:
     how: tmt
