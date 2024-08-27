@@ -223,7 +223,7 @@ _EOF"
 	journalctl --header > journalctl_header.txt
 	ls -l /run/log/journal > ls_l_run_log_journal.txt
 	systemctl status systemd-journald.service > systemctl_status_journald.txt
-	rlBundleLogs journal_logs dmesg.log journalctl_b.log journalctl_header.txt ls_l_run_log_journal.txt systemctl_status_journald.tx
+	rlBundleLogs journal_logs dmesg.log journalctl_b.log journalctl_header.txt ls_l_run_log_journal.txt systemctl_status_journald.txt
         # Cleanup the trust store
         rlRun "rm /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
         rlRun "update-ca-trust"
