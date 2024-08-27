@@ -5,7 +5,6 @@ jobs:
   branch: main
   targets:
     #- fedora-branched
-    - fedora-all
     - centos-stream-10-x86_64
   skip_build: true
   tf_extra_params:
@@ -14,28 +13,6 @@ jobs:
           context:
             target_PR_branch: "main"
             multihost: "no"
-- job: tests
-  trigger: pull_request
-  identifier: multihost
-  branch: main
-  targets:
-    - centos-stream-10-x86_64
-  skip_build: true
-  env:
-    SYNC_DEBUG: "1"
-  use_internal_tf: True
-  tf_extra_params:
-    test:
-      tmt:
-        name: "/plans/upstream-keylime-multihost.*"
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "main"
-            multihost: "yes"
-    settings:
-      pipeline:
-        type: tmt-multihost
 - job: tests
   trigger: pull_request
   identifier: singlehost

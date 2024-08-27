@@ -20,10 +20,6 @@ rlJournalStart
             done
         fi
 
-        # restart journald as it seems to get stuck on RHEL-10 but
-        # I wasn't able to figure out the details yet
-        rlRun "systemctl restart systemd-journald "
-
         # Create directory to store certificates and keys
         CERTDIR=/var/lib/keylime/certs
         rlRun "mkdir -p $CERTDIR"
@@ -221,6 +217,13 @@ _EOF"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
+	# gather more logs
+	dmesg > dmesg.log
+	journalctl -b > journalctl_b.log
+	journalctl --header > journalctl_header.txt
+	ls -l /run/log/journal > ls_l_run_log_journal.txt
+	systemctl status systemd-journald.service > systemctl_status_journald.txt
+	rlBundleLogs journal_logs dmesg.log journalctl_b.log journalctl_header.txt ls_l_run_log_journal.txt systemctl_status_journald.tx
         # Cleanup the trust store
         rlRun "rm /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
         rlRun "update-ca-trust"

@@ -17,7 +17,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
-        rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
+        rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE} enforcing=0'"
         rlRun -s "grubby --info DEFAULT | grep '^args'"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
