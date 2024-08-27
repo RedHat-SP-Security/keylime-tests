@@ -20,6 +20,10 @@ rlJournalStart
             done
         fi
 
+        # restart journald as it seems to get stuck on RHEL-10 but
+        # I wasn't able to figure out the details yet
+        rlRun "systemctl restart systemd-journald "
+
         # Create directory to store certificates and keys
         CERTDIR=/var/lib/keylime/certs
         rlRun "mkdir -p $CERTDIR"
