@@ -12,7 +12,7 @@ discover:
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
    - /setup/install_upstream_rust_keylime
-   - /setup/enable_keylime_debug_messages
+   #- /setup/enable_keylime_debug_messages
    - /setup/enable_keylime_coverage
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
