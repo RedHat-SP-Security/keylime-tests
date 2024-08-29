@@ -1615,6 +1615,8 @@ limeCreateTestPolicy() {
     touch $__INTERNAL_limeBaseExcludeList && \
     cat $__INTERNAL_limeBaseExcludeList >> excludelist.txt && \
     echo -e "${EXCLUDE}" >> excludelist.txt
+    # workaround for https://github.com/keylime/keylime/issues/1622
+    sed -i '/^$/ d' excludelist.txt
 
     [ $? -ne 0 ] && return 1
 
