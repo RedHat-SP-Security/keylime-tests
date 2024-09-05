@@ -24,7 +24,6 @@ rlJournalStart
         if $SECUREBOOT; then
 	    rlRun -s "keyctl show %:.machine"
 	    grep -q 'keylime-tests-IMA-CA' $rlRun_LOG || rlDie "keylime-tests IMA CA is not present in MOK"
-            rlAssertExists /lib/dracut/modules.d/98integrity/module-setup.sh || rlDie "/lib/dracut/modules.d/98integrity/module-setup.sh not found"
 	fi
         # generate key and certificate for IMA
         rlRun "limeInstallIMAKeys"
@@ -34,7 +33,6 @@ rlJournalStart
         #rlRun "keyctl show %keyring:.ima"
         # regenerate initramfs to incorporate ima keys
         if $SECUREBOOT; then
-            rlRun "sed -i 's/return 255/return 0/' /lib/dracut/modules.d/98integrity/module-setup.sh"
             rlRun "cp ${limeIMACertificateDER} /etc/keys/ima/"
             rlRun "dracut --kver $(uname -r) --force --add integrity"
         fi
