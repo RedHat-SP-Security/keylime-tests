@@ -11,5 +11,7 @@ require:
 - grubby
 - tpm2-tools
 - openssl
+- attr
+- mokutil
 duration: 15m
 enabled: true
