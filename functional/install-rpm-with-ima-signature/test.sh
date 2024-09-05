@@ -107,7 +107,7 @@ _EOF"
         SCRIPT=$( rpm -qlp ${RPM_PATH} )
         ls -l ${SCRIPT}
         rlRun -s "getfattr -m ^security.ima --dump ${SCRIPT}"
-        rlRun "evmctl ima_verify -a sha256 ${SCRIPT}"
+        rlRun "evmctl ima_verify -a sha256 --key ${limeIMACertificateDER} ${SCRIPT}"
         rlRun -s "${SCRIPT} boom"
         rlRun -s "grep '${SCRIPT}' /sys/kernel/security/ima/ascii_runtime_measurements"
     rlPhaseEnd
