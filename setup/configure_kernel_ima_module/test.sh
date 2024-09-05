@@ -9,15 +9,47 @@
 
 COOKIE=/var/tmp/configure-kernel-ima-module-rebooted
 TESTFILE=/var/tmp/configure-kernel-ima-module-test$$
+SECUREBOOT=false
 
 rlJournalStart
 
   if [ ! -e $COOKIE ]; then
     rlPhaseStartSetup "pre-reboot phase"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+
+	# when in secure boot, install only when IMA CA key has been imported to MOK
+	rlRun -s "mokutil --sb-state" 0,1
+	grep -q 'enabled' $rlRun_LOG && SECUREBOOT=true
+
+        if $SECUREBOOT; then
+	    rlRun -s "keyctl show %:.machine"
+	    grep -q 'keylime-tests-IMA-CA' $rlRun_LOG || rlDie "keylime-tests IMA CA is not present in MOK"
+            rlAssertExists /lib/dracut/modules.d/98integrity/module-setup.sh || rlDie "/lib/dracut/modules.d/98integrity/module-setup.sh not found"
+	fi
+        # generate key and certificate for IMA
+        rlRun "limeInstallIMAKeys"
+	rlRun "openssl x509 -in ${limeIMACertificateDER} -text"
+        # try to import keys into ima keyring - this doesn't work
+        #rlRun "evmctl import ${limeIMACertificateDER} .ima"
+        #rlRun "keyctl show %keyring:.ima"
+        # regenerate initramfs to incorporate ima keys
+        if $SECUREBOOT; then
+            rlRun "sed -i 's/return 255/return 0/' /lib/dracut/modules.d/98integrity/module-setup.sh"
+            rlRun "cp ${limeIMACertificateDER} /etc/keys/ima/"
+            rlRun "dracut --kver $(uname -r) --force --add integrity"
+        fi
+        # install IMA policy
+        rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
+        # sign policy file
+        rlRun "evmctl ima_sign --hashalgo sha256 --key ${limeIMAPrivateKey} /etc/ima/ima-policy"
+        rlRun "getfattr -m - -e hex -d /etc/ima/ima-policy"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
-        rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
+        if $SECUREBOOT; then
+            rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=secure_boot ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
+        else
+            rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
+        fi
         rlRun -s "grubby --info DEFAULT | grep '^args'"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
@@ -26,10 +58,6 @@ rlJournalStart
         # on s390x run zipl to make change done through grubby effective
         [ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
         rlRun "touch $COOKIE"
-        # generate key and certificate for IMA
-        rlRun "limeInstallIMAKeys"
-        # install IMA policy
-        rlRun "limeInstallIMAConfig ${IMA_POLICY_FILE}"
         # clear TPM
         if ! limeTPMEmulated && [ -c /dev/tpmrm0 ]; then
             rlRun "tpm2_clear"
@@ -50,6 +78,7 @@ rlJournalStart
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
         rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
+        rlRun "keyctl show %keyring:.ima"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
         rlRun "rm $COOKIE"
