@@ -46,9 +46,9 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho boom' > ${SCRIPT} && chmod a+x ${SCRIPT} && chown ${limeTestUser}:${limeTestUser} ${SCRIPT}"
         ls -l ${SCRIPT}
         ALG_ARG="-a sha256"
-        rlRun "evmctl ima_sign ${ALG_ARG} ${SCRIPT}"
+        rlRun "evmctl ima_sign ${ALG_ARG} --key ${limeIMAPrivateKey} ${SCRIPT}"
         rlRun -s "getfattr -m ^security.ima --dump ${SCRIPT}"
-        rlRun "evmctl ima_verify ${ALG_ARG} ${SCRIPT}"
+        rlRun "evmctl ima_verify ${ALG_ARG} --key ${limeIMACertificateDER} ${SCRIPT}"
         # if IMA is emulated, we would have good checksum for Agent but our running kernel would deny access anyway
         rlRun -s "${SCRIPT} boom"
         rlAssertGrep "boom" $rlRun_LOG
