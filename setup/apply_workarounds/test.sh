@@ -24,4 +24,8 @@ rlJournalStart
 	fi
     rlPhaseEnd
 
+    rlPhaseStartTest "Apply workaround bz#2297942"
+        [ -f /usr/sbin/tpm2-abrmd ] && rlRun "restorecon -v /usr/sbin/tpm2-abrmd"
+        rlPass
+    rlPhaseEnd
 rlJournalEnd
