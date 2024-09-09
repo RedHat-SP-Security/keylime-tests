@@ -18,7 +18,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
 
 	# when in secure boot, install only when IMA CA key has been imported to MOK
-	rlRun -s "mokutil --sb-state" 0,1
+	rlRun -s "mokutil --sb-state" 0,1,127
 	grep -q 'enabled' $rlRun_LOG && SECUREBOOT=true
 
         if $SECUREBOOT; then
