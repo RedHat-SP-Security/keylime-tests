@@ -18,7 +18,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
 
 	# when in secure boot, install only when IMA CA key has been imported to MOK
-	rlRun -s "mokutil --sb-state" 0,1,127
+	rlRun -s "mokutil --sb-state" 0,1,127,255
 	grep -q 'enabled' $rlRun_LOG && SECUREBOOT=true
 
         if $SECUREBOOT; then
@@ -41,6 +41,8 @@ rlJournalStart
         # sign policy file
         rlRun "evmctl ima_sign --hashalgo sha256 --key ${limeIMAPrivateKey} /etc/ima/ima-policy"
         rlRun "getfattr -m - -e hex -d /etc/ima/ima-policy"
+        rlRun "uname -a"
+        rlRun "cat /proc/cmdline"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
         if $SECUREBOOT; then
@@ -71,6 +73,7 @@ rlJournalStart
 
   else
     rlPhaseStartTest "post-reboot IMA test"
+        rlRun "uname -a"
         rlRun -s "cat /proc/cmdline"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
@@ -79,6 +82,8 @@ rlJournalStart
         rlRun "keyctl show %keyring:.ima"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
+        rlRun "dmesg &> dmesg.log"
+        rlFileSubmit dmesg.log
         rlRun "rm $COOKIE"
 
         if [ "${IMA_STATE}" == "on" -o "${IMA_STATE}" == "1" ]; then
