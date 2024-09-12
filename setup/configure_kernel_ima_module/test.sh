@@ -67,6 +67,7 @@ rlJournalStart
         # ensure debugfs won't be mounted
         rlRun "rm -f /{lib,etc}/systemd/system/sysinit.target.wants/sys-kernel-debug.mount"
         rlRun "systemctl daemon-reload"
+        rlRun "sync"
     rlPhaseEnd
 
     rhts-reboot
