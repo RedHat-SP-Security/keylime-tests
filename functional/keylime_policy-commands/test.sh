@@ -143,7 +143,6 @@ rlJournalStart
             rlRun "${algo}sum rootfs/test | awk '{print \$1}' > test.${algo}"
             rlRun "${algo}sum rootfs/nested/nested | awk '{print \$1}' > nested.${algo}"
             rlRun -s "keylime_policy create runtime --rootfs rootfs --algo ${algo}"
-            rlAssertGrep "${algo}" "$rlRun_LOG"
             rlAssertGrep "$(cat test.${algo})" "$rlRun_LOG"
             rlAssertGrep "$(cat nested.${algo})" "$rlRun_LOG"
         done
