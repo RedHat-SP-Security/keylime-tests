@@ -13,12 +13,17 @@ provision:
     role: agent
 
 discover:
+  - name: keylime_install
+    how: fmf
+    test:
+      - /setup/install_upstream_keylime
   - name: agent_setup
     how: fmf
     where:
       - agent
     test:
       - /setup/configure_tpm_emulator
+      - /setup/install_rust_keylime_from_copr
       - /setup/configure_kernel_ima_module/ima_policy_signing
   - name: multihost_test
     how: fmf
