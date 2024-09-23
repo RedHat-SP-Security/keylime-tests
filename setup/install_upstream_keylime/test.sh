@@ -43,7 +43,7 @@ _EOF'
             EXTRA_PIP_PKGS="typing_extensions"
         fi
         rlRun "yum -y install git-core libselinux-python3 patch procps-ng python3-alembic python3-cryptography python3-gpg python3-jinja2 python3-jsonschema python3-pip python3-psutil python3-pyasn1 python3-pyasn1-modules python3-pyyaml python3-requests python3-sqlalchemy python3-tornado tpm2-abrmd tpm2-tss tpm2-tools ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
-        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ] && rlIsFedora; then
             rlRun "yum -y install python3-zmq"
         fi
         # need to install few more pgs from pip
