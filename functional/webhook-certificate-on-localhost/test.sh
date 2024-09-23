@@ -20,10 +20,6 @@ rlJournalStart
             done
         fi
 
-        # restart journald as it seems to get stuck on RHEL-10 but
-        # I wasn't able to figure out the details yet
-        rlRun "systemctl restart systemd-journald "
-
         # Create directory to store certificates and keys
         CERTDIR=/var/lib/keylime/certs
         rlRun "mkdir -p $CERTDIR"
@@ -31,6 +27,7 @@ rlJournalStart
         # Generate keys for TLS certificates
         rlRun "x509KeyGen good-ca" 0 "Generating good CA RSA key pair"
         rlRun "x509KeyGen bad-ca" 0 "Generating bad CA RSA key pair"
+        rlRun "x509KeyGen installed-ca" 0 "Generating installed CA RSA key pair"
         rlRun "x509KeyGen intermediate-ca" 0 "Generating Intermediate CA RSA key pair"
         rlRun "x509KeyGen verifier" 0 "Generating verifier RSA key pair"
         rlRun "x509KeyGen verifier-client" 0 "Generating verifier-client RSA key pair"
@@ -38,15 +35,18 @@ rlJournalStart
         rlRun "x509KeyGen tenant" 0 "Generating tenant RSA key pair"
         rlRun "x509KeyGen good-webhook" 0 "Generating webhook RSA key pair"
         rlRun "x509KeyGen bad-webhook" 0 "Generating bad webhook RSA key pair"
+        rlRun "x509KeyGen installed-webhook" 0 "Generating installed webhook RSA key pair"
 
         # Sign good certificates for each component and the webhook
         rlRun "x509SelfSign good-ca" 0 "Selfsigning good CA certificate"
+        rlRun "x509SelfSign installed-ca" 0 "Selfsigning installed CA certificate"
         rlRun "x509CertSign --CA good-ca --DN 'CN = ${HOSTNAME}' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our goot CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' good-webhook" 0 "Signing webhook certificate with intermediate CA key"
+        rlRun "x509CertSign --CA installed-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' installed-webhook" 0 "Signing webhook certificate with installed CA key"
 
         # Sign bad certificate for the webhook
         rlRun "x509SelfSign bad-ca" 0 "Selfsigning bad CA certificate"
@@ -68,6 +68,8 @@ rlJournalStart
         rlRun "cp $(x509Key good-webhook) $CERTDIR/good-webhook-key.pem"
         rlRun "cp $(x509Cert bad-webhook) $CERTDIR/bad-webhook-cert.pem"
         rlRun "cp $(x509Key bad-webhook) $CERTDIR/bad-webhook-key.pem"
+        rlRun "cp $(x509Cert installed-webhook) $CERTDIR/installed-webhook-cert.pem"
+        rlRun "cp $(x509Key installed-webhook) $CERTDIR/installed-webhook-key.pem"
         # assign cert ownership to keylime user if it exists
         id keylime && rlRun "chown -R keylime:keylime $CERTDIR"
 
@@ -120,20 +122,18 @@ rlJournalStart
         limeCreateTestPolicy
     rlPhaseEnd
 
-    for i in "good-webhook good 8980 none" "bad-webhook bad 8981 CERTIFICATE_VERIFY_FAILED" "none bad 8982 SSLError" "installed good 8983 none"; do
+    for i in "good-webhook good 8980 none" "bad-webhook bad 8981 CERTIFICATE_VERIFY_FAILED" "none bad 8982 SSLError" "installed-webhook good 8983 none"; do
         read -r WEBHOOK EXPECTED_RESULT WEBHOOK_SERVER_PORT EXPECTED_ERROR <<< "${i}"
 
         # This case is to test that the verifier is including the system-wide
         # installed certificates when verifying the revocation notification
         # webhook certificate
-        if [ "${WEBHOOK}" = "installed" ]; then
+        if [ "${WEBHOOK}" = "installed-webhook" ]; then
             rlPhaseStartTest "Install CA certificate on system-wide store, and run on port ${WEBHOOK_SERVER_PORT}"
                 rlRun "limeUpdateConf revocations webhook_url https://localhost:${WEBHOOK_SERVER_PORT}"
-                # Install the "bad" CA certificate on system-wide trust store
-                rlRun "cp $(x509Cert bad-ca) /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
+                # Install the "installed" CA certificate on system-wide trust store
+                rlRun "cp $(x509Cert installed-ca) /etc/pki/ca-trust/source/anchors/webhook-ca.crt"
                 rlRun "update-ca-trust"
-                # Use the "bad" revocation notification webhook certificate
-                WEBHOOK="bad-webhook"
             rlPhaseEnd
         fi
 
