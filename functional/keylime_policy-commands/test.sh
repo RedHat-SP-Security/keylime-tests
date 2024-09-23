@@ -81,11 +81,11 @@ rlJournalStart
         rlAssertGrep "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2" "$rlRun_LOG"
     rlPhaseEnd
 
-    rlPhaseStartTest "Test creating a policy by converting an exclude list with --exclude-list"
+    rlPhaseStartTest "Test creating a policy by converting an exclude list with --excludelist"
         # TODO: Currently, the output is not parseable as JSON directly with a pipe.
         # Possibly related to https://github.com/keylime/keylime/issues/1613
-        # rlRun -s "keylime_policy create runtime --exclude-list ${EXCLUDE_LIST} | jq '.excludes'"
-        rlRun "keylime_policy create runtime --exclude-list ${EXCLUDE_LIST} -o policy.json"
+        # rlRun -s "keylime_policy create runtime --excludelist ${EXCLUDE_LIST} | jq '.excludes'"
+        rlRun "keylime_policy create runtime --excludelist ${EXCLUDE_LIST} -o policy.json"
         rlRun -s "jq '.excludes' policy.json"
         rlAssertGrep "test" "$rlRun_LOG"
     rlPhaseEnd
@@ -110,11 +110,11 @@ rlJournalStart
     rlPhaseStartTest "Add signature verification key with --add-ima-signature-verification-key"
         # TODO: Currently, the output is not parseable as JSON directly with a pipe.
         # Possibly related to https://github.com/keylime/keylime/issues/1613
-        # rlRun -s "keylime_policy create runtime -A $(x509Cert cert) -A $(x509Key pem) -A $(x509Key --der der) | jq '.\"verification-keys\"'"
+        # rlRun -s "keylime_policy create runtime --add-ima-signature-verification-key $(x509Cert cert) --add-ima-signature-verification-key $(x509Key pem) --add-ima-signature-verification-key $(x509Key --der der) | jq '.\"verification-keys\"'"
         rlAssertExists "$(x509Cert cert)"
         rlAssertExists "$(x509Key pem)"
         rlAssertExists "$(x509Key --der der)"
-        rlRun "keylime_policy create runtime -A $(x509Cert cert) -A $(x509Key pem) -A $(x509Key --der der) -o policy.json"
+        rlRun "keylime_policy create runtime --add-ima-signature-verification-key $(x509Cert cert) --add-ima-signature-verification-key $(x509Key pem) --add-ima-signature-verification-key $(x509Key --der der) -o policy.json"
         rlRun -s "jq '.\"verification-keys\"' policy.json"
         for key in cert pem der; do
             rlRun "PUBKEY=$(openssl pkey -in "$(x509Key "${key}")" -pubout | sed 's/----.*//g' | tr -d '\n')"
