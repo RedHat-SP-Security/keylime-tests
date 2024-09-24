@@ -1,0 +1,28 @@
+name: Check upstream CI test parity
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Repository checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install tmt
+        run: |
+          sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system
+          pip install tmt
+
+      - name: Check test parity
+        run: ./scripts/check_upstream_test_parity.sh
