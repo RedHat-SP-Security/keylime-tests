@@ -7,11 +7,6 @@ ALLOW_LIST="allowlist.txt"
 EXCLUDE_LIST="excludelist.txt"
 IMA_LOG="ima_log.txt"
 
-# Construct base URL to download data
-UPSTREAM_NO_SUFFIX=${KEYLIME_UPSTREAM_URL%.git}
-UPSTREAM_USER_REPO=${UPSTREAM_NO_SUFFIX#https://github.com/}
-UPSTREAM_DATA_URL="https://raw.githubusercontent.com/${UPSTREAM_USER_REPO}/${KEYLIME_UPSTREAM_BRANCH}"
-
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
@@ -33,8 +28,8 @@ rlJournalStart
         # Prepare rpm repo
         rlRun "mkdir rpm"
         rlRun "mkdir boot"
-        rlRun "curl -O '${UPSTREAM_DATA_URL}/test/data/create-runtime-policy/setup-rpm-tests'"
-        rlRun "curl -O '${UPSTREAM_DATA_URL}/test/data/create-runtime-policy/setup-initrd-tests'"
+        rlRun "limeCopyKeylimeFile --source test/data/create-runtime-policy/setup-rpm-tests"
+        rlRun "limeCopyKeylimeFile --source test/data/create-runtime-policy/setup-initrd-tests"
         rlRun "chmod +x setup-rpm-tests"
         rlRun "chmod +x setup-initrd-tests"
         rlRun "./setup-rpm-tests ${TMPDIR}/rpm"
