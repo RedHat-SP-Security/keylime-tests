@@ -76,7 +76,7 @@ rlJournalStart
 
     rlPhaseStartTest "Add agent with incorrect tpm_policy"
         rlRun "sed 's/0x[1-9a-f]/0x0/g' mb_refstate2.txt > mb_refstate3.txt"
-        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --runtime-policy policy.json -f /etc/hostname -c add --mb_refstate mb_refstate3.txt"
+        rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --runtime-policy policy.json -f /etc/hostname -c add --mb_refstate mb_refstate3.txt" 1
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Tenant Quote Failed'"
     rlPhaseEnd
 
