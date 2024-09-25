@@ -88,6 +88,7 @@ _EOF'
             rlRun "systemctl daemon-reload"
         fi
 
+        rlRun "usermod -a -G tss keylime"
         # fix conf file ownership
         rlRun "chown -R keylime:keylime /etc/keylime"
         rlRun "find /etc/keylime -type f -exec chmod 400 {} \;"
