@@ -38,9 +38,9 @@ rlJournalStart
         rlRun "x509KeyGen installed-webhook" 0 "Generating installed webhook RSA key pair"
 
         # Sign good certificates for each component and the webhook
-        rlRun "x509SelfSign good-ca" 0 "Selfsigning good CA certificate"
-        rlRun "x509SelfSign installed-ca" 0 "Selfsigning installed CA certificate"
-        rlRun "x509CertSign --CA good-ca --DN 'CN = ${HOSTNAME}' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our goot CA key"
+        rlRun "x509SelfSign good-ca --DN 'CN = goodCA'" 0 "Selfsigning good CA certificate"
+        rlRun "x509SelfSign installed-ca --DN 'CN = installedCA'" 0 "Selfsigning installed CA certificate"
+        rlRun "x509CertSign --CA good-ca --DN 'CN = intermediateCA' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our goot CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' verifier-client" 0 "Signing verifier-client certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with intermediate CA key"
@@ -49,7 +49,7 @@ rlJournalStart
         rlRun "x509CertSign --CA installed-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' installed-webhook" 0 "Signing webhook certificate with installed CA key"
 
         # Sign bad certificate for the webhook
-        rlRun "x509SelfSign bad-ca" 0 "Selfsigning bad CA certificate"
+        rlRun "x509SelfSign bad-ca --DN 'CN = badCA'" 0 "Selfsigning bad CA certificate"
         rlRun "x509CertSign --CA bad-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' bad-webhook" 0 "Signing bad webhook certificate with bad CA key"
 
         # Copy certificates to proper location
