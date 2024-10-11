@@ -32,6 +32,12 @@ adjust:
  - when: distro == fedora-39
    ref: fedora-39
    continue: false
+ - when: distro == fedora-40
+   ref: fedora-40
+   continue: false
+ - when: distro == fedora-41
+   ref: fedora-41
+   continue: false
  - when: distro == fedora
    ref: fedora-rawhide
    continue: false
