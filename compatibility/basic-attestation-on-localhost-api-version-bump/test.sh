@@ -54,20 +54,34 @@ rlJournalStart
     rlPhaseStartTest "Compile keylime agent with old API version"
         # Store a backup of the installed binary
         rlRun "rlFileBackup --namespace agent /usr/bin/keylime_agent"
-        rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
-        rlRun "pushd ${WORKDIR}/rust-keylime"
-
+        # check if I am running agent from RPM file, i.e. not the upstream one
+        # in this case I am going to use sources from RPM file because
+        # I need to use the right version and extra patches from SRPM may
+        # be necessary
+        if rpm -q keylime-agent-rust; then
+            rlLogInfo "Will use agent sources from SRPM"
+            rlFetchSrcForInstalled keylime-agent-rust
+            rlRun "rpm -i keylime-agent-rust*.src.rpm"
+            rlRun "rpmbuild -bp ~/rpmbuild/SPECS/keylime-agent-rust.spec --nodeps --define '_builddir $PWD'" 0,1
+            rlRun "pushd keylime-agent-rust*build/rust-keylime*"
+        else
+            rlLogInfo "Will use agent sources from upstream repo"
+            rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
+            rlRun "pushd ${WORKDIR}/rust-keylime"
+        fi
         # Get a supported version older than the current
         CURRENT_VERSION="$(grep -E '(^.*API_VERSION.*v)([0-9]+\.[0-9]+)' keylime-agent/src/common.rs | grep -o -E '[0-9]+\.[0-9]+')"
         OLD_VERSION="$(grep -o -E "Supported older API versions: .*" "$(limeVerifierLogfile)" | grep -o -E '[0-9]+\.[0-9]+' | sed -n "1,/^$CURRENT_VERSION\$/ p" | grep -v "^$CURRENT_VERSION\$" | tail -1)"
 
         # Replace the API version to fake an older version
+        rlRun "cp keylime-agent/src/common.rs keylime-agent/src/common.rs.backup"
         rlRun "sed -i -E \"s/(^.*API_VERSION.*v)([0-9]+\.[0-9]+)/\1$OLD_VERSION/\" keylime-agent/src/common.rs"
-        rlRun "git diff"
+        rlRun "diff keylime-agent/src/common.rs.backup keylime-agent/src/common.rs" 1
         # Replace agent binary
         rlRun "cargo build"
         rlRun "limeStopAgent"
-        rlRun "cp ./target/debug/keylime_agent /usr/bin/keylime_agent"
+        BUILDDIR=$PWD
+        rlRun "cp ${BUILDDIR}/target/debug/keylime_agent /usr/bin/keylime_agent"
         rlRun "popd"
     rlPhaseEnd
 
@@ -101,7 +115,7 @@ _EOF"
 
     rlPhaseStartTest "Verify that API version downgrade is not allowed"
         rlRun "limeStopAgent"
-        rlRun "cp ${WORKDIR}/rust-keylime/target/debug/keylime_agent /usr/bin/keylime_agent"
+        rlRun "cp ${BUILDDIR}/target/debug/keylime_agent /usr/bin/keylime_agent"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - Agent $AGENT_ID API version $OLD_VERSION is lower or equal to previous version" "$(limeVerifierLogfile)"
