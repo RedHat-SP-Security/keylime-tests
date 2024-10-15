@@ -60,7 +60,7 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 
         # create refstat from fake binary_bios_measurements
-        rlRun "python3 /usr/share/keylime/scripts/create_mb_refstate /var/tmp/binary_bios_measurements mb_refstate.txt"
+        rlRun "/usr/share/keylime/scripts/create_mb_refstate /var/tmp/binary_bios_measurements mb_refstate.txt"
 
         # create allowlist and excludelist
         TESTDIR=$(limeCreateTestDir)
