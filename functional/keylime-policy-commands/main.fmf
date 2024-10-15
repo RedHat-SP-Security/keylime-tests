@@ -8,6 +8,7 @@ test: ./test.sh
 framework: beakerlib
 tag:
   - CI-Tier-1
+  - not-agent-upstream-CI
 require:
   - yum
   - createrepo_c
