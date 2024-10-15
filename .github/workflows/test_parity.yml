@@ -21,7 +21,7 @@ jobs:
 
       - name: Install tmt
         run: |
-          sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system
+          sudo apt-get update && sudo apt install libkrb5-dev pkg-config libvirt-dev genisoimage qemu-kvm libvirt-daemon-system
           pip install tmt
 
       - name: Check test parity
