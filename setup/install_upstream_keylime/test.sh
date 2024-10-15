@@ -10,6 +10,34 @@
 rlJournalStart
 
     rlPhaseStartTest "Install keylime and its dependencies"
+        EXTRA_PKGS="git-core libselinux-python3 patch procps-ng tpm2-abrmd tpm2-tss tpm2-tools rpm-build"
+        PYTHON_PKGS="python3-alembic python3-cryptography python3-gpg python3-jinja2 python3-jsonschema python3-pip python3-psutil python3-pyasn1 python3-pyasn1-modules python3-pyyaml python3-requests python3-sqlalchemy python3-tornado python3-lark-parser python3-packaging"
+        if rlIsRHELLike 9; then
+            EXTRA_PKGS+=" gpgme gcc python3.12-devel libpq-devel"
+            PYTHON_PKGS="python3.12 python3.12-setuptools python3.12-pip python3.12-requests python3.12-pyyaml python3.12-wheel python3-gpg"
+            EXTRA_PIP_PKGS="typing-extensions cryptography packaging pyasn1 pyasn1-modules jinja2 lark jsonschema tornado sqlalchemy psutil alembic pymysql psycopg2"
+        elif rlIsFedora 36; then
+            EXTRA_PKGS+=" python3-pip"
+            EXTRA_PIP_PKGS="typing_extensions"
+        fi
+        rlRun "yum -y install ${EXTRA_PKGS} ${PYTHON_PKGS} ${EXTRA_DNF_ARGS}"
+        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ] && rlIsFedora; then
+            rlRun "yum -y install python3-zmq"
+        fi
+        # need to install few more pgs from pip
+        if [ -n "$EXTRA_PIP_PKGS" ]; then
+	    if rlIsRHELLike 9; then
+                rlRun "pip3.12 install $EXTRA_PIP_PKGS"
+	    else
+                rlRun "pip3 install $EXTRA_PIP_PKGS"
+	    fi
+        fi
+	# need to fake python3.12-gpg since it cannot be installed
+	if rlIsRHELLike 9; then
+            rlRun "cp -r /usr/lib64/python3.9/site-packages/gpg /usr/lib64/python3.12/site-packages/"
+	    rlRun "find /usr/lib64/python3.12/site-packages/gpg -name __pycache__ -exec rm -rf {} \\;" 0,1
+	    rlRun "mv /usr/lib64/python3.12/site-packages/gpg/_gpgme.cpython-39-x86_64-linux-gnu.so /usr/lib64/python3.12/site-packages/gpg/_gpgme.cpython-312-x86_64-linux-gnu.so"
+	fi
         # remove all install keylime packages
         rlRun "yum remove -y --noautoremove python3-keylime\* keylime\*"
         # build and install keylime-99 dummy RPM
@@ -17,39 +45,6 @@ rlJournalStart
         RPMPKG=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
         # replace installed keylime with our newly built dummy package
         rlRun "rpm -Uvh $RPMPKG"
-        EXTRA_PKGS="python3-lark-parser python3-packaging"
-        # for RHEL8 and CentOS Stream8 configure Sergio's copr repo providing necessary dependencies
-        if rlIsRHEL 8 || rlIsCentOS 8; then
-            rlRun 'cat > /etc/yum.repos.d/keylime.repo <<_EOF
-[copr:copr.fedorainfracloud.org:scorreia:keylime]
-name=Copr repo for keylime owned by scorreia
-baseurl=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/centos-stream-\$releasever-\$basearch/
-type=rpm-md
-skip_if_unavailable=True
-gpgcheck=1
-gpgkey=https://download.copr.fedorainfracloud.org/results/scorreia/keylime/pubkey.gpg
-repo_gpgcheck=0
-enabled=1
-enabled_metadata=1
-priority=999
-_EOF'
-            EXTRA_PKGS="python3-pip"
-            rlIsRHEL '<10' && EXTRA_DNF_ARGS="--enablerepo epel" || EXTRA_DNF_ARGS=""
-            EXTRA_PIP_PKGS="packaging lark-parser typing_extensions"
-        elif rlIsRHEL 9 || rlIsCentOS 9; then
-            EXTRA_PKGS+=" python3-typing-extensions"
-        elif rlIsFedora 36; then
-            EXTRA_PKGS+=" python3-pip"
-            EXTRA_PIP_PKGS="typing_extensions"
-        fi
-        rlRun "yum -y install git-core libselinux-python3 patch procps-ng python3-alembic python3-cryptography python3-gpg python3-jinja2 python3-jsonschema python3-pip python3-psutil python3-pyasn1 python3-pyasn1-modules python3-pyyaml python3-requests python3-sqlalchemy python3-tornado tpm2-abrmd tpm2-tss tpm2-tools ${EXTRA_PKGS} ${EXTRA_DNF_ARGS}"
-        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ] && rlIsFedora; then
-            rlRun "yum -y install python3-zmq"
-        fi
-        # need to install few more pgs from pip
-        if [ -n "$EXTRA_PIP_PKGS" ]; then
-            rlRun "pip3 install $EXTRA_PIP_PKGS"
-        fi
         if [ -d /var/tmp/keylime_sources ]; then
             rlLogInfo "Installing keylime from /var/tmp/keylime_sources"
         else
@@ -71,7 +66,11 @@ _EOF'
         [ -d /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations ] && rlRun "rm -rf /usr/local/lib/python*/site-packages/keylime-*/keylime/migrations"
         [ -d /etc/keylime ] && rlRun "mv /etc/keylime /etc/keylime.backup$$" && "rm -rf /etc/keylime"
         rlRun "mkdir -p /etc/keylime && chmod 700 /etc/keylime"
-        rlRun "python3 setup.py install"
+        if rlIsRHELLike 9; then
+            rlRun "python3.12 setup.py install"
+        else
+            rlRun "python3 setup.py install"
+        fi
 
         # create directory structure in /etc/keylime and copy config files there
         for comp in "verifier" "tenant" "registrar" "ca" "logging"; do
@@ -82,6 +81,12 @@ _EOF'
         # install scripts to /usr/share/keylime
         rlRun "mkdir -p /usr/share/keylime"
         rlRun "cp -r scripts /usr/share/keylime/"
+        # update Python version for Python scripts
+        if rlIsRHELLike 9; then
+            find /usr/share/keylime/scripts -type f | while read F; do
+                file "$F" | grep -qi 'python' && rlRun "sed -i '1 s/python3/python3.12/' $F"
+	    done
+        fi
 
         if $INSTALL_SERVICE_FILES; then
             rlRun "cd services; bash installer.sh"
