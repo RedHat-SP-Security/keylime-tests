@@ -62,8 +62,14 @@ rlJournalStart
             rlLogInfo "Will use agent sources from SRPM"
             rlFetchSrcForInstalled keylime-agent-rust
             rlRun "rpm -i keylime-agent-rust*.src.rpm"
+            rlRun "dnf -y builddep ~/rpmbuild/SPECS/keylime-agent-rust.spec"
             rlRun "rpmbuild -bp ~/rpmbuild/SPECS/keylime-agent-rust.spec --nodeps --define '_builddir $PWD'" 0,1
-            rlRun "pushd keylime-agent-rust*build/rust-keylime*"
+            if ls -d keylime-agent-rust*build; then
+                rlRun "pushd keylime-agent-rust*build/rust-keylime*"
+            else
+                rlRun "rm -rf rust-keylime-*SPECPARTS"
+                rlRun "pushd rust-keylime*"
+            fi
         else
             rlLogInfo "Will use agent sources from upstream repo"
             rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
