@@ -32,7 +32,7 @@ adjust+:
     enabled: false
     because: we want to run this plan only for PRs targeting the main branch
 
-  - when: distro != fedora-39 and distro != centos-stream-10
+  - when: distro != fedora-41 and distro != centos-stream-10
     enabled: false
 
   - when: distro == centos-stream-9
