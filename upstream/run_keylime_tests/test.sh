@@ -38,6 +38,12 @@ rlJournalStart
         rlRun "TmpDir=\$( mktemp -d )"
         rlRun "cp -r /var/tmp/keylime_sources/* $TmpDir"
         pushd $TmpDir/test
+
+	# Let's define PYTHONPATH to the keylime source, which will make it
+	# so that we will use primarily the code from the keylime sources
+	# tree under testing, instead of the installed (rpm) modules.
+	rlRun "export PYTHONPATH=\"\${TmpDir}\""
+
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
