@@ -2423,7 +2423,7 @@ limeconRunAgent() {
         PUBLISH_PORTS="-P"
     fi
 
-    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=$TESTDIR:$TESTDIR -e RUST_LOG=keylime_agent=trace -e TCTI=device:/dev/tpmrm${limeTPMDevNo}"
+    local EXTRA_ARGS="--privileged $ADD_PORT $ADD_REV_PORT $PUBLISH_PORTS --volume=/sys/kernel/security/:/sys/kernel/security/:ro --volume=$TESTDIR:$TESTDIR -e RUST_LOG=keylime_agent=trace,keylime=trace -e TCTI=device:/dev/tpmrm${limeTPMDevNo}"
 
     if [ -n "$CONFDIR" ]; then
         EXTRA_ARGS="--volume=${CONFDIR}:/etc/keylime/:z $EXTRA_ARGS"
