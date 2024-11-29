@@ -13,6 +13,7 @@ require:
 - openssl
 - attr
 - ima-evm-utils
+- keyutils
 recommend:
 - mokutil
 duration: 15m
