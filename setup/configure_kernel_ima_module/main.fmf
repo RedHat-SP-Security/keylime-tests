@@ -12,6 +12,8 @@ require:
 - tpm2-tools
 - openssl
 - attr
+- ima-evm-utils
+- keyutils
 recommend:
 - mokutil
 duration: 15m
