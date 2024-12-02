@@ -50,6 +50,10 @@ rlJournalStart
         rlRun "keylime-policy create --help"
         rlRun "keylime-policy create runtime -h"
         rlRun "keylime-policy create runtime --help"
+        rlRun "keylime-policy sign -h"
+        rlRun "keylime-policy sign --help"
+        rlRun "keylime-policy sign runtime -h"
+        rlRun "keylime-policy sign runtime --help"
     rlPhaseEnd
 
     # Generate runtime policy from filesystem
@@ -207,6 +211,117 @@ rlJournalStart
             rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
             rlRun "kill ${SERVER_PID}"
         done
+    rlPhaseEnd
+
+    # Sign runtime policies.
+
+    rlPhaseStartTest "Sign runtime policy with the ECDSA DSSE backend"
+        mkdir -p sign-ecdsa
+        pushd sign-ecdsa || exit
+            rlRun "keylime-policy create runtime -m ../\"${IMA_LOG}\" -o test-policy.json" 0 "Create a policy to use for the signing tests"
+            rlAssertExists test-policy.json
+
+            # Specifying a bad input policy to be signed.
+            rlRun "echo foobar > bad-policy"
+            rlRun "keylime-policy sign runtime -b ecdsa -r bad-policy -o signed-ecdsa-bad.json" 1
+            rlAssertNotExists signed-ecdsa-bad.json
+
+            # Specifying a non-existing policy to be signed.
+            rlRun "keylime-policy sign runtime -b ecdsa -r NON-EXISTING -o signed-ecdsa-non-existing.json" 1
+            rlAssertNotExists signed-ecdsa-non-existing.json
+
+            # Not specifying a key, so it will create one with default name keylime-ecdsa-key.pem.
+            rlRun "keylime-policy sign runtime -b ecdsa -r test-policy.json -o signed-ecdsa-01.json"
+            rlAssertExists signed-ecdsa-01.json
+            rlAssertExists keylime-ecdsa-key.pem
+            # Check the policy was signed by the keylime-ecdsa-key.pem key.
+            rlRun "limeVerifyRuntimePolicySignature signed-ecdsa-01.json keylime-ecdsa-key.pem"
+
+            # Specifying a non existing key.
+            rlRun "keylime-policy sign runtime -b ecdsa -k NON-EXISTING -r test-policy.json -o signed-ecdsa-02.json" 1 "Attempting to use non-existing key"
+            rlAssertNotExists signed-ecdsa-02.json
+
+            # Specifying a key path for the key to be created, since we are
+            # not providng one. We first make sure it does not yet exist.
+            rlAssertNotExists new-key.pem
+            rlRun "keylime-policy sign runtime -b ecdsa -p new-key.pem -r test-policy.json -o signed-ecdsa-03.json"
+            rlAssertExists signed-ecdsa-03.json
+            rlAssertExists new-key.pem
+            # Check the policy was signed by the new-key.pem.
+            rlRun "limeVerifyRuntimePolicySignature signed-ecdsa-03.json new-key.pem"
+
+            # Attempt to use RSA key.
+            rlRun "openssl genrsa -out rsa2048-privkey.pem 2048" 0 "Creating RSA private key (2048)"
+            rlRun "keylime-policy sign runtime -b ecdsa -k rsa2048-privkey.pem -r test-policy.json -o signed-ecdsa-04.json" 1 "Attempting to use RSA key"
+            rlAssertNotExists signed-ecdsa-04.json
+
+            # Now let's use an EC key.
+            rlRun "openssl ecparam -out prime256v1-privkey.pem -name prime256v1 -genkey" 0 "Create EC private key (prime256v1)"
+            rlRun "keylime-policy sign runtime -b ecdsa -k prime256v1-privkey.pem -r test-policy.json -o signed-ecdsa-05.json"
+            rlAssertExists signed-ecdsa-05.json
+            # Check the policy was signed by the proper key.
+            rlRun "limeVerifyRuntimePolicySignature signed-ecdsa-05.json prime256v1-privkey.pem"
+
+            # Finally, let's try to use some dummy data as a key.
+            rlRun "echo foobar > dummy.key"
+            rlRun "keylime-policy sign runtime -b ecdsa -k dummy.pem -r test-policy.json -o signed-ecdsa-06.json" 1 "Attempting to use bad input file as key"
+            rlAssertNotExists signed-ecdsa-06.json
+        popd ||:
+    rlPhaseEnd
+
+    rlPhaseStartTest "Sign runtime policy with the X509 DSSE backend"
+        mkdir -p sign-x509
+        pushd sign-x509 || exit
+            rlRun "keylime-policy create runtime -m ../\"${IMA_LOG}\" -o test-policy.json" 0 "Create a policy to use for the signing tests"
+            rlAssertExists test-policy.json
+
+            # Specifying a bad input policy to be signed.
+            rlRun "echo foobar > bad-policy"
+            rlRun "keylime-policy sign runtime -b x509 -c x509-bad-policy -r bad-policy -o signed-x509-bad.json" 1
+            rlAssertNotExists signed-x509-bad.json
+
+            # Specifying a non-existing policy to be signed.
+            rlRun "keylime-policy sign runtime -b x509 -c x509-non-existing -r NON-EXISTING -o signed-x509-non-existing.json" 1
+            rlAssertNotExists signed-x509-non-existing.json
+
+            # Not specifying a certificate output file, so it should fail.
+            rlRun "keylime-policy sign runtime -b x509 -r test-policy.json -o signed-x509-01.json" 1 "Not specyfing output certificate file"
+            rlAssertNotExists signed-x509-01.json
+
+            # Not specifying a key, so it will create one with default name keylime-ecdsa-key.pem.
+            rlRun "keylime-policy sign runtime -b x509 -c x509-02 -r test-policy.json -o signed-x509-02.json"
+            rlAssertExists signed-x509-02.json
+            rlAssertExists keylime-ecdsa-key.pem
+            rlAssertExists x509-02
+            rlRun "limeVerifyRuntimePolicySignature signed-x509-02.json keylime-ecdsa-key.pem"
+            rlRun "limeVerifyRuntimePolicySignature signed-x509-02.json x509-02"
+
+            # Specifying a non existing key.
+            rlRun "keylime-policy sign runtime -b x509 -c x509-03 -k NON-EXISTING -r test-policy.json -o signed-x509-03.json" 1 "Attempting to use non-existing key"
+            rlAssertNotExists signed-x509-03.json
+            rlAssertNotExists x509-03
+
+            # Attempt to use RSA key.
+            rlRun "openssl genrsa -out rsa2048-privkey.pem 2048" 0 "Creating RSA private key (2048)"
+            rlRun "keylime-policy sign runtime -b x509 -c x509-04 -k rsa2048-privkey.pem -r test-policy.json -o signed-x509-04.json" 1 "Attempting to use RSA key"
+            rlAssertNotExists signed-x509-04.json
+            rlAssertNotExists x509-04
+
+            # Now let's use an EC key.
+            rlRun "openssl ecparam -out prime256v1-privkey.pem -name prime256v1 -genkey" 0 "Create EC private key (prime256v1)"
+            rlRun "keylime-policy sign runtime -b x509 -c x509-05 -k prime256v1-privkey.pem -r test-policy.json -o signed-x509-05.json"
+            rlAssertExists signed-x509-05.json
+            rlAssertExists x509-05
+            # Check the policy was signed by both the key ands the cert.
+            rlRun "limeVerifyRuntimePolicySignature signed-x509-05.json prime256v1-privkey.pem"
+            rlRun "limeVerifyRuntimePolicySignature signed-x509-05.json x509-05"
+
+            # Finally, let's try to use some dummy data as a key.
+            rlRun "echo foobar > dummy.key"
+            rlRun "keylime-policy sign runtime -b x509 -c x509-06 -k dummy.pem -r test-policy.json -o signed-x509-06.json" 1 "Attempting to use bad input file as key"
+            rlAssertNotExists signed-x509-06.json
+            rlAssertNotExists x509-06
+        popd ||:
     rlPhaseEnd
 
     rlPhaseStartCleanup
