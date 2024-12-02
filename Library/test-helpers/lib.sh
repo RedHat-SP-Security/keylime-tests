@@ -254,6 +254,102 @@ function limeIsPythonAgent() {
 
 }
 
+
+true <<'=cut'
+=pod
+
+=head2 limeDssePae
+
+Returns the PAE - "Pre-Authentication Encoding" from a signed Keylime policy.
+This can be used to assist verifying the policy signature.
+
+    limeDssePae
+
+=over
+
+=back
+
+Returns the PAE string for the provided signed runtime policy.
+
+=cut
+
+limeDssePae() {
+    _policy_f="${1}"
+
+    [ -z "${_policy_f}" ] && return 1
+    [ -e "${_policy_f}" ] || return 1
+
+    # Valid JSON.
+    jq -er . "${_policy_f}" >/dev/null 2>&1 || return 1
+
+    # Now let's extract the required data.
+    _payload_b64="$(jq -er .payload "${_policy_f}")" || return 1
+    _payload_t="$(jq -er .payloadType "${_policy_f}")" || return 1
+    _sig_b64="$(jq -er .signatures[].sig "${_policy_f}")" || return 1
+
+    _payload="$(printf '%s' "${_payload_b64}" | base64 -d)"
+    _payload_len="$(printf '%s' "${_payload}" | wc -c)"
+    _payload_t_len="$(printf '%s' "${_payload_t}" | wc -c)"
+    _dsse_h="DSSEv1"
+
+    # Finally, the PAE.
+    printf '%s %s %s %s %s' \
+           "${_dsse_h}" \
+           "${_payload_t_len}" \
+           "${_payload_t}" \
+           "${_payload_len}" \
+           "${_payload}"
+    return 0
+}
+
+
+true <<'=cut'
+=pod
+
+=head2 limeVerifyRuntimePolicySignature
+
+Verifies whether the given runtime policy was signed by the provided
+private key or certificate.
+
+    limeVerifyRuntimePolicySignature
+
+=over
+
+=back
+
+Returns success, if the given runtime policy was signed by the provided private
+key or certificate.
+
+=cut
+
+
+limeVerifyRuntimePolicySignature() {
+    _policy="${1}"
+    _privkey_or_cert="${2}"
+
+    [ -e "${_policy}" ] || return 1
+    [ -e "${_privkey_or_cert}" ] || return 1
+
+    _pubkey=
+    # Let's check if it is a privkey.
+    if ! _pubkey="$(openssl pkey -in "${_privkey_or_cert}" \
+                    -pubout 2>/dev/null)" || [ -z "${_pubkey}" ]; then
+        # Not a privkey; let's check if is a certificate.
+        _pubkey="$(openssl x509 -pubkey -noout -in "${_privkey_or_cert}" \
+                   2>/dev/null)" || return 1
+    fi
+
+    [ -z "${_pubkey}" ] && return 1
+    _pae=$(limeDssePae "${_policy}") || return 1
+    _sig_b64="$(jq -er .signatures[].sig "${_policy}")" || return 1
+
+    openssl dgst -verify <(printf '%s' "${_pubkey}") \
+            -keyform PEM -sha256 \
+            -signature <(printf '%s' "${_sig_b64}" | base64 -d) \
+            -binary <(printf '%s' "${_pae}")
+}
+
+
 # ~~~~~~~~~~~~~~~~~~~~
 #   Backup/Restore
 # ~~~~~~~~~~~~~~~~~~~~
