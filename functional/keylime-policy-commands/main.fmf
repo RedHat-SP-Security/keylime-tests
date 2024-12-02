@@ -15,6 +15,7 @@ require:
   - rpm-sign
   - rpm-build
   - gpg
+  - jq
 recommend:
   - keylime
 duration: 15m
