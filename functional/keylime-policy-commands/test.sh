@@ -6,6 +6,8 @@ BASE_POLICY="base_policy.json"
 ALLOW_LIST="allowlist.txt"
 EXCLUDE_LIST="excludelist.txt"
 IMA_LOG="ima_log.txt"
+MB_LOG="mb_log.bin"
+MB_LOG_SECUREBOOT="mb_log_secureboot.bin"
 
 rlJournalStart
 
@@ -23,6 +25,8 @@ rlJournalStart
         rlRun "cp ${EXCLUDE_LIST} ${TMPDIR}"
         rlRun "cp ${IMA_LOG} ${TMPDIR}"
         rlRun "cp ${BASE_POLICY} ${TMPDIR}"
+        rlRun "cp ${MB_LOG} ${TMPDIR}"
+        rlRun "cp ${MB_LOG_SECUREBOOT} ${TMPDIR}"
         rlRun "cp -r rootfs ${TMPDIR}"
         rlRun "pushd ${TMPDIR}"
         # Prepare rpm repo
@@ -50,6 +54,8 @@ rlJournalStart
         rlRun "keylime-policy create --help"
         rlRun "keylime-policy create runtime -h"
         rlRun "keylime-policy create runtime --help"
+        rlRun "keylime-policy create measured-boot -h"
+        rlRun "keylime-policy create measured-boot --help"
         rlRun "keylime-policy sign -h"
         rlRun "keylime-policy sign --help"
         rlRun "keylime-policy sign runtime -h"
@@ -216,8 +222,8 @@ rlJournalStart
     # Sign runtime policies.
 
     rlPhaseStartTest "Sign runtime policy with the ECDSA DSSE backend"
-        mkdir -p sign-ecdsa
-        pushd sign-ecdsa || exit
+        rlRun "mkdir -p sign-ecdsa"
+        rlRun "pushd sign-ecdsa"
             rlRun "keylime-policy create runtime -m ../\"${IMA_LOG}\" -o test-policy.json" 0 "Create a policy to use for the signing tests"
             rlAssertExists test-policy.json
 
@@ -266,12 +272,12 @@ rlJournalStart
             rlRun "echo foobar > dummy.key"
             rlRun "keylime-policy sign runtime -b ecdsa -k dummy.pem -r test-policy.json -o signed-ecdsa-06.json" 1 "Attempting to use bad input file as key"
             rlAssertNotExists signed-ecdsa-06.json
-        popd ||:
+        rlRun "popd"
     rlPhaseEnd
 
     rlPhaseStartTest "Sign runtime policy with the X509 DSSE backend"
-        mkdir -p sign-x509
-        pushd sign-x509 || exit
+        rlRun "mkdir -p sign-x509"
+        rlRun "pushd sign-x509"
             rlRun "keylime-policy create runtime -m ../\"${IMA_LOG}\" -o test-policy.json" 0 "Create a policy to use for the signing tests"
             rlAssertExists test-policy.json
 
@@ -321,7 +327,31 @@ rlJournalStart
             rlRun "keylime-policy sign runtime -b x509 -c x509-06 -k dummy.pem -r test-policy.json -o signed-x509-06.json" 1 "Attempting to use bad input file as key"
             rlAssertNotExists signed-x509-06.json
             rlAssertNotExists x509-06
-        popd ||:
+        rlRun "popd"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Create measured boot policy"
+        rlRun "mkdir -p measured-boot"
+        rlRun "pushd measured-boot"
+            rlRun "keylime-policy create measured-boot -e \"../${MB_LOG_SECUREBOOT}\" -o mb-policy.json" 0 "Create a measured-boot policy"
+            rlRun -s "jq '.has_secureboot' mb-policy.json"
+            rlAssertGrep "true" "$rlRun_LOG"
+            rlRun -s "jq '.kernels' mb-policy.json"
+            rlAssertGrep "0xb7aa67ab83a8ebe76393e0cf8ba25f9e7b5dc734740cf87e68640f391c207732" "$rlRun_LOG"
+            rlAssertGrep "0xb7aa67ab83a8ebe76393e0cf8ba25f9e7b5dc734740cf87e68640f391c207732" "$rlRun_LOG"
+
+            rlRun "keylime-policy create measured-boot -e \"../${MB_LOG}\" -i -o mb-policy.json" 0 "Create a measured-boot without secure boot"
+            rlRun -s "jq '.has_secureboot' mb-policy.json"
+            rlAssertGrep "false" "$rlRun_LOG"
+            rlRun -s "jq '.kernels' mb-policy.json"
+            rlAssertGrep "0x5f5457bd9d68d9e1c6443c16b6c416be9531f3bca4754a30f5cfdf8038ce01a2" "$rlRun_LOG"
+
+            rlRun "keylime-policy create measured-boot -e \"../${MB_LOG_SECUREBOOT}\" -i -o mb-policy.json" 0 "Create a measured-boot with flag to ignore secure boot"
+            # Check that the flag is ignored because the event log has secure
+            # boot enabled
+            rlRun -s "jq '.has_secureboot' mb-policy.json"
+            rlAssertGrep "true" "$rlRun_LOG"
+        rlRun "popd"
     rlPhaseEnd
 
     rlPhaseStartCleanup
