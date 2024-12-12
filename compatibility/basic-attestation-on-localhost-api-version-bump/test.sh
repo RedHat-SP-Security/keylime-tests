@@ -58,7 +58,7 @@ rlJournalStart
         # in this case I am going to use sources from RPM file because
         # I need to use the right version and extra patches from SRPM may
         # be necessary
-        if rpm -q keylime-agent-rust; then
+        if rpm -q keylime-agent-rust && rpm -q --qf '%{VENDOR}' keylime-agent-rust | grep -qv 'Fedora Copr - user packit'; then
             rlLogInfo "Will use agent sources from SRPM"
             rlFetchSrcForInstalled keylime-agent-rust
             rlRun "rpm -i keylime-agent-rust*.src.rpm"
