@@ -184,7 +184,7 @@ def get_patch_coverage(patch_path, db_path):
     for row in table_context:
         if row[0] in contexts_used:
             prefix = get_test_code(row[0])
-            name = re.sub('^.*\/discover\/[^/]*\/tests', '', row[1])
+            name = re.sub(r'^.*/discover/[^/]*/tests', '', row[1])
             print('  {}  {}'.format(prefix, name))
     print()
 
