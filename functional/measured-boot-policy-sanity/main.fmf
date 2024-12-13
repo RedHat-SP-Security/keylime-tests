@@ -4,8 +4,15 @@ description: |
  Requires TPM and Secure Boot enabled
  Starts verifier, registrar, agent.
  Uses accept-all measured boot policy for the verifier.
- Registers agent providing --mb_refstate generated using create_mb_refstate.
+ Enroll agent with empty measured boot policy and PCR15 set in TPM policy.
+ Check that it fails and generates a warning.
+ Enroll agent with empty measured boot policy and empty TPM policy.
  Confirms that agent passes verification, we use accept-all policy anyway.
+ Restart verifier and configure to use elchecking/example policy.
+ For both policies generated using create_mb_refstate and keylime-policy,
+ re-register and re-enroll agent and confirm that agent passes verification.
+ Using a tampered measured boot policy, re-enroll agent.
+ Confirms that agent fails verification.
 contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
