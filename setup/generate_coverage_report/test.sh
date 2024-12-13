@@ -31,6 +31,7 @@ UPLOAD_SERVICE=$( uploadServiceFind )
 #export PACKIT_SOURCE_SHA=a79b05642bbe04af0ef0a356afd4f5af276898bb
 
 OMIT_FILES="--omit=/var/lib/keylime/secure/unzipped/*,*/keylime/backport_dataclasses.py"
+INCLUDE_FILES='*/*keylime*/*,*/*keylime*'
 
 rlJournalStart
 
@@ -49,22 +50,22 @@ rlJournalStart
         rlAssertExists .coverage
         # packit summary report
         rlLogInfo "keylime-tests code coverage summary report"
-        rlRun -s "coverage report --include '*keylime*' $OMIT_FILES"
+        rlRun -s "coverage report --include '$INCLUDE_FILES' $OMIT_FILES"
         rlAssertGreater "coverage report should contain at least 100 files" $( grep -c keylime $rlRun_LOG ) 100
-        rlRun "coverage xml --include '*keylime*' $OMIT_FILES"
+        rlRun "coverage xml --include '$INCLUDE_FILES' $OMIT_FILES"
         rlRun "mv coverage.xml coverage.packit.xml"
         rlRun "mv .coverage .coverage.packit"
         # testsuite summary report
         if [ -f coverage.testsuite ]; then
             rlLogInfo "keylime testsuite code coverage summary report"
             rlRun "cp coverage.testsuite .coverage"
-            rlRun "coverage report --include '*keylime*' $OMIT_FILES"
+            rlRun "coverage report --include '$INCLUDE_FILES' $OMIT_FILES"
         fi
         # unittests summary report
         if [ -f coverage.unittests ]; then
             rlLogInfo "keylime unittests code coverage summary report"
             rlRun "cp coverage.unittests .coverage"
-            rlRun "coverage report --include '*keylime*' $OMIT_FILES"
+            rlRun "coverage report --include '$INCLUDE_FILES' $OMIT_FILES"
         fi
         # now create overall report including upstream tests
         [ -f coverage.testsuite ] && rlRun "cp coverage.testsuite .coverage.testsuite"
@@ -74,8 +75,8 @@ rlJournalStart
         rlRun "coverage combine"
         ls -l .coverage*
         rlLogInfo "combined code coverage summary report"
-        rlRun "coverage html --include '*keylime*' $OMIT_FILES --show-contexts"
-        rlRun -s "coverage report --include '*keylime*' $OMIT_FILES"
+        rlRun "coverage html --include '$INCLUDE_FILES' $OMIT_FILES --show-contexts"
+        rlRun -s "coverage report --include '$INCLUDE_FILES' $OMIT_FILES"
         CURRENT_COVERAGE=$( sed -nE 's/TOTAL.* ([0-9]*)%/\1/ p' $rlRun_LOG )
 	rlLogInfo "Current total coverage is ${CURRENT_COVERAGE}%"
 	[ "${PATCH_COVERAGE_THRESHOLD}" == "total" ] && PATCH_COVERAGE_THRESHOLD=${CURRENT_COVERAGE}
