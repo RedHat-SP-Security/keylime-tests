@@ -34,11 +34,3 @@ adjust+:
 
   - when: distro != fedora-41 and distro != centos-stream-10
     enabled: false
-
-  - when: distro == centos-stream-9
-    prepare+:
-      - how: shell
-        order: 30
-        script:
-         - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
-

@@ -37,11 +37,3 @@ adjust+:
   - when: multihost is not defined or multihost != yes
     enabled: false
     because: we want to run this plan only in the multihost pipeline
-
-  - when: distro == centos-stream-9
-    prepare+:
-      - how: shell
-        order: 30
-        script:
-         - rpm -Uv https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm https://dl.fedoraproject.org/pub/epel/epel-next-release-latest-9.noarch.rpm || true
-
