@@ -1,0 +1,32 @@
+summary: Run tests from the rhel-10-main branch on the distribution keylime
+
+# unfortunately, filtering using adjust doesn't work for plan for context defined
+# in the very same plan. We need to update packit.yaml
+context:
+  swtpm: yes
+  agent: rust
+  faked_measured_boot_log: no
+
+adjust+:
+ - when: target_PR_branch is defined and target_PR_branch != rhel-10-main
+   enabled: false
+   because: we want to run this plan only for PRs targeting the rhel branch
+
+discover:
+  how: fmf
+  test: 
+   - /setup/apply_workarounds
+   - /setup/configure_tpm_emulator
+   # change IMA policy to simple and run one attestation scenario
+   # this is to utilize also a different parser
+   - /setup/configure_kernel_ima_module/ima_policy_simple
+   #- /setup/enable_keylime_debug_messages
+   - "^/functional/basic-attestation-on-localhost"
+   # now change IMA policy to signing and run all tests
+   - /setup/configure_kernel_ima_module/ima_policy_signing
+   #- /setup/inject_SELinux_AVC_check
+   - "^/functional/.*"
+   - "^/regression/.*"
+
+execute:
+    how: tmt

@@ -1,0 +1,34 @@
+summary:
+  Container tests from the rhel-10-main branch
+
+context:
+  swtpm: yes
+  agent: rust
+  faked_measured_boot_log: no
+
+adjust+:
+ - when: target_PR_branch is defined and target_PR_branch != rhel-10-main
+   enabled: false
+   because: we want to run this plan only for PRs targeting the main branch
+
+environment:
+  AGENT_DOCKERFILE: Dockerfile.agent
+  VERIFIER_DOCKERFILE: Dockerfile.verifier
+  REGISTRAR_DOCKERFILE: Dockerfile.registrar
+  TENANT_DOCKERFILE: Dockerfile.tenant
+
+discover:
+  how: fmf
+  test: 
+   - /setup/apply_workarounds
+   # need two TPM devices
+   - /setup/configure_swtpm_device
+   - /setup/configure_swtpm_device
+   # change IMA policy to simple and run one attestation scenario
+   # this is to utilize also a different parser
+   - /setup/configure_kernel_ima_module/ima_policy_simple
+   - /functional/basic-attestation-on-localhost
+   - "/container/.*"
+
+execute:
+    how: tmt
