@@ -8,6 +8,10 @@ description: |
  Configure python agent to read custom bios_binary_measurements from /var/tmp.
  Re-registers agent providing --mb_refstate generated using create_mb_refstate.
  Confirms that agent fails verification since PCR banks won't match.
+ Fix the PCR banks by extending with events from measured boot log.
+ Generate measured boot policies with create_mb_refstate and keylime-policy.
+ For each policy, re-register and re-enroll agents confirming successful verification.
+ Test commands related with the named measured boot policies.
 contact: Karel Srot <ksrot@redhat.com>
 component:
 - keylime
