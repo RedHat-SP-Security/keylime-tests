@@ -48,4 +48,22 @@ _EOF"
 	rlRun "systemctl daemon-reload"
     rlPhaseEnd
 
+    rlPhaseStartTest "Injecting .coverage archiving code into rlRun"
+
+        BEAKERLIB_SCRIPT=/usr/share/beakerlib/testing.sh
+
+        if grep -q "__INTERNAL_limeCoverageDir" $BEAKERLIB_SCRIPT; then
+            rlLogInfo "Archiving code has been already injected into $BEAKERLIB_SCRIPT"
+        else
+            rlRun "cp $BEAKERLIB_SCRIPT $BEAKERLIB_SCRIPT.pre_injection_backup.$$" 0 "Making backup of $BEAKERLIB_SCRIPT"
+            # modify rlRun()
+            CODE=$(cat <<_EOF
+\[ -n "\$__INTERNAL_limeCoverageDir" \] && \[ "\$PWD" != "\$__INTERNAL_limeCoverageDir" \] && ls .coverage.* &>/dev/null &&  cp -u .coverage.* "\${__INTERNAL_limeCoverageDir}/" &>/dev/null || :
+_EOF
+)
+            rlRun "sed -i '/return \$__INTERNAL_rlRun_exitcode/ i\ ${CODE}\ ' $BEAKERLIB_SCRIPT"
+            grep -B 3 'return $__INTERNAL_rlRun_exitcode' $BEAKERLIB_SCRIPT
+        fi
+    rlPhaseEnd
+
 rlJournalEnd
