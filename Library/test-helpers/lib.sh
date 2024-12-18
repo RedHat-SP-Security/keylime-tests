@@ -461,7 +461,7 @@ __limeStopKeylimeService() {
     fi
 
     # copy .coverage* files to a persistent location
-    $__INTERNAL_limeCoverageEnabled && cp -n .coverage* $__INTERNAL_limeCoverageDir &> /dev/null
+    $__INTERNAL_limeCoverageEnabled && cp -u .coverage.* $__INTERNAL_limeCoverageDir &> /dev/null
 
     return $RET
 
