@@ -10,6 +10,7 @@ tag:
   - CI-Tier-1
   - not-agent-upstream-CI
 require:
+  - library(openssl/certgen)
   - yum
   - createrepo_c
   - openssl
