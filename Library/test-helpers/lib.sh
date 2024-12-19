@@ -1358,7 +1358,7 @@ limeWaitForAgentStatus() {
         AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].operational_state")
         if echo "$AGTSTATE" | grep -E -q "$STATUS"; then
             cat $OUTPUT
-            rm $OUTPUT
+            rm -f $OUTPUT
             return 0
         fi
         if [[ "$((SECONDS - START))" -ge $TIMEOUT ]]; then
@@ -1367,7 +1367,7 @@ limeWaitForAgentStatus() {
         sleep 1
     done
     cat $OUTPUT
-    rm $OUTPUT
+    rm -f $OUTPUT
     return 1
 }
 
@@ -1410,7 +1410,7 @@ limeWaitForAgentRegistration() {
         REGSTATE=$(cat $OUTPUT | grep "^{" | jq -r ".[].operational_state")
         if [ "$REGSTATE" == "Registered" ]; then
             cat $OUTPUT
-            rm $OUTPUT
+            rm -f $OUTPUT
             return 0
         fi
         if [[ "$((SECONDS - START))" -ge $TIMEOUT ]]; then
@@ -1419,7 +1419,7 @@ limeWaitForAgentRegistration() {
         sleep 1
     done
     cat $OUTPUT
-    rm $OUTPUT
+    rm -f $OUTPUT
     return 1
 }
 
