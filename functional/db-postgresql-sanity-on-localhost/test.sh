@@ -29,7 +29,10 @@ rlJournalStart
         rlRun "sed -i '/host.*all.*all.*127.0.0.1.*ident/ s/ident/md5/' /var/lib/pgsql/data/pg_hba.conf"
         rlServiceStart postgresql
         sleep 3
-        rlRun "sudo -u postgres psql -f setup.psql"
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
+        rlRun "cp setup.psql ${TmpDir}/"
+        rlRun "chown postgres: ${TmpDir} -R"
+        rlRun 'su - postgres -c "psql -f ${TmpDir}/setup.psql"'
         # configure keylime
         limeBackupConfig
         # update /etc/keylime.conf
@@ -80,6 +83,7 @@ rlJournalStart
         limeRestoreConfig
         rlFileRestore
         rlServiceRestore postgresql
+        rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
 
 rlJournalEnd
