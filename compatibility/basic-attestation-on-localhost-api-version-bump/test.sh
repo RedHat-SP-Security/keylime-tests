@@ -10,6 +10,8 @@ AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
+        # store test dir so we can apply extra patch later
+        TESTDIR=$PWD
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         # install recommend devel packages from CRB if missing
         rpm -q tpm2-tss-devel 2> /dev/null || INSTALL_PKGS="$INSTALL_PKGS tpm2-tss-devel"
@@ -54,6 +56,7 @@ rlJournalStart
         rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
         rlRun "pushd ${WORKDIR}/rust-keylime"
         rlRun "git checkout v0.2.1"
+	rlRun "git apply $TESTDIR/unnecessary_qualification_warnings.patch"
         # Workaround regression on proc-macro2 build with nightly compiler:
         # See: https://github.com/rust-lang/rust/issues/113152
         rlRun "cargo update -p proc-macro2 --precise 1.0.66"
