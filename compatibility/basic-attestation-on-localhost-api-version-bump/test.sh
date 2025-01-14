@@ -45,7 +45,7 @@ rlJournalStart
     rlPhaseStartTest "Get agent supported versions"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        mapfile -t SUPPORTED_VERSIONS< <(grep -ohE '> Starting server with API version.*' "$(limeAgentLogfile)" | grep -ohE '[0-9]*\.[0-9]*' | sort -V)
+        mapfile -t SUPPORTED_VERSIONS< <(grep -ohE '> Starting server with API version.*' "$(limeAgentLogfile)" | grep -ohE '[0-9]+\.[0-9]+' | sort -V)
         if [[ "${#SUPPORTED_VERSIONS[@]}" -lt 2 ]]; then
             rlFail "Agent supports only one API version: ${SUPPORTED_VERSIONS[*]}"
         fi
