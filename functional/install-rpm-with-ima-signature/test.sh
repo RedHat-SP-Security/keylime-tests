@@ -81,7 +81,13 @@ EOF
         TESTDIR=`limeCreateTestDir`
         rlRun "chmod a+rx ${TESTDIR}"
         # build test rpm
-        rlRun -s "rpmbuild -bb -D 'destdir ${TESTDIR}' ${TEST_SRC_DIR}/rpm-ima-sign-test.spec"
+        DIST_SUFFIX=""
+        if rlIsFedora '>=42'; then
+            DIST_SUFFIX=.f42
+            rlRun "mkdir -p ~/rpmbuild/SOURCES"
+            rlRun "cp ${TEST_SRC_DIR}/rpm-ima-sign-test.sysusers ~/rpmbuild/SOURCES"
+        fi
+        rlRun -s "rpmbuild -bb -D 'destdir ${TESTDIR}' ${TEST_SRC_DIR}/rpm-ima-sign-test.spec${DIST_SUFFIX}"
         RPM_PATH=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
         # generage GPG key for RPM signing
         # add gpg key to rpm macros
@@ -141,6 +147,7 @@ _EOF"
         rlFileRestore
         limeExtendNextExcludelist ${TESTDIR}
         #rlRun "rm -f $TESTDIR/keylime-bad-script.sh"  # possible but not really necessary
+        rlRun "rm -f ~/rpmbuild/SOURCES/rpm-ima-sign-test.sysusers"
     rlPhaseEnd
 
 rlJournalEnd

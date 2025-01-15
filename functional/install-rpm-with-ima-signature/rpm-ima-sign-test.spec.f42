@@ -1,0 +1,32 @@
+# build with
+# $ rpmbuild -bb -D 'destdir /some/destination/dir' rpm-ima-sign-test.spec
+
+Summary: This is the rpm-ima-sign-test package
+Name: rpm-ima-sign-test
+Version: 1
+Release: 1
+Group: System Environment/Base
+License: GPL
+BuildArch: noarch
+BuildRoot:  %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+Source0: rpm-ima-sign-test.sysusers
+%{?sysusers_requires_compat}
+%description
+
+This is a rpm-ima-sign-test test package
+
+%pre
+%sysusers_create_compat %{SOURCE0}
+
+%build
+echo -e '#!/bin/bash\necho' > rpm-ima-sign-test-echo
+
+%install
+install -D -m 755 rpm-ima-sign-test-echo %{buildroot}/%{destdir}/rpm-ima-sign-test-echo
+
+%files
+%{destdir}/rpm-ima-sign-test-echo
+
+%changelog
+* Wed Jan 15 2025 Karel Srot <ksrot@redhat.com> - 0.1-1
+- Update packaging
