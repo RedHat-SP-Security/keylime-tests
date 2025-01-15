@@ -1,0 +1,2 @@
+#Type Name   ID  GECOS                        Home directory  Shell
+u     limetester  -   "limetester user"  /home/limetester      /sbin/nologin
