@@ -21,10 +21,13 @@ rlJournalStart
         rlRun "grcov . --binary-path /usr/bin/ -s /var/tmp/rust-keylime_sources -t html --ignore-not-existing -o e2e_coverage.html"
         # export coverage report in format compatible for codecov, gather code cover for all rust binaries
         rlRun "grcov . --binary-path /usr/bin/ -s /var/tmp/rust-keylime_sources -t lcov --ignore-not-existing -o e2e_coverage.txt"
-        # create tar file for uploading coverage file
+        # compress files for uploading
         rlRun "tar -czf e2e_coverage.tar.gz e2e_coverage.html"
-        rlFileSubmit  e2e_coverage.tar.gz
-        rlFileSubmit e2e_coverage.txt
+        rlRun "tar -czf e2e_coverage.txt.tar.gz e2e_coverage.txt"
+        rlRun "tar -czf upstream_coverage.xml.tar.gz upstream_coverage.xml"
+        rlFileSubmit e2e_coverage.tar.gz
+        rlFileSubmit e2e_coverage.txt.tar.gz
+        rlFileSubmit upstream_coverage.xml.tar.gz
         if [ -f "e2e_coverage.tar.gz" ]; then
             # upload e2e report in tar.gz
             URL=$( uploadServiceUpload -v $UPLOAD_SERVICE e2e_coverage.tar.gz )
