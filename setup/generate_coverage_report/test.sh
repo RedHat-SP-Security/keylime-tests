@@ -2,13 +2,6 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-# to upload code coverage define UPLOAD_COVERAGE=1
-#UPLOAD_COVERAGE=0
-
-# load functions to handle file upload
-. ../../scripts/upload_service.sh
-UPLOAD_SERVICE=$( uploadServiceFind )
-
 # for proper patch code coverage functioning this script
 # expects these env variables to be set from the outside
 # PACKIT_SOURCE_URL - repo URL from which PR comes from
@@ -20,9 +13,6 @@ UPLOAD_SERVICE=$( uploadServiceFind )
 # PATCH_COVERAGE_THRESHOLD=total means the patch coverage should be
 # same or larger than the current total coverage
 [ -n "${PATCH_COVERAGE_THRESHOLD}" ] || PATCH_COVERAGE_THRESHOLD=0
-
-# for Packit PRs we would be uploading code coverage files unless forbidden
-[ -n "${PACKIT_SOURCE_URL}" -a -z "${UPLOAD_COVERAGE}" ] && UPLOAD_COVERAGE=1
 
 #export PACKIT_TARGET_BRANCH=master
 #export PACKIT_SOURCE_BRANCH=quote_before_register
@@ -82,20 +72,6 @@ rlJournalStart
         rlRun "cd .."
         rlRun "tar -czf coverage.tar.gz coverage"
         rlFileSubmit coverage.tar.gz
-        # upload the archive to $UPLOAD_SERVICE
-        if [ "${UPLOAD_COVERAGE}" == "1" ]; then
-            # upload coverage.tar.gz
-            URL=$( uploadServiceUpload -v $UPLOAD_SERVICE coverage.tar.gz )
-            rlLogInfo "HTML code coverage report is available as GZIP archive at $URL"
-            # upload coverage.xml reports
-            for REPORT in coverage.packit.xml coverage.testsuite.xml coverage.unittests.xml; do
-                ls -l coverage/$REPORT
-                if [ -f coverage/$REPORT ]; then
-                    URL=$( uploadServiceUpload -v $UPLOAD_SERVICE coverage/$REPORT )
-                    rlLogInfo "$REPORT report is available at $URL"
-                fi
-            done
-        fi
         rlRun "popd"
     rlPhaseEnd
 
