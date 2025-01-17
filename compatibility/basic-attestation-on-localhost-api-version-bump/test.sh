@@ -56,6 +56,7 @@ rlJournalStart
         rlRun "rlFileBackup --namespace agent /usr/bin/keylime_agent"
         rlRun "git clone ${RUST_KEYLIME_UPSTREAM_URL} ${WORKDIR}/rust-keylime"
         rlRun "pushd ${WORKDIR}/rust-keylime"
+        rlRun "git checkout v0.2.6"
 
         # Get a supported version older than the current
         CURRENT_VERSION="$(grep -E '(^.*API_VERSION.*v)([0-9]+\.[0-9]+)' keylime-agent/src/common.rs | grep -o -E '[0-9]+\.[0-9]+')"
