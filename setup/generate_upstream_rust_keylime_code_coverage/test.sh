@@ -16,12 +16,15 @@ rlJournalStart
         # export coverage report in format compatible for codecov, gather code cover for all rust binaries
         rlRun "grcov . --binary-path /usr/bin/ -s /var/tmp/rust-keylime_sources -t lcov --ignore-not-existing -o e2e_coverage.txt"
         # compress files for uploading
-        rlRun "tar -czf e2e_coverage.tar.gz e2e_coverage.html"
-        rlRun "tar -czf e2e_coverage.txt.tar.gz e2e_coverage.txt"
-        rlRun "tar -czf upstream_coverage.xml.tar.gz upstream_coverage.xml"
-        rlFileSubmit e2e_coverage.tar.gz
-        rlFileSubmit e2e_coverage.txt.tar.gz
-        rlFileSubmit upstream_coverage.xml.tar.gz
+        [ -f e2e_coverage.html ] && \
+                rlRun "tar -czf e2e_coverage.tar.gz e2e_coverage.html" && \
+                rlFileSubmit e2e_coverage.tar.gz
+        [ -f e2e_coverage.txt ] && \
+                rlRun "tar -czf e2e_coverage.txt.tar.gz e2e_coverage.txt" && \
+                rlFileSubmit e2e_coverage.txt.tar.gz
+        [ -f upstream_coverage.xml ] && \
+                rlRun "tar -czf upstream_coverage.xml.tar.gz upstream_coverage.xml" && \
+                rlFileSubmit upstream_coverage.xml.tar.gz
         rlRun "popd"
     rlPhaseEnd
 
