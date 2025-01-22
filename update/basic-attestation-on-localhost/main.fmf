@@ -36,3 +36,7 @@ adjust:
     PHASES: test
   extra-nitrate: TC#0615279
   id: 3ec2b3ba-70ec-4710-9613-56de3d9d66c1
+
+/cleanup:
+  environment:
+    PHASES: cleanup
