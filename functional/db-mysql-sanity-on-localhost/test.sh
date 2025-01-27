@@ -3,6 +3,7 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
+MYSQL_VER=""
 
 rlJournalStart
 
@@ -10,7 +11,8 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         #rlAssertRpm keylime
 
-        rpm -q mysql-server && rlServiceStop mysqld
+        rlIsRHELLike 10 && MYSQL_VER=8.4
+        rpm -q mysql${MYSQL_VER}-server && rlServiceStop mysqld
         rpm -q mariadb-server && rlServiceStop mariadb
 
         # backup and configure mysql/mariadb
@@ -22,7 +24,7 @@ rlJournalStart
         if [ -n "$PKGS" ]; then
             rlRun "yum -y remove $PKGS"
         fi
-        rlRun "yum -y install mysql-server"
+        rlRun "yum -y install mysql${MYSQL_VER}-server"
 
         rlServiceStart mysqld
         sleep 3
@@ -86,7 +88,7 @@ rlJournalStart
 
         # check if mariadb was installed and reinstall it
         if [ -n "$PKGS" ]; then
-            rlRun "yum -y remove mysql-server"
+            rlRun "yum -y remove mysql${MYSQL_VER}-server"
             rlRun "yum -y install $PKGS"
             rlRun "rpm -q $PKGS"
         fi
@@ -95,7 +97,7 @@ rlJournalStart
         limeClearData
         limeRestoreConfig
         rlFileRestore
-        rpm -q mysql-server && rlServiceRestore mysqld
+        rpm -q mysql${MYSQL_VER}-server && rlServiceRestore mysqld
         rpm -q mariadb-server && rlServiceRestore mariadb
     rlPhaseEnd
 
