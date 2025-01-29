@@ -1,0 +1,6 @@
+FROM localhost/bootc:latest
+RUN mkdir -p /keylime-tests /etc/ima/
+COPY 10-ima_kargs.toml /usr/lib/bootc/kargs.d/10-ima_kargs.toml
+COPY ima-policy /etc/ima/ima-policy
+COPY yum.repos.d/* /etc/yum.repos.d/
+RUN dnf -y install selinux-policy-devel swtpm swtpm-tools nmap keylime expect
