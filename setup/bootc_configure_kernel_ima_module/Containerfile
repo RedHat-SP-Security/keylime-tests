@@ -1,14 +1,6 @@
 FROM localhost/bootc:latest
+RUN mkdir -p /keylime-tests /etc/ima/
 COPY 10-ima_kargs.toml /usr/lib/bootc/kargs.d/10-ima_kargs.toml
-RUN mkdir -p /etc/ima/
 COPY ima-policy /etc/ima/ima-policy
-# install various test dependencies
 COPY yum.repos.d/* /etc/yum.repos.d/
-RUN dnf -y install selinux-policy-devel swtpm swtpm-tools nmap keylime
-# create /keylime-tests dir
-RUN mkdir /keylime-tests
-#RUN dd if=/dev/zero of=/var/keylime-tests.img bs=1M count=100 && mkfs.ext4 /var/keylime-tests.img && mkdir /keylime-tests && echo '/var/keylime-tests.img /keylime-tests ext4 loop' >> /etc/fstab
-# add keylimetester user
-#RUN adduser -rm -d /keylime-tests keylimetester
-#USER keylimetester
-#WORKDIR /keylime-tests
+RUN dnf -y install selinux-policy-devel swtpm swtpm-tools nmap keylime expect
