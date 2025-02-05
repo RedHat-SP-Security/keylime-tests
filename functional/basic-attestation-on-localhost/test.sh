@@ -58,7 +58,7 @@ rlJournalStart
             rlAssertExists "${WEBHOOK_CERT}"
             rlAssertExists "${WEBHOOK_KEY}"
             # start revocation notifier webhook server
-            rlRun "sleep 500 | openssl s_server -cert ${WEBHOOK_CERT} -key ${WEBHOOK_KEY} -port ${WEBHOOK_PORT} &> ${WEBHOOK_LOG} &"
+            rlRun "sleep 500 | openssl s_server -cert ${WEBHOOK_CERT} -key ${WEBHOOK_KEY} -pass pass:default -port ${WEBHOOK_PORT} &> ${WEBHOOK_LOG} &"
             WEBHOOK_PID=$!
         fi
     rlPhaseEnd
