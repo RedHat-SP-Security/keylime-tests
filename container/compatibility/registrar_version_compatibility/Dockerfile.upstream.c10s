@@ -1,0 +1,12 @@
+FROM quay.io/centos/centos:stream10-development
+COPY lime_con_install_upstream.sh /usr/local/bin/lime_con_install_upstream
+RUN \
+    rm -f /etc/yum.repos.d/centos.repo && \
+    curl -o /etc/yum.repos.d/c10s.repo 'https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c10s.repo' && \
+    cat /etc/yum.repos.d/* && \
+    chmod a+x /usr/local/bin/lime_con_* && \
+    mkdir -p /mnt/keylime_sources && \
+    cp -r /mnt/keylime_sources /var/tmp/keylime_sources && \
+    /usr/local/bin/lime_con_install_upstream
+COPY reg_data.sqlite cv_data.sqlite /var/lib/keylime/
+RUN chown keylime:keylime /var/lib/keylime/*.sqlite

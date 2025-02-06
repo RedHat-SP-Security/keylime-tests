@@ -1,0 +1,23 @@
+summary: Tests compatibility between different versions of registrar
+description: |
+    Running agents,verifier and registrar and tenant in containers.
+    Register an agent using the old keylime version.
+    Update keylime to a newer version.
+    Run tenant query to verify that registrar can read its database.
+    Do the above again for different "old" keylime versions.
+    Old keylime version can be downloaded from quay or built from dockerfiles.
+contact: Karel Srot <ksrot@redhat.com>
+tag:
+  - container
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - podman
+  - nmap
+recommend:
+  - keylime
+duration: 20m
+enabled: true
