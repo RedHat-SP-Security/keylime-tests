@@ -7,6 +7,8 @@ environment+:
   VERIFIER_IMAGE: keylime/keylime_verifier:master
   REGISTRAR_IMAGE: keylime/keylime_registrar:master
   AGENT_IMAGE: keylime/keylime_agent:master
+  COMP_TEST_KEYLIME_VERSIONS: "v7.3.0 v7.8.0 v7.9.0 v7.10.0 v7.11.0 v7.12.0"
+  COMP_TEST_AGENT_VERSION: "v0.2.4"
 
 discover:
   how: fmf
@@ -21,7 +23,8 @@ discover:
    # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_simple
    #- /setup/inject_SELinux_AVC_check
-   - "/container/.*"
+   - "/container/functional/.*"
+   - "/container/compatibility/.*"
 
 execute:
     how: tmt
