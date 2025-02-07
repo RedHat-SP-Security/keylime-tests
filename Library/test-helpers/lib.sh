@@ -738,7 +738,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 
 limeKeylimeTenant() {
 
-    local TENANT_CMD=$@
+    local TENANT_CMD="$@"
 
     if [ -n "$limeconKeylimeTenantCmd" ]; then
         $limeconKeylimeTenantCmd "$TENANT_CMD" "$limeconTenantVolume"
@@ -2730,9 +2730,8 @@ limeconRunTenant() {
         MOUNT_TENANT="$PWD/cv_ca:/var/lib/keylime/cv_ca/:z $MOUNT_TENANT"
     fi
     
+    echo -e "\nRunning podman:\npodman run --volume $MOUNT_DIR --volume $MOUNT_TENANT --rm --name $NAME --entrypoint= --net $NETWORK --ip $IP $TAG keylime_tenant $TENANT_CMD"
     podman run --volume $MOUNT_DIR --volume $MOUNT_TENANT --rm --name $NAME --entrypoint= --net $NETWORK --ip $IP $TAG keylime_tenant $TENANT_CMD
-    sleep 3
-    limeconStop "tenant_container"
 
 }
 
