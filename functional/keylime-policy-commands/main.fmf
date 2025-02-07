@@ -1,0 +1,22 @@
+summary: Runs keylime-policy commands
+description: |
+ Runs multiple keylime-policy commands to confirm they are functional (basic sanity test).
+contact: Anderson Sasaki <ansasaki@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - createrepo_c
+  - openssl
+  - rpm-sign
+  - rpm-build
+  - gpg
+  - jq
+recommend:
+  - keylime
+duration: 15m
+enabled: true
