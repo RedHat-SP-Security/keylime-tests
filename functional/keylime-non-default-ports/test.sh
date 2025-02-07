@@ -78,7 +78,7 @@ rlJournalStart
             WEBHOOK_LOG=$( mktemp )
             WEBHOOK_CERT="/var/lib/keylime/cv_ca/server-cert.crt"
             WEBHOOK_KEY="/var/lib/keylime/cv_ca/server-private.pem"
-            rlRun "sleep 500 | openssl s_server -cert ${WEBHOOK_CERT} -key ${WEBHOOK_KEY} -port ${WEBHOOK_PORT} &> ${WEBHOOK_LOG} &"
+            rlRun "sleep 500 | openssl s_server -cert ${WEBHOOK_CERT} -key ${WEBHOOK_KEY} -pass pass:default -port ${WEBHOOK_PORT} &> ${WEBHOOK_LOG} &"
             WEBHOOK_PID=$!
         fi
     rlPhaseEnd
