@@ -2730,7 +2730,7 @@ limeconRunTenant() {
         MOUNT_TENANT="$PWD/cv_ca:/var/lib/keylime/cv_ca/:z $MOUNT_TENANT"
     fi
     
-    podman run --volume $MOUNT_DIR --volume $MOUNT_TENANT --name $NAME --net $NETWORK --ip $IP $TAG keylime_tenant $TENANT_CMD
+    podman run --volume $MOUNT_DIR --volume $MOUNT_TENANT --rm --name $NAME --net $NETWORK --ip $IP $TAG keylime_tenant $TENANT_CMD
     sleep 3
     limeconStop "tenant_container"
 
