@@ -27,13 +27,19 @@ yum -y install \
     python3-tornado \
     python3-typing-extensions \
     tpm2-tools \
-    which
+    which \
+    rpm-build \
+    gawk
 
 # if keylime_sources are not present, clone the repo
 if [ ! -f /var/tmp/keylime_sources/setup.py ]; then
     rm -rf /var/tmp/keylime_sources
     git clone https://github.com/keylime/keylime.git /var/tmp/keylime_sources
 fi
+
+# add keylime user
+useradd keylime
+usermod -a -G tss keylime
 
 # install upstream keylime
 pushd /var/tmp/keylime_sources
@@ -49,6 +55,41 @@ done
 # install scripts to /usr/share/keylime
 mkdir -p /usr/share/keylime
 cp -r scripts /usr/share/keylime/
+
+# prepare fake keylime package
+cat > keylime.spec <<_EOF
+Name:		keylime
+Version:	99
+Release:	1
+Summary:	Dummy package preventing keylime RPM installation
+License:	GPLv2+
+BuildArch:  noarch
+Provides: keylime-base = 99
+Provides: keylime-verifier = 99
+Provides: keylime-registrar = 99
+Provides: keylime-tenant = 99
+Provides: python3-keylime = 99
+Obsoletes: keylime-base < 99
+
+%description
+Dummy package that prevents replacing installed keylime bits with keylime RPM
+
+%prep
+
+%build
+
+%install
+
+%files
+
+%changelog
+* Fri Jan 28 2022 Karel Srot <ksrot@redhat.com> 99-1
+- Initial version
+_EOF
+
+rpmbuild -bb keylime.spec 2>&1 | tee build.log
+RPMPKG=$( awk '/Wrote:/ { print $2 }' build.log )
+rpm -ivh $RPMPKG
 
 # enable rust agent COPR repo and install agent
 cat > /etc/yum.repos.d/copr-rust-keylime-master.repo <<_EOF
@@ -71,8 +112,6 @@ mkdir -p /etc/systemd/system/keylime_agent.service.d
 mkdir -p /etc/keylime/agent.conf.d
 
 # fix conf file ownership
-useradd keylime
-usermod -a -G tss keylime
 chown -Rv keylime:keylime /etc/keylime /var/lib/keylime
 find /etc/keylime -type f -exec chmod 400 {} \;
 find /etc/keylime -type d -exec chmod 500 {} \;
