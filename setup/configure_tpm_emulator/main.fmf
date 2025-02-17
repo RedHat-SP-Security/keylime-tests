@@ -10,6 +10,6 @@ framework: beakerlib
 require:
 - yum
 - tpm2-abrmd
-duration: 10m
+duration: 15m
 enabled: true
 extra-nitrate: TC#0611726
