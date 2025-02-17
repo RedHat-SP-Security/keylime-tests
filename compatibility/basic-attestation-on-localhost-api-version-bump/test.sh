@@ -59,6 +59,7 @@ rlJournalStart
     rlPhaseStartTest "Add keylime agent with old API version"
         rlRun "limeUpdateConf agent api_versions \"\\\"${OLD_VERSION}\\\"\""
         rlRun "limeStartAgent"
+        sleep 3
         rlAssertGrep "Starting server with API versions: ${OLD_VERSION}$" "$(limeAgentLogfile)" -E
         rlRun "cat > script.expect <<_EOF
 set timeout 20
@@ -78,6 +79,7 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeUpdateConf agent api_versions \"\\\"${LATEST_VERSION}\\\"\""
         rlRun "limeStartAgent"
+        sleep 3
         rlAssertGrep "Starting server with API versions: ${LATEST_VERSION}$" "$(limeAgentLogfile)" -E
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID API version updated\"' -m 10 -d 1 -t 10"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
@@ -89,6 +91,7 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeUpdateConf agent api_versions \"\\\"${OLD_VERSION}\\\"\""
         rlRun "limeStartAgent"
+        sleep 3
         rlAssertGrep "Starting server with API versions: ${OLD_VERSION}$" "$(limeAgentLogfile)" -E
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - Agent $AGENT_ID API version $OLD_VERSION is lower or equal to previous version" "$(limeVerifierLogfile)"
