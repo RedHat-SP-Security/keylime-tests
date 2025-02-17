@@ -1720,8 +1720,8 @@ limeCreateTestPolicy() {
 
     # create policy.json and create signed policies and keys
     keylime-policy create runtime --allowlist allowlist.txt --excludelist excludelist.txt --output policy.json && \
-    keylime_sign_runtime_policy -r policy.json -p dsse-ecdsa-privkey.key -b ecdsa -o policy-dsse-ecdsa.json && \
-    keylime_sign_runtime_policy -r policy.json -p dsse-x509-privkey.key -b x509 -o policy-dsse-x509.json && \
+    keylime-policy sign runtime -r policy.json -p dsse-ecdsa-privkey.key -b ecdsa -o policy-dsse-ecdsa.json && \
+    keylime-policy sign runtime -r policy.json -p dsse-x509-privkey.key -b x509 -o policy-dsse-x509.json && \
     openssl ec -in dsse-ecdsa-privkey.key -pubout -out dsse-ecdsa-pubkey.pub && \
     openssl ec -in dsse-x509-privkey.key -pubout -out dsse-x509-pubkey.pub
 }
