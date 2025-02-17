@@ -14,4 +14,9 @@ require:
 recommend:
   - keylime
 duration: 2m
-enabled: true
+enabled: false
+
+adjust:
+    when: distro == rhel-9 or distro == centos-stream-9
+    enabled: true
+    because: the tool has been removed from RHEL-10
