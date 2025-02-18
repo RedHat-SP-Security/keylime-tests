@@ -330,6 +330,9 @@ rlJournalStart
         rlRun "popd"
     rlPhaseEnd
 
+  # efivar not available on s390x and ppc64le
+  ARCH=$( rlGetPrimaryArch )
+  if [ "$ARCH" != "s390x" ] && [ "$ARCH" != "ppc64le" ]; then
     rlPhaseStartTest "Create measured boot policy"
         rlRun "mkdir -p measured-boot"
         rlRun "pushd measured-boot"
@@ -353,6 +356,7 @@ rlJournalStart
             rlAssertGrep "true" "$rlRun_LOG"
         rlRun "popd"
     rlPhaseEnd
+  fi
 
     rlPhaseStartCleanup
         rlRun "popd"
