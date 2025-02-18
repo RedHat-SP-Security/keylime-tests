@@ -752,7 +752,7 @@ __limeStartTPMEmulator_swtpm() {
 
     __limeStopTPMEmulator_swtpm
     if rpm -q swtpm &> /dev/null; then
-        mkdir -p /var/lib/tpm/swtpm
+        mkdir -p /var/lib/swtpm/swtpm
         if [ "$limeTPMDevNo" == "0" ]; then
             rlServiceStart swtpm
         else
