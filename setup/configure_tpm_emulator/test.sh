@@ -15,6 +15,7 @@ fi
 # We use ibmswtpm2 for EL8 and swtpm for the other platforms.
 TPM_PKGS_SWTPM="swtpm swtpm-tools"
 TPM_PKGS_IBMSWTPM="ibmswtpm2"
+TPM_RUNTIME_TOPDIR="/var/lib/swtpm"
 
 rlJournalStart
 
@@ -60,9 +61,9 @@ Description=swtpm TPM Software emulator
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/mkdir -p /var/lib/tpm/swtpm
-ExecStartPre=/usr/bin/swtpm_setup --tpm-state /var/lib/tpm/swtpm --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
-ExecStart=/usr/bin/swtpm socket --tpmstate dir=/var/lib/tpm/swtpm --log level=1 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
+ExecStartPre=/usr/bin/mkdir -p ${TPM_RUNTIME_TOPDIR}/swtpm
+ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${TPM_RUNTIME_TOPDIR}/swtpm --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStart=/usr/bin/swtpm socket --tpmstate dir=${TPM_RUNTIME_TOPDIR}/swtpm --log level=1 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
 
 [Install]
 WantedBy=multi-user.target
