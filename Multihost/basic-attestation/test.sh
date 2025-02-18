@@ -311,7 +311,7 @@ Agent() {
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
-        limeCreateTestPolicy
+        rlRun "limeCreateTestPolicy"
     rlPhaseEnd
 
 if [ -n "${AGENT2}" ]; then
@@ -468,7 +468,7 @@ Agent2() {
         # so let's just wait for 20 seconds
         rlRun "sleep 20"
         # create allowlist and excludelist
-        limeCreateTestPolicy
+        rlRun "limeCreateTestPolicy"
 
         # expose lists to Agent
         rlRun "mkdir http"
