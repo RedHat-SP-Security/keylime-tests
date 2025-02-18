@@ -11,6 +11,7 @@
 # Packages list based on the TPM emulator.
 # We use ibmswtpm2 for EL8 and swtpm for the other platforms.
 TPM_EMULATOR=swtpm
+TPM_RUNTIME_TOPDIR="/var/lib/swtpm"
 
 rlJournalStart
 
@@ -33,8 +34,8 @@ _EOF"
             SUFFIX=""
         fi
         # create swtpm unit file as it doesn't exist
-        rlRun "mkdir -p /var/lib/tpm"
-        rlRun "SWTPM_DIR=\$( mktemp -d -p /var/lib/tpm swtpmXXX )"
+        rlRun "mkdir -p ${TPM_RUNTIME_TOPDIR}"
+        rlRun "SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
         rlLogInfo "Creating unit file /etc/systemd/system/swtpm${SUFFIX}.service"
         rlRun "cat > /etc/systemd/system/swtpm${SUFFIX}.service <<_EOF
 [Unit]
