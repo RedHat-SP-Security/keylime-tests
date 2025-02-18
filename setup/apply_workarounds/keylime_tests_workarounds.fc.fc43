@@ -1,0 +1,2 @@
+# https://bugzilla.redhat.com/show_bug.cgi?id=2297942
+/usr/bin/tpm2-abrmd	--	gen_context(system_u:object_r:tabrmd_exec_t,s0)
