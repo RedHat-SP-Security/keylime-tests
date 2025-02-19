@@ -156,6 +156,11 @@ rlJournalStart
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
+        # Evict objects made persistent
+        rlRun "tpm2_evictcontrol -c $(cat ikeys/idevid.handle)"
+        rlRun "tpm2_evictcontrol -c $(cat ikeys/iak.handle)"
+        # Set TPM endorsement hierarchy password back to empty
+        rlRun "tpm2_changeauth -c e -p 'hex:00001a2b3c1a2b3c1a2b3c'"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
