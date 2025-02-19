@@ -1,0 +1,3 @@
+adjust+:
+  - duration+: "*2"
+    when: double_test_duration is defined
