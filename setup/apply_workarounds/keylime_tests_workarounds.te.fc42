@@ -1,0 +1,8 @@
+policy_module(keylime_tests_workarounds, 1.0)
+
+require {
+    type cgroup_t;
+    type keylime_server_t;
+}
+
+fs_dontaudit_search_cgroup_dirs(keylime_server_t)
