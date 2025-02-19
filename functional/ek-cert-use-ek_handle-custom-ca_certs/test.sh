@@ -85,6 +85,9 @@ rlJournalStart
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlRun "limeStopIMAEmulator"
+        # changes authorization values back to empty
+        rlRun "tpm2_changeauth -c o -p '$PASSWORD_TPM'"
+        rlRun "tpm2_changeauth -c e -p '$PASSWORD_TPM'"
         rlRun "limeStopTPMEmulator"
         limeSubmitCommonLogs
         rlRun "limeCondStopAbrmd"
