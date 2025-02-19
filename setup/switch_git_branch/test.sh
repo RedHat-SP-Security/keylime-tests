@@ -2,24 +2,18 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+SCRIPT_URL="https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/refs/heads/main/setup/switch_git_branch/autodetect.sh"
+
 rlJournalStart
 
     rlPhaseStartTest
-        rlAssertRpm git
-        rpm -q redhat-release || rlDie "Not running on RHEL!"
-        rlLogInfo "Current working directory: ${PWD}"
-        rlRun "git status"
-        if [ -z "${SWITCH_TMT_TESTS_BRANCH}" ]; then
-            rlLogInfo "No branch provided using SWITCH_TMT_TESTS_BRANCH variable, using autodetection"
-            VERSION=$(rpm -q --qf "%{VERSION}" redhat-release)
-            rlRun -s "git branch -r"
-            SWITCH_TMT_TESTS_BRANCH=$( grep "origin/rhel-${VERSION}" "$rlRun_LOG" | head -1)
-            [ -z "$SWITCH_TMT_TESTS_BRANCH" ] && SWITCH_TMT_TESTS_BRANCH="rhel-9-main"
-            rlLogInfo "Autodetected branch: $SWITCH_TMT_TESTS_BRANCH"
+        # always download the latest version of the script from main
+        rlRun "curl -o autodetect.sh '${SCRIPT_URL}'"
+        if grep -q rlRun autodetect.sh; then
+            . autodetect.sh
+        else
+            rlFail "Failed to download autodetect.sh script"
         fi
-        rlLogInfo "Switching to branch ${SWITCH_TMT_TESTS_BRANCH}"
-        rlRun "git checkout ${SWITCH_TMT_TESTS_BRANCH}"
-        rlRun "git status"
     rlPhaseEnd
 
 rlJournalEnd
