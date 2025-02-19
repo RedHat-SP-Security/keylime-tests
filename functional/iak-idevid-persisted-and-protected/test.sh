@@ -82,6 +82,8 @@ rlJournalStart
 # The attributes (-a) and algorithms (-g, -G) are specified in 7.3.4.1 Table 3 and 7.3.4.2 Table 4 respectively
 # The policy values (-L) are specified in 7.3.6.6 Table 19
     rlPhaseStartSetup "Create keys, csrs, and import certificates"
+        # flush TPM objects to ensure there is a space for new objects
+        rlRun "tpm2_flushcontext -t -l -s"
         rlRun "mkdir ikeys && cd ikeys"
         rlRun "tpm2_changeauth -c e 'hex:00001a2b3c1a2b3c1a2b3c'"
         # Regenerate IDevID within TPM
