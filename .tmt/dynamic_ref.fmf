@@ -41,6 +41,9 @@ adjust:
  - when: distro == fedora-41
    ref: fedora-41
    continue: false
+ - when: distro == fedora-42
+   ref: fedora-42
+   continue: false
  - when: distro == fedora
    ref: fedora-rawhide
    continue: false
