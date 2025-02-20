@@ -2,86 +2,13 @@ jobs:
 - job: tests
   trigger: pull_request
   identifier: singlehost
-  branch: main
+  branch: fedora-41
   targets:
-    #- fedora-branched
-    - fedora-all
-    - centos-stream-9-x86_64
+    - fedora-41
   skip_build: true
   tf_extra_params:
     environments:
       - tmt:
           context:
-            target_PR_branch: "main"
+            target_PR_branch: "fedora-41"
             multihost: "no"
-- job: tests
-  trigger: pull_request
-  identifier: multihost
-  branch: main
-  targets:
-    - centos-stream-9-x86_64
-  skip_build: true
-  env:
-    SYNC_DEBUG: "1"
-  use_internal_tf: True
-  tf_extra_params:
-    test:
-      tmt:
-        name: "/plans/upstream-keylime-multihost"
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "main"
-            multihost: "yes"
-    settings:
-      pipeline:
-        type: tmt-multihost
-- job: tests
-  trigger: pull_request
-  identifier: singlehost
-  branch: rhel-9-main
-  targets:
-    - centos-stream-9-x86_64
-  skip_build: true
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "rhel-9-main"
-            multihost: "no"
-        artifacts:
-          - type: repository-file
-            id: "https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo"
-- job: tests
-  trigger: pull_request
-  identifier: multihost
-  branch: rhel-9-main
-  targets:
-    - centos-stream-9-x86_64
-  skip_build: true
-  env:
-    SYNC_DEBUG: "1"
-  use_internal_tf: True
-  tf_extra_params:
-    test:
-      tmt:
-        name: "/plans/distribution-c9s-keylime-multihost"
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "rhel-9-main"
-            multihost: "yes"
-    settings:
-      pipeline:
-        type: tmt-multihost
-- job: tests
-  trigger: pull_request
-  branch: fedora-rawhide
-  targets:
-    - fedora-rawhide-x86_64
-  skip_build: true
-  tf_extra_params:
-    environments:
-      - tmt:
-          context:
-            target_PR_branch: "fedora-rawhide"
