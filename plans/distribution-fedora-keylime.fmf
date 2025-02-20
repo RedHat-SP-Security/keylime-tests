@@ -27,6 +27,7 @@ discover:
    - /setup/inject_SELinux_AVC_check
    - "^/functional/.*"
    - "^/regression/.*"
+   - "^/compatibility/.*"
 
 execute:
     how: tmt
