@@ -43,14 +43,15 @@ function assign_server_roles() {
 
         export KEYLIME=${TMT_GUESTS["keylime.hostname"]}
         export AGENT=${TMT_GUESTS["agent.hostname"]}
-        MY_IP="${TMT_GUEST['hostname']}"
+        ME="${TMT_GUEST['hostname']}"
     elif [ -n "$SERVERS" ]; then
         # assign roles using SERVERS and CLIENTS variables
         export KEYLIME=$( echo "$SERVERS $CLIENTS" | awk '{ print $1 }')
         export AGENT=$( echo "$SERVERS $CLIENTS" | awk '{ print $2 }')
     fi
 
-    [ -z "$MY_IP" ] && MY_IP=$( hostname -I | awk '{ print $1 }' )
+    [ -z "$ME" ] && ME=$( hostname -I | awk '{ print $1 }' )
+    MY_IP=$( get_IP $ME )
     [ -n "$KEYLIME" ] && export KEYLIME_IP=$( get_IP $KEYLIME )
     [ -n "${AGENT}" ] && export AGENT_IP=$( get_IP ${AGENT} )
 }
