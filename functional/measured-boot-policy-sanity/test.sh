@@ -57,10 +57,7 @@ rlJournalStart
     rlPhaseEnd
 
     MB_POLICIES=()
-    rlPhaseStartTest "Create measured boot policy using different tools"
-        # use installed create_mb_refstate from /usr/share/keylime/scripts
-        rlRun "python3 /usr/share/keylime/scripts/create_mb_refstate $NO_SB_PARAM /sys/kernel/security/tpm0/binary_bios_measurements mb_refstate2.txt"
-        MB_POLICIES+=("mb_refstate2.txt")
+    rlPhaseStartTest "Create measured boot policy"
         # Use keylime-policy to create the measured boot policy
         rlRun "keylime-policy create measured-boot -e $NO_SB_PARAM /sys/kernel/security/tpm0/binary_bios_measurements -o mb_refstate3.txt"
         MB_POLICIES+=("mb_refstate3.txt")
@@ -85,7 +82,7 @@ rlJournalStart
     done
 
     rlPhaseStartTest "Add agent with incorrect tpm_policy"
-        rlRun "sed 's/0x[1-9a-f]/0x0/g' mb_refstate2.txt > modified_mb_refstate.txt"
+        rlRun "sed 's/0x[1-9a-f]/0x0/g' mb_refstate3.txt > modified_mb_refstate.txt"
         rlRun -s "keylime_tenant -u $AGENT_ID --verify --tpm_policy '{}' --runtime-policy policy.json -f /etc/hostname -c add --mb_refstate modified_mb_refstate.txt" 1
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Tenant Quote Failed'"
     rlPhaseEnd
