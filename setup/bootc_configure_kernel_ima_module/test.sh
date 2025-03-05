@@ -2,6 +2,12 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
+# you can use BOOTC_BASE_IMAGE variable to override a base image in Containerfile
+PODMAN_BUILD_ARGS=""
+[ -n "${BOOTC_BASE_IMAGE}" ] && PODMAN_BUILD_ARGS="${PODMAN_BUILD_ARGS} --build-arg BOOTC_BASE_IMAGE='${BOOTC_BASE_IMAGE}'"
+# you can use BOOTC_INSTALL_PACKAGES variable to override packages installed in Containerfile
+[ -n "${BOOTC_INSTALL_PACKAGES}" ] && PODMAN_BUILD_ARGS="${PODMAN_BUILD_ARGS} --build-arg BOOTC_INSTALL_PACKAGES='${BOOTC_INSTALL_PACKAGES}'"
+
 [ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="fix"
 [ -z "${IMA_POLICY}" ] && IMA_POLICY="tcb"
 [ -z "${IMA_TEMPLATE}" ] && IMA_TEMPLATE="ima-ng"
@@ -14,7 +20,6 @@ rlJournalStart
   if [ ! -e $COOKIE ]; then
     rlPhaseStartSetup "pre-reboot phase"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
-
         # copy IMA policy file
         rlRun "cp ${limeLibraryDir}/${IMA_POLICY_FILE} ima-policy"
 	# prepare extra kernel arguments
@@ -24,8 +29,8 @@ EOF"
         # copy dnf repos
 	rlRun "cp -r /etc/yum.repos.d yum.repos.d"
         # download bootc image and build and install an update
-	rlRun "bootc image copy-to-storage"
-	rlRun "podman build -t localhost/test ."
+	[ "${BOOTC_BASE_IMAGE}" == "localhost/bootc:latest" ] && rlRun "bootc image copy-to-storage"
+	rlRun "podman build ${PODMAN_BUILD_ARGS} -t localhost/test ."
 	rlRun "bootc switch --transport containers-storage localhost/test"
 	# configure /keylime-tests mount point
         rlRun "dd if=/dev/zero of=/var/keylime-tests.img bs=1M count=100"
