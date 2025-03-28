@@ -1,0 +1,17 @@
+summary: Checks if the verifier and registrar starts with a default configuration
+description: |
+    Running all services on localhost.
+    Starts verifier, registrar and verify the status.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+recommend:
+  - keylime
+duration: 5m
+enabled: true
