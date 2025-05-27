@@ -11,3 +11,26 @@ jobs:
       - tmt:
           context:
             target_PR_branch: "rhel-9.6.0"
+- job: tests
+  trigger: pull_request
+  identifier: multihost
+  branch: rhel-9.6.0
+  targets:
+    centos-stream-9-x86_64:
+      distros: [RHEL-9.6.0-Nightly]
+  skip_build: true
+  env:
+    SYNC_DEBUG: "1"
+  use_internal_tf: True
+  tf_extra_params:
+    test:
+      tmt:
+        name: "/plans/distribution-c9s-keylime-multihost.*"
+    environments:
+      - tmt:
+          context:
+            target_PR_branch: "rhel-9.6.0"
+            multihost: "yes"
+    settings:
+      pipeline:
+        type: tmt-multihost
