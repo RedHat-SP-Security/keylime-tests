@@ -1,10 +1,10 @@
-FROM quay.io/centos/centos:stream9
+FROM docker.io/redhat/ubi9:9.6
 COPY id_*.pub /root/
+COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
 RUN \
-  rm -f /etc/yum.repos.d/centos.repo && \
-  curl -o /etc/yum.repos.d/c9s.repo 'https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo' && \
-  cat /etc/yum.repos.d/* && \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh && \
   dnf install -y systemd util-linux-core openssh openssh-server && \
+  dnf clean all && \
   ssh-keygen -A && \
   mkdir -p /root/.ssh && \
   cat /root/id_*.pub > /root/.ssh/authorized_keys && \

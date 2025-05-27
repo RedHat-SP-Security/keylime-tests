@@ -1,8 +1,15 @@
-FROM quay.io/centos/centos:stream9
+FROM docker.io/redhat/ubi9:9.6
+COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
 RUN \
-  rm -f /etc/yum.repos.d/centos.repo && \
-  curl -o /etc/yum.repos.d/c9s.repo 'https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo' && \
-  cat /etc/yum.repos.d/* && \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh
+
+# Add user to workaround https://issues.redhat.com/browse/RHEL-7193
+RUN \
+  dnf install -y tpm2-tss && \
+  getent passwd 'keylime' >/dev/null || \
+      useradd -r -G 'tss' -s '/bin/false' -c 'Keylime unprivileged user' 'keylime'
+
+RUN \
   dnf install -y keylime-agent-rust util-linux-core which && \
   dnf clean all
 
