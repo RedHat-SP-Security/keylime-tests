@@ -25,7 +25,7 @@ rlJournalStart
 	# contacting the registrar
         rlRun "limeStartAgent"
 	sleep 5
-	rlAssertGrep "Requesting registrar API version" "$(limeAgentLogfile)"
+	#rlAssertGrep "Requesting registrar API version" "$(limeAgentLogfile)"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"

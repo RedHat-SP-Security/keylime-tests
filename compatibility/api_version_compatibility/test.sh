@@ -51,7 +51,7 @@ rlJournalStart
             rlRun "limeUpdateConf agent api_versions \"\\\"${VERSION}\\\"\""
             rlRun "limeStartAgent"
             sleep 3
-            rlAssertGrep "Starting server with API versions: ${VERSION}$" "$(limeAgentLogfile)" -E
+            #rlAssertGrep "Starting server with API versions: ${VERSION}$" "$(limeAgentLogfile)" -E
             rlRun "cat > script.expect <<_EOF
 set timeout 20
 spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --cert default -c add

@@ -30,3 +30,8 @@ recommend:
   - zeromq-devel
 duration: 20m
 enabled: true
+
+adjust:
+  - when: distro == centos-stream-9 or distro <= rhel-9.7
+    enabled: false
+    because: keylime agent supports only one API version
