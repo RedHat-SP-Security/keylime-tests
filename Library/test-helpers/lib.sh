@@ -479,8 +479,9 @@ __limeStartKeylimeService() {
 
     # if there is no unit file, execute the process directly
     else
-        # export RUST_LOG=keylime_agent=trace just in case we are using rust-keylime
-        RUST_LOG=keylime_agent=trace
+        # export RUST_LOG=keylime_agent=trace,keylime=trace just in case we are
+        # using rust-keylime
+        RUST_LOG=keylime_agent=trace,keylime=trace
         echo "running: keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &"
         keylime_${NAME} ${ARGS} >> ${LOGFILE} 2>&1 &
     fi
