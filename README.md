@@ -1,5 +1,3 @@
-TEST
-
 # Special Project Upstream Testing Repository for the keylime package
 
 There are multiple projects running tests from this repository.

@@ -487,6 +487,25 @@ __limeStartKeylimeService() {
 
 }
 
+__limeProcesses() {
+    local NAME=$1
+
+    pgrep -af "${NAME}([[:space:]]|\$)" \
+       | grep "/${NAME}" | grep -v grep
+}
+
+__limePIDs() {
+    local NAME=$1
+    __limeProcesses "${NAME}" | awk '{ print $1 }'
+}
+
+__limeStillRunning() {
+    local NAME=$1
+    _nproc="$(__limeProcesses "${NAME}" | wc -l)"
+    [ "${_nproc}" -eq 0 ] && return 1
+    return 0
+}
+
 __limeWaitForProcessEnd() {
     local NAME=$1
     local TIMEOUT=10
@@ -497,7 +516,7 @@ __limeWaitForProcessEnd() {
         echo -n "."
         sleep 1
         # if process has already stopped
-        if ! pgrep -f "${NAME}([[:space:]]|\$)" &> /dev/null; then
+        if ! __limeStillRunning "${NAME}"; then
             RET=0
             break
         fi
@@ -525,27 +544,27 @@ __limeStopKeylimeService() {
     # otherwise stop the process directly
     else
         # send SIGINT when measuring coverage to generate the report
-        if $__INTERNAL_limeCoverageEnabled && pgrep -f "keylime_${NAME}([[:space:]]|\$)" &> /dev/null; then
-            pkill -INT -f keylime_${NAME}
+        if $__INTERNAL_limeCoverageEnabled && __limeStillRunning "keylime_${NAME}"; then
+            kill -2 $(__limePIDs "${NAME}") # SIGINT = 2
             __limeWaitForProcessEnd keylime_${NAME}
         fi
         # send SIGTERM if not stopped yet
-        if pgrep -f "keylime_${NAME}([[:space:]]|\$)" &> /dev/null; then
+        if __limeStillRunning "keylime_${NAME}"; then
             #if $__INTERNAL_limeCoverageEnabled; then
             #    echo "Process wasn't termnated after SIGINT, coverage data may not be correct"
             #    RET=1
             #fi
-            pkill -f keylime_${NAME}
+            kill $(__limePIDs "keylime_${NAME}")
             __limeWaitForProcessEnd keylime_${NAME}
         fi
     fi
 
     # send SIGKILL if the process didn't stop yet
-    if pgrep -f "keylime_${NAME}([[:space:]]|\$)" &> /dev/null; then
-        pgrep -af "keylime_${NAME}([[:space:]]|\$)"
+    if __limeStillRunning "keylime_${NAME}"; then
+        __limeProcesses "keylime_${NAME}"
         echo "Process wasn't terminated with SIGTERM, sending SIGKILL signal..."
         RET=9
-        pkill -KILL -f keylime_${NAME}
+        kill -9 $(__limePIDs "${NAME}") # SIGKILL = 9
         __limeWaitForProcessEnd keylime_${NAME}
     fi
 
