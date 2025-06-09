@@ -77,6 +77,7 @@ if echo ${PHASES} | egrep -qi '(test|all)'; then
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 	sleep 5
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        limeSubmitCommonLogs
     rlPhaseEnd
 
 fi
