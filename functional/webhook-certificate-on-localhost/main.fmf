@@ -26,5 +26,5 @@ require:
 recommend:
   - keylime
   - python3-tomli
-duration: 5m
+duration: 10m
 enabled: true
