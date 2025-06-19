@@ -28,4 +28,18 @@ recommend:
 duration: 15m
 enabled: true
 extra-nitrate: TC#0611725
-id: 81d1da23-9e06-4d2c-b6fe-14df6786c4b0
+/ecdsa:
+    environment:
+        CRYPTO_ALG: ECDSA
+/rsa:
+    environment:
+        CRYPTO_ALG: RSA
+    id: 81d1da23-9e06-4d2c-b6fe-14df6786c4b0
+/pqc_alg:
+    environment:
+        CRYPTO_ALG: ML-DSA-65
+    continue: false
+    adjust+:
+      - enabled: false
+        when: distro < rhel-10.1 or distro < fedora-43
+        because: PQC is available from this version of OS
