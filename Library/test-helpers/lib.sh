@@ -1677,6 +1677,106 @@ END
 true <<'=cut'
 =pod
 
+=head2 limeGeneratePrivateKeyForCertsign
+
+Generates a private key for various algorithms like RSA, EC, and others. The
+key is stored in a directory named after the provided alias.
+
+    # Generate a 4096-bit RSA key
+    limeGeneratePrivateKeyForCertsign "my-rsa-alias" "RSA" 4096
+
+    # Generate an ECDSA key with a specific curve
+    limeGeneratePrivateKeyForCertsign "my-ec-alias" "EC" "secp384r1"
+
+    # Generate an ECDSA key with the default curve (prime256v1)
+    limeGeneratePrivateKeyForCertsign "my-default-ec-alias" "ECDSA"
+
+    # Generate an Ed25519 key (no parameters needed)
+    limeGeneratePrivateKeyForCertsign "my-ed25519-alias" "ED25519"
+
+The function creates a directory based on the alias and places the generated
+private key file, named `key.pem`, within it.
+
+=over
+
+=item alias
+
+The first argument, a mandatory string that serves as an alias for the key.
+A directory with this name will be created to store the key file.
+
+=item algorithm
+
+The second argument, a mandatory string specifying the cryptographic algorithm
+for the key generation (e.g., "RSA", "EC", "ECDSA", "ED25519"). The algorithm
+name must be one that is recognized by `openssl genpkey` or `openssl genrsa`.
+
+=item params
+
+An optional third argument whose meaning depends on the chosen algorithm.
+
+=over
+
+=item *
+
+For B<RSA>, this specifies the key size in bits. Defaults to C<2048>.
+
+=item *
+
+For B<EC> or B<ECDSA>, this specifies the curve name (e.g., C<secp384r1>).
+Defaults to C<prime256v1>.
+
+=item *
+
+For other algorithms like B<ED25519> or B<ML-DSA-65>, this parameter is
+typically unused.
+
+=back
+
+=back
+
+Returns 0 on successful key generation, and a non-zero value otherwise.
+
+=cut
+
+limeGeneratePrivateKeyForCertsign() {
+    local alias="$1"
+    local algorithm="$2"
+    local params="$3"
+    local cmd
+
+    if ! mkdir -p "$alias"; then
+        rlLog "Failed to create directory for alias '$alias'"
+        return 1
+    fi
+
+    local key_path="$alias/key.pem"
+
+    case "$algorithm" in
+        "RSA")
+            local rsa_bits="${params:-2048}"
+            cmd="openssl genrsa -out \"$key_path\" $rsa_bits"
+            ;;
+
+        "EC" | "ECDSA")
+            # For ECDSA, the parameter is the curve name. Default to a common, secure curve.
+            local curve="${params:-prime256v1}"
+            cmd="openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:\"$curve\" -out \"$key_path\""
+            ;;
+
+        *)
+            # For modern algorithms like ML-DSA-65, ED25519, etc.
+            # These often don't require extra parameters.
+            cmd="openssl genpkey -algorithm \"$algorithm\" -out \"$key_path\""
+            ;;
+    esac
+
+    # Assuming rlRun is a helper function you have defined elsewhere.
+    rlRun "$cmd" 0 "Generate private key ($algorithm) -> $alias"
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeCreateTestPolicy
 
 Creates policy.json to be used for testing purposes.
