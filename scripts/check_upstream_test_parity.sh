@@ -1,14 +1,20 @@
 #!/bin/bash
 
-KEYLIME_PLAN_URL="https://raw.githubusercontent.com/keylime/keylime/refs/heads/master/packit-ci.fmf"
-AGENT_PLAN_URL="https://raw.githubusercontent.com/keylime/rust-keylime/refs/heads/master/packit-ci.fmf"
+KEYLIME_REPO_URL="https://github.com/keylime/keylime.git"
+AGENT_REPO_URL="https://github.com/keylime/rust-keylime.git"
 
 function test_filter() {
 	sed 's#^[^/]*##g' | grep -E "^/(functional|compatibility|regression)" | sort -u
 }
 
 function get_upstream_tests() {
-	curl -s "$1" | test_filter
+	WORKDIR=$(pwd)
+	TMPDIR=$( mktemp -d )
+        git clone "$1" "$TMPDIR"
+        pushd "$TMPDIR" || exit
+        tmt run discover -v 2>&1 | sed -n '/^[^/]\s*\// p' | test_filter > "$WORKDIR/$2"
+        popd || exit
+        rm -rf "$TMPDIR"
 }
 
 function get_test_list() {
@@ -32,14 +38,14 @@ get_test_list > tests.txt
 get_agent_test_list > agent_tests.txt
 wc -l tests.txt agent_tests.txt
 echo "Getting a list of tests used in keylime CI..."
-get_upstream_tests "$KEYLIME_PLAN_URL" > keylime.txt
+get_upstream_tests "$KEYLIME_REPO_URL" keylime.txt
 wc -l keylime.txt
 echo
 do_diff agent_tests.txt keylime.txt
 RESULT=$(( RESULT+$? ))
 echo
 echo "Getting a list of tests used in rust-keylime CI..."
-get_upstream_tests "$AGENT_PLAN_URL" > agent.txt
+get_upstream_tests "$AGENT_REPO_URL" agent.txt
 wc -l agent.txt
 echo
 do_diff agent_tests.txt agent.txt
