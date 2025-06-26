@@ -24,31 +24,18 @@ rlJournalStart
         CERTDIR=/var/lib/keylime/certs
         rlRun "mkdir -p $CERTDIR"
 
-        limeGeneratePrivateKeyForCertsign "good-ca" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "bad-ca" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "installed-ca" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "intermediate-ca" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "verifier" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "verifier-client" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "registrar" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "tenant" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "good-webhook" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "bad-webhook" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "installed-webhook" "${CRYPTO_ALG}"
-
-        # Library doesn't support generation of PQC algorithms
         # Generate keys for TLS certificates
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} good-ca" 0 "Generating good CA ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} bad-ca" 0 "Generating bad CA ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} installed-ca" 0 "Generating installed CA ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} intermediate-ca" 0 "Generating Intermediate CA ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} verifier" 0 "Generating verifier ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} verifier-client" 0 "Generating verifier-client ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} registrar" 0 "Generating registrar ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} tenant" 0 "Generating tenant ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} good-webhook" 0 "Generating webhook ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} bad-webhook" 0 "Generating bad webhook ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen -t ${CRYPTO_ALG} installed-webhook" 0 "Generating installed webhook ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} good-ca" 0 "Generating good CA ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} bad-ca" 0 "Generating bad CA ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} installed-ca" 0 "Generating installed CA ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} intermediate-ca" 0 "Generating Intermediate CA ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} verifier" 0 "Generating verifier ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} verifier-client" 0 "Generating verifier-client ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} registrar" 0 "Generating registrar ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} tenant" 0 "Generating tenant ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} good-webhook" 0 "Generating webhook ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} bad-webhook" 0 "Generating bad webhook ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} installed-webhook" 0 "Generating installed webhook ${CRYPTO_ALG} key pair"
 
         # Sign good certificates for each component and the webhook
         rlRun "x509SelfSign good-ca --DN 'CN = goodCA'" 0 "Selfsigning good CA certificate"
