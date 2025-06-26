@@ -30,13 +30,13 @@ duration: 10m
 enabled: true
 /ecdsa:
     environment:
-        CRYPTO_ALG: ECDSA
+        CRYPTO_ALG: ecdsa
 /rsa:
     environment:
-        CRYPTO_ALG: RSA
+        CRYPTO_ALG: rsa
 /pqc_alg:
     environment:
-        CRYPTO_ALG: ML-DSA-65
+        CRYPTO_ALG: mldsa65
     continue: false
     adjust+:
       - enabled: false

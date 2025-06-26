@@ -29,24 +29,13 @@ rlJournalStart
         # tenant = webclient cert used (twice) by the tenant, running on AGENT server
         # webhook = webserver cert used for the revocation notification webhook
         # btw, we could live with just one key instead of generating multiple keys.. but that's just how openssl/certgen works
-
-        limeGeneratePrivateKeyForCertsign "ca" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "intermediate-ca" "${CRYPTO_ALG}" 
-        limeGeneratePrivateKeyForCertsign "verifier" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "verifier-client" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "registrar" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "tenant" "${CRYPTO_ALG}"
-        limeGeneratePrivateKeyForCertsign "webhook" "${CRYPTO_ALG}" 
-
-        # Library doesn't support generation of PQC algorithms
-        # Generate keys for TLS certificates
-        #rlRun "x509KeyGen ca" 0 "Generating Root CA RSA key pair"
-        #rlRun "x509KeyGen intermediate-ca" 0 "Generating Intermediate CA RSA key pair"
-        #rlRun "x509KeyGen verifier" 0 "Generating verifier RSA key pair"
-        #rlRun "x509KeyGen verifier-client" 0 "Generating verifier-client RSA key pair"
-        #rlRun "x509KeyGen registrar" 0 "Generating registrar RSA key pair"
-        #rlRun "x509KeyGen tenant" 0 "Generating tenant RSA key pair"
-        #rlRun "x509KeyGen webhook" 0 "Generating webhook RSA key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} ca" 0 "Generating Root CA ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} intermediate-ca" 0 "Generating Intermediate CA ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} verifier" 0 "Generating verifier ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} verifier-client" 0 "Generating verifier-client ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} registrar" 0 "Generating registrar ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} tenant" 0 "Generating tenant ${CRYPTO_ALG} key pair"
+        rlRun "x509KeyGen -t ${CRYPTO_ALG} webhook" 0 "Generating webhook ${CRYPTO_ALG} key pair"
         #rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
         rlRun "x509SelfSign ca" 0 "Selfsigning Root CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our Root CA key"
