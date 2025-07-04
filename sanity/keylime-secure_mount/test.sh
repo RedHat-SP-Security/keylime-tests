@@ -43,7 +43,7 @@ rlJournalStart
         rlRun "systemctl daemon-reload"
         rlRun "limeStartAgent"
         sleep 3
-        rlAssertGrep "secure_mount > Directory \"$SECURE_DIR\" created" $(limeAgentLogfile)
+        rlAssertGrep "Directory \"$SECURE_DIR\" created" $(limeAgentLogfile)
         #verify that the mount point has been created and tmpfs mounted
         rlRun "findmnt -M \"$SECURE_DIR\" -t tmpfs"
         rlRun "limeStopAgent"
@@ -53,7 +53,7 @@ rlJournalStart
     rlPhaseStartTest "Manual mount dir with wrong fs, agent fail"
         rlRun "mount -t ramfs -o size=1m,mode=0700 ramfs $SECURE_DIR"
         rlRun "limeStartAgent"
-        rlAssertGrep "secure_mount > Secure mount error: Secure storage location $SECURE_DIR already mounted on wrong file system type:" $(limeAgentLogfile)
+        rlAssertGrep "Secure mount error: Secure storage location $SECURE_DIR already mounted on wrong file system type:" $(limeAgentLogfile)
         rlRun "limeStopAgent"
         rlRun "umount $SECURE_DIR"
     rlPhaseEnd
