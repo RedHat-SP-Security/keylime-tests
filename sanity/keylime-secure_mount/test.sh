@@ -53,6 +53,7 @@ rlJournalStart
     rlPhaseStartTest "Manual mount dir with wrong fs, agent fail"
         rlRun "mount -t ramfs -o size=1m,mode=0700 ramfs $SECURE_DIR"
         rlRun "limeStartAgent"
+        sleep 3
         rlAssertGrep "ERROR keylime_agent::secure_mount > Secure mount error: Secure storage location $SECURE_DIR already mounted on wrong file system type:" $(limeAgentLogfile)
         rlRun "limeStopAgent"
         rlRun "umount $SECURE_DIR"
