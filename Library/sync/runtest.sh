@@ -43,7 +43,7 @@ rlJournalStart
         rlPhaseStartTest "Test library import"
             rlRun "sync-set READY"
             rlAssertGrep "READY:.* $( hostname -I )" /var/tmp/sync-status -E
-            rlRun -s "sync-block -d READY $( hostname -i )"
+            rlRun -s "sync-block -d READY $( hostname -I )"
             rlAssertGrep "UNBLOCKED" $rlRun_LOG
             rlServiceStart sync-get
             rlRun -s "ncat --recv-only localhost 2134"
