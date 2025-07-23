@@ -42,12 +42,12 @@ rlJournalStart
     if [[ "$PHASE" =~ "Test" ]]; then
         rlPhaseStartTest "Test library import"
             rlRun "sync-set READY"
-            rlAssertGrep "READY:.* $( hostname -i )" /var/tmp/sync-status -E
+            rlAssertGrep "READY:.* $( hostname -I )" /var/tmp/sync-status -E
             rlRun -s "sync-block -d READY $( hostname -i )"
             rlAssertGrep "UNBLOCKED" $rlRun_LOG
             rlServiceStart sync-get
             rlRun -s "ncat --recv-only localhost 2134"
-            rlAssertGrep "READY:.* $( hostname -i )" $rlRun_LOG -E
+            rlAssertGrep "READY:.* $( hostname -I )" $rlRun_LOG -E
             rlServiceStop sync-get
         rlPhaseEnd
     fi
