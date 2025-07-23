@@ -5,7 +5,7 @@ TMPFILE=$( mktemp )
 [ "$SYNC_DEBUG" == "1" -o "$SYNC_DEBUG" == "true" ] && SYNC_DEBUG=true || SYNC_DEBUG=false
 
 function debug() {
-    $SYNC_DEBUG && echo -e $@
+    "$SYNC_DEBUG" && echo -e "$@"
 }
 
 # enable debug mode?
@@ -58,33 +58,33 @@ function is_blocked() {
         # when I am the SYNC_PROVIDER read statuses locally
         if echo " $MY_IDENTIFIERS " | grep -E -q " $PROVIDER "; then
             debug "reading statuses from local $STATUS_FILE"
-            cat $STATUS_FILE > $TMPFILE
+            cat "$STATUS_FILE" > "$TMPFILE"
         else
             # read the status file over the network
             debug "reading statuses from $PROVIDER"
-            $SYNC_DEBUG && ping -c 1 $PROVIDER
-            ncat --recv-only $PROVIDER $PORT 2> ${$TMPFILE}.stderr > $TMPFILE
+            "$SYNC_DEBUG" && ping -c 1 "$PROVIDER"
+            ncat --recv-only "$PROVIDER" "$PORT" 2> "${TMPFILE}.stderr" > "$TMPFILE"
         fi
 
         if [ $? -eq 0 ]; then
 
-            $SYNC_DEBUG && echo "--- response ---" && cat $TMPFILE && echo "----------------"
+            "$SYNC_DEBUG" && echo "--- response ---" && cat "$TMPFILE" && echo "----------------"
             # I am blocked if there is not a line with STATE for the given IDENTIFIER
-            grep -E -q "^$STATE:" $TMPFILE || BLOCKED=true
-            grep -E -q "^$STATE:.* $IDENTIFIER " $TMPFILE || BLOCKED=true
-            $BLOCKED && debug "$IDENTIFIER is blocked" || debug "$IDENTIFIER is not blocked"
+            grep -E -q "^$STATE:" "$TMPFILE" || BLOCKED=true
+            grep -E -q "^$STATE:.* $IDENTIFIER " "$TMPFILE" || BLOCKED=true
+            "$BLOCKED" && debug "$IDENTIFIER is blocked" || debug "$IDENTIFIER is not blocked"
 
         else
 
             # when getting status failed I am blocked
-            $SYNC_DEBUG && echo "--- stderr ---" && cat ${TMPFILE}.stderr && echo "----------------"
+            "$SYNC_DEBUG" && echo "--- stderr ---" && cat "${TMPFILE}.stderr" && echo "----------------"
             debug "getting status failed"
             BLOCKED=true
 
         fi
 
         # when blocked, terminate the loop
-        if $BLOCKED; then
+        if "$BLOCKED"; then
             debug "$IDENTIFIER is blocked, terminating this round"
             break
         fi
@@ -94,10 +94,10 @@ function is_blocked() {
 
     done
 
-    rm -f $TMPFILE ${TMPFILE}.stderr
-    $BLOCKED && debug "\ndecision is BLOCKED" || debug "\ndecision is NOT BLOCKED"
+    rm -f "$TMPFILE" "${TMPFILE}.stderr"
+    "$BLOCKED" && debug "\ndecision is BLOCKED" || debug "\ndecision is NOT BLOCKED"
 
-    if $BLOCKED; then
+    if "$BLOCKED"; then
         return 0
     else
         return 1
@@ -112,7 +112,7 @@ while is_blocked "$@"; do
     echo "BLOCKED"
     DELAY=${DELAYS%% *}  # current delay
     DELAYS=${DELAYS#* }  # cut-off current delay for DELAYS list (except the last one)
-    sleep $DELAY
+    sleep "$DELAY"
     ROUND=$(( $ROUND+1 ))
     echo -n "Checking status - round $ROUND - $(date +'%T')"
 done
