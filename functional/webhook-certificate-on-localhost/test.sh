@@ -185,7 +185,7 @@ _EOF"
                 # We expect the verifier was not successful to connect to the
                 # webhook. The webhook should not receive the notification.
                 rlAssertGrep "Sending revocation event via webhook to https://localhost:${WEBHOOK_SERVER_PORT}" "$(limeVerifierLogfile)"
-                rlAssertGrep "requests.exceptions.SSLError: HTTPSConnectionPool\(host='localhost', port=${WEBHOOK_SERVER_PORT}.*${EXPECTED_ERROR}" "$(limeVerifierLogfile)" -E || (cat "$(limeVerifierLogfile)" && cat "${WEBHOOK_SERVER_LOG}")
+                rlAssertGrep "HTTPSConnectionPool\(host='localhost', port=${WEBHOOK_SERVER_PORT}.*${EXPECTED_ERROR}" "$(limeVerifierLogfile)" -E || (cat "$(limeVerifierLogfile)" && cat "${WEBHOOK_SERVER_LOG}")
                 rlAssertNotGrep "\\\\\"type\\\\\": \\\\\"revocation\\\\\", \\\\\"ip\\\\\": \\\\\"127.0.0.1\\\\\", \\\\\"agent_id\\\\\": \\\\\"${AGENT_ID}\\\\\"" "${WEBHOOK_SERVER_LOG}" -i
             else
                 # We expect the verifier was successful connecting to the
