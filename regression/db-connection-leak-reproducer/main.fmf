@@ -1,0 +1,43 @@
+summary: Database connection leak reproducer test
+description: |
+    Tests that database connections are properly managed and released under high load.
+    This test reproduces scenarios that would have caused connection leaks before the fix
+    from PR https://github.com/keylime/keylime/pull/1782.
+
+    Configures a small database connection pool and performs intensive operations:
+    - Multiple agent registrations and deletions
+    - Policy creation, updates, and deletions
+    - Concurrent API requests
+    - Agent processing cycles
+
+    Uses file descriptor monitoring (lsof) to detect connection leaks by tracking
+    open file descriptors for the SQLite database file. Additionally uses operation
+    timeout monitoring to detect system unresponsiveness caused by connection leaks.
+
+    This provides direct evidence of leaked connections, as unclosed DB connections
+    leave file descriptors open and can cause operations to hang or timeout.
+
+    Verifies that the connection pool doesn't get exhausted, file descriptor counts
+    remain stable, and operations complete within reasonable timeouts, confirming
+    that the DB connection leak fix is working properly.
+contact: Anderson Sasaki <ansasaki@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - regression
+  - database
+require:
+  - yum
+  - expect
+  - nmap-ncat
+  - sqlite3
+  - lsof
+  - coreutils
+recommend:
+  - keylime
+  - python3-tomli
+duration: 30m
+enabled: true
+id: 2c828a46-f460-48c9-bc17-d140ad441076
