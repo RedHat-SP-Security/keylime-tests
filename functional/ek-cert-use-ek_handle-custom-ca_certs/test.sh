@@ -14,6 +14,13 @@ rlJournalStart
         rlAssertRpm keylime
         # update /etc/keylime.conf
         limeBackupConfig
+        # back CERTDIR
+        if [ -d "${CERTDIR}" ]; then
+            rlFileBackup --clean "$CERTDIR"
+        else
+            rlRun "mkdir -p $CERTDIR"
+        fi
+        rlFileBackup /etc/group  # just to always backup something
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -55,8 +62,6 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
-        # creating dir, where will be store CA cert for veryfi genuine of TPM
-        rlRun "mkdir -p $CERTDIR"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent and verify fail of checking EK cert"
@@ -93,6 +98,7 @@ rlJournalStart
         rlRun "limeCondStopAbrmd"
         limeClearData
         limeRestoreConfig
+        rlFileRestore
     rlPhaseEnd
 
 rlJournalEnd
