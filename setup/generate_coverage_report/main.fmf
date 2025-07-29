@@ -1,7 +1,7 @@
 summary: Generate code coverage report
 description: |
- Generates code coverage report from data gathered on a test system.
- For PR’s tests run via Packit-as-a-service also measure patch specific code coverage.
+    Generates code coverage report from data gathered on a test system.
+    For PR’s tests run via Packit-as-a-service also measure patch specific code coverage.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
@@ -19,3 +19,4 @@ require:
 duration: 10m
 enabled: true
 extra-nitrate: TC#0612775
+id: c596f79a-f419-4635-9aec-08cfd2fb94d9

@@ -22,10 +22,6 @@ require:
   - gawk
   - gnupg2
   - rng-tools
-# do not install rpm-plugin-ima so we won't install RHEL packages with signatures
-# bogus IMA signatures is old C9S image are breaking our tests
-# see https://github.com/keylime/keylime/issues/1030 for details
-#  - rpm-plugin-ima
   - pinentry
 recommend:
   - keylime
@@ -33,9 +29,11 @@ duration: 5m
 adjust:
   - when: distro <= fedora-36
     enabled: false
-    because: rpm issue not fixed in F36 https://github.com/rpm-software-management/rpm/pull/1914
+    because: rpm issue not fixed in F36 
+        https://github.com/rpm-software-management/rpm/pull/1914
   - when: distro == rhel-8 or distro = centos-stream-8
     enabled: false
     because: RHEL-8 has old kernel
 enabled: true
 extra-nitrate: TC#0613628
+id: cee4cda1-4b05-4eed-ade7-fa5c9ace9a95

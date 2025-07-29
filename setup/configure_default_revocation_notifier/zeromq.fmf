@@ -3,3 +3,4 @@ description: Configures zeromq as a default revocation notifier in keylime.conf
 environment:
     REVOCATION_NOTIFIER: zeromq
 extra-nitrate: TC#0614040
+id: 3e7cb95b-5d6b-45f5-a4fb-832c2a131467

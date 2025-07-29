@@ -1,10 +1,10 @@
 summary: Basic test of tpm_policy on localhost
 description: |
- Running all services on localhost.
- Update keylime.conf with tpm_policy monitoring PCR bank 23.
- Register agent and confirm it passes attestation.
- Update PRC 23 with a new value and confirm that agent failed attestation.
- Run keylime_tenant -c update –tpm_policy overriding policy configuration from keylime.conf, confirm that agent is passing the attestation again.
+    Running all services on localhost.
+    Update keylime.conf with tpm_policy monitoring PCR bank 23.
+    Register agent and confirm it passes attestation.
+    Update PRC 23 with a new value and confirm that agent failed attestation.
+    Run keylime_tenant -c update –tpm_policy overriding policy configuration from keylime.conf, confirm that agent is passing the attestation again.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
@@ -20,3 +20,4 @@ recommend:
 duration: 5m
 enabled: true
 extra-nitrate: TC#0612863
+id: 9c2c0e09-1203-45e5-9875-7c38723e9159

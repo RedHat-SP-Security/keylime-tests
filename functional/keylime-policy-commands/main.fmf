@@ -1,6 +1,6 @@
 summary: Runs keylime-policy commands
 description: |
- Runs multiple keylime-policy commands to confirm they are functional (basic sanity test).
+    Runs multiple keylime-policy commands to confirm they are functional (basic sanity test).
 contact: Anderson Sasaki <ansasaki@redhat.com>
 component:
   - keylime
@@ -22,3 +22,4 @@ recommend:
   - keylime
 duration: 15m
 enabled: true
+id: 82a7d76d-b45e-4102-84f4-0a728a89c3ac
