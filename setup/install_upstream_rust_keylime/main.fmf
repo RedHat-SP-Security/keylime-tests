@@ -1,22 +1,24 @@
 summary: Install rust-keylime upstream bits
-description: Download rust keylime agent and replace default python keylime agent for keylime agent in rust.
+description: Download rust keylime agent and replace default python keylime 
+    agent for keylime agent in rust.
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
- - setup
+  - setup
 framework: beakerlib
 require:
- - cargo
- - clang-devel
- - gcc
- - git
- - libarchive-devel
- - openssl-devel
- - rpm-build
- - tpm2-tss-devel
- - yum
+  - cargo
+  - clang-devel
+  - gcc
+  - git
+  - libarchive-devel
+  - openssl-devel
+  - rpm-build
+  - tpm2-tss-devel
+  - yum
 duration: 20m
 enabled: true
 extra-nitrate: TC#0613570
+id: 5bb5d56e-f475-437b-a47b-a2646c8074cc

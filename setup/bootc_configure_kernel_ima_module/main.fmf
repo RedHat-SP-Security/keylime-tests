@@ -2,16 +2,16 @@ summary: Configures kernel IMA for image mode
 description: Enables kernel_ima on a running system in image mode
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
-- setup
-- image-mode
+  - setup
+  - image-mode
 framework: beakerlib
 require:
 duration: 45m
 enabled: false
-
 adjust:
   - when: deployment_mode is defined and deployment_mode == image
     enabled: true
+id: 00098092-455d-4d4a-b12f-878fcbeed56d

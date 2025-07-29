@@ -1,4 +1,4 @@
-summary:  Test of keylime durable attestation
+summary: Test of keylime durable attestation
 description: |
     Running all services on localhost.
     Configures agent to validate durable attestation.
@@ -8,17 +8,17 @@ description: |
     Run keylime_attest CLI to ensure store attestation artifacts are attested.
 contact: Marcio Silva <marcio.a.silva@ibm.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 framework: beakerlib
 require:
-- yum
-- tpm2-tools
-- tss2
-- tpm2-tss
+  - yum
+  - tpm2-tools
+  - tss2
+  - tpm2-tss
 recommend:
-- keylime
-- efivar-libs
+  - keylime
+  - efivar-libs
 duration: 5m
 enabled: true
 adjust:
@@ -33,8 +33,11 @@ adjust:
     because: RHEL-8 has old tpm2-tools
   - when: agent == rust and faked_measured_boot_log is not defined
     enabled: false
-    because: For Rust agent we are not able to fake measuredboot log during runtime
+    because: For Rust agent we are not able to fake measuredboot log during 
+        runtime
   - when: agent == rust and faked_measured_boot_log != yes
     enabled: false
-    because: For Rust agent we are not able to fake measuredboot log during runtime
+    because: For Rust agent we are not able to fake measuredboot log during 
+        runtime
 extra-nitrate: TC#0615273
+id: ca228e8b-ee98-40d9-ac66-aba595873f90

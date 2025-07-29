@@ -1,4 +1,4 @@
-summary:  Test of keylime checking of endorsment key by script
+summary: Test of keylime checking of endorsment key by script
 description: |
     Running all services on localhost.
     Configures agent to validate EK cert through ek_check_script
@@ -14,8 +14,9 @@ tag:
   - CI-Tier-1
 require:
   - yum
-  - tpm2-tools 
+  - tpm2-tools
 recommend:
   - keylime
 duration: 5m
 extra-nitrate: TC#0614117
+id: 7bdc0091-953c-4603-84d9-8e1eae07346c

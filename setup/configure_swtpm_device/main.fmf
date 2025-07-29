@@ -1,19 +1,21 @@
 summary: Configures emulated TPM device on a running system
-description: Configures emulated TPM as a device using the kernel vtpm proxy module
+description: Configures emulated TPM as a device using the kernel vtpm proxy 
+    module
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
-- setup
+  - setup
 framework: beakerlib
 require:
-- yum
-- tpm2-tss
-- tpm2-tools
-- selinux-policy-devel
+  - yum
+  - tpm2-tss
+  - tpm2-tools
+  - selinux-policy-devel
 recommend:
-- swtpm
-- swtpm-tools
+  - swtpm
+  - swtpm-tools
 duration: 5m
 enabled: true
+id: bfadf8e3-6f60-4cd2-ab78-46f6b207066f

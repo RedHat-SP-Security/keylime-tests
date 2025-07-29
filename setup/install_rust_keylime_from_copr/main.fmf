@@ -1,13 +1,15 @@
 summary: Install rust-keylime RPM from packit/keylime-rust-keylime-master
-description: Install the Rust keylime agent RPM from COPR repo packit/keylime-rust-keylime-master
+description: Install the Rust keylime agent RPM from COPR repo 
+    packit/keylime-rust-keylime-master
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
- - setup
+  - setup
 framework: beakerlib
 require:
- - yum
+  - yum
 duration: 5m
 enabled: true
+id: 560481d7-3d2c-4608-b5b5-4f576b5fe4b5

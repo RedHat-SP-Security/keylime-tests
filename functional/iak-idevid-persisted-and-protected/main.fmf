@@ -1,4 +1,5 @@
-summary:  Test persisted IAK and IDevID credentials that are protected with hex passwords
+summary: Test persisted IAK and IDevID credentials that are protected with hex 
+    passwords
 description: |
     Generate iak and idevid certs, persist keys within the TPM
     Also uses a hex password for the TPM itself
@@ -11,7 +12,7 @@ test: ./test.sh
 framework: beakerlib
 require:
   - yum
-  - tpm2-tools 
+  - tpm2-tools
   - /usr/bin/xxd
 recommend:
   - keylime
@@ -21,3 +22,4 @@ enabled: true
 adjust:
   - when: distro < fedora-39 or distro == centos-stream-9 or distro == rhel-9
     enabled: false
+id: c15594d2-fcd2-4f37-ad2f-454d00045c8d
