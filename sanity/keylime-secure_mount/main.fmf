@@ -1,9 +1,9 @@
 summary: Tests secure mount on keylime agent
 description: |
- Running keylime verifier and registrar on localhost.
- Start agent and check creating and mount secure dir.
- Manually mount secure dir with wrong FS and restart
- agent. Check that agent fail.
+    Running keylime verifier and registrar on localhost.
+    Start agent and check creating and mount secure dir.
+    Manually mount secure dir with wrong FS and restart
+    agent. Check that agent fail.
 contact: Patrik Koncity <pkoncity@redhat.com>
 component:
   - keylime
@@ -15,3 +15,4 @@ recommend:
   - keylime
 duration: 5m
 enabled: true
+id: e6641349-e716-4d7c-8087-a50baa8e7e72

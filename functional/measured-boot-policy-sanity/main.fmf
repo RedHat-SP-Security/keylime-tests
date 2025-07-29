@@ -1,37 +1,39 @@
 summary: Tests configuration of a measured boot policy
 description: |
- Running all services on localhost.
- Requires TPM and Secure Boot enabled
- Starts verifier, registrar, agent.
- Uses accept-all measured boot policy for the verifier.
- Enroll agent with empty measured boot policy and PCR15 set in TPM policy.
- Check that it fails and generates a warning.
- Enroll agent with empty measured boot policy and empty TPM policy.
- Confirms that agent passes verification, we use accept-all policy anyway.
- Restart verifier and configure to use elchecking/example policy.
- For both policies generated using create_mb_refstate and keylime-policy,
- re-register and re-enroll agent and confirm that agent passes verification.
- Using a tampered measured boot policy, re-enroll agent.
- Confirms that agent fails verification.
+    Running all services on localhost.
+    Requires TPM and Secure Boot enabled
+    Starts verifier, registrar, agent.
+    Uses accept-all measured boot policy for the verifier.
+    Enroll agent with empty measured boot policy and PCR15 set in TPM policy.
+    Check that it fails and generates a warning.
+    Enroll agent with empty measured boot policy and empty TPM policy.
+    Confirms that agent passes verification, we use accept-all policy anyway.
+    Restart verifier and configure to use elchecking/example policy.
+    For both policies generated using create_mb_refstate and keylime-policy,
+    re-register and re-enroll agent and confirm that agent passes verification.
+    Using a tampered measured boot policy, re-enroll agent.
+    Confirms that agent fails verification.
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 framework: beakerlib
 require:
-- yum
-- tpm2-tools
-- mokutil
+  - yum
+  - tpm2-tools
+  - mokutil
 recommend:
-- keylime
-- efivar-libs
+  - keylime
+  - efivar-libs
 duration: 5m
 enabled: true
 extra-nitrate: TC#0613891
 adjust:
   - when: secureboot is not defined or secureboot != yes
     enabled: false
-    because: This tests works only with SecureBoot enabled or modified keylime agent
+    because: This tests works only with SecureBoot enabled or modified keylime 
+        agent
   - when: swtpm == yes
     enabled: false
     because: This tests needs TPM device since kernel boot
+id: beb255ea-7fe2-4611-a914-108774d06a3d
