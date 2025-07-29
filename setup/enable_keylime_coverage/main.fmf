@@ -1,5 +1,6 @@
 summary: Enable code coverage stats gathering
-description: Enables code coverage gathering for keylime scripts on a test system.
+description: Enables code coverage gathering for keylime scripts on a test 
+    system.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
@@ -16,3 +17,4 @@ require:
 duration: 5m
 enabled: true
 extra-nitrate: TC#0612766
+id: 5438d841-8588-49c8-8644-5bada4443c09

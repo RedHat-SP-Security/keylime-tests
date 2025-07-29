@@ -1,4 +1,5 @@
-summary: Checks if the verifier and registrar starts with a default configuration
+summary: Checks if the verifier and registrar starts with a default 
+    configuration
 description: |
     Running all services on localhost.
     Starts verifier, registrar and verify the status.
@@ -15,3 +16,4 @@ recommend:
   - keylime
 duration: 5m
 enabled: true
+id: fec35153-9761-4210-a356-089988827606

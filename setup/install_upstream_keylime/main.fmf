@@ -1,17 +1,19 @@
 summary: Install keylime upstream bits
-description: Downloads and installs keylime bits from upstream github repository.
+description: Downloads and installs keylime bits from upstream github 
+    repository.
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
- - setup
+  - setup
 framework: beakerlib
 require:
- - git
- - yum
- - gawk
- - rpm-build
+  - git
+  - yum
+  - gawk
+  - rpm-build
 duration: 5m
 enabled: true
 extra-nitrate: TC#0611727
+id: 03925aaf-3b41-4ada-9a48-9ee66e207745

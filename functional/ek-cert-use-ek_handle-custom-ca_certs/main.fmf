@@ -1,4 +1,5 @@
-summary:  Test of keylime checking of endorsement key by manually generate ek and verify against CA certs
+summary: Test of keylime checking of endorsement key by manually generate ek and
+    verify against CA certs
 description: |
     Running all services on localhost.
     Manually generate endorsement key and add 
@@ -15,7 +16,7 @@ tag:
   - CI-Tier-1
 require:
   - yum
-  - tpm2-tools 
+  - tpm2-tools
 recommend:
   - keylime
 duration: 5m
@@ -28,3 +29,4 @@ adjust:
     enabled: false
     because: swtpm is not rhel-8 and CentOS-Stream-8
 extra-nitrate: TC#0614116
+id: 8ae50122-94ed-466f-a990-4a2fd3dbbe9e
