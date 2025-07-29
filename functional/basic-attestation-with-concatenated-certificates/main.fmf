@@ -1,26 +1,27 @@
 summary: Run keylime services with TLS certificates stored in a single file
 description: |
- Running all services on localhost.
- Uses custom generated TLS certificates with an intermediate CA in the chain,
- with both certs concatenated to a single file.
- Starts verifier, registrar, agent.
- Verifiers that system passed attestation.
+    Running all services on localhost.
+    Uses custom generated TLS certificates with an intermediate CA in the chain,
+    with both certs concatenated to a single file.
+    Starts verifier, registrar, agent.
+    Verifiers that system passed attestation.
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 framework: beakerlib
 tag:
-- CI-Tier-1
+  - CI-Tier-1
 require:
-- library(openssl/certgen)
-- yum
-- expect
-- openssl
-- nmap-ncat
-- policycoreutils-python-utils
+  - library(openssl/certgen)
+  - yum
+  - expect
+  - openssl
+  - nmap-ncat
+  - policycoreutils-python-utils
 recommend:
-- keylime
-- python3-tomli
+  - keylime
+  - python3-tomli
 duration: 15m
 enabled: true
+id: 28d16cde-a490-4f8b-97f0-602c2fa3b2db

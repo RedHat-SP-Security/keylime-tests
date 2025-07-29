@@ -3,3 +3,4 @@ description: Configures agent as a default revocation notifier in keylime.conf
 environment:
     REVOCATION_NOTIFIER: agent
 extra-nitrate: TC#0614039
+id: 4678976a-86bd-4b8d-82c5-afcfc47a759d
