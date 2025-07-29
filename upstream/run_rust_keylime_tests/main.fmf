@@ -1,4 +1,5 @@
-summary: Run tests from keylime rust upstream testsuite and eventually gather code coverage
+summary: Run tests from keylime rust upstream testsuite and eventually gather 
+    code coverage
 contact: Patrik Koncity <pkoncity@redhat.com>
 component:
   - keylime
@@ -12,3 +13,4 @@ recommend:
   - keylime
 duration: 20m
 enabled: true
+id: 73ea5a65-57dd-41ce-a71c-76ce102a52be

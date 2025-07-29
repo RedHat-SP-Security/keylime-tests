@@ -12,7 +12,7 @@ framework: beakerlib
 duration: 3m
 enabled: true
 extra-nitrate: TC#0614625
-
 adjust:
- - when: disable_keylime_debug == yes
-   enabled: 0
+  - when: disable_keylime_debug == yes
+    enabled: 0
+id: fd6be8ae-6eac-4832-b34a-b04b7b69e820

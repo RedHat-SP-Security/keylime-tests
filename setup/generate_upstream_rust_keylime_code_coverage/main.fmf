@@ -1,11 +1,13 @@
-summary: Process gathered code coverage data for the rust agent and generate a report
+summary: Process gathered code coverage data for the rust agent and generate a 
+    report
 description:
 contact: Patrik Koncity <pkoncity@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
- - setup
+  - setup
 framework: beakerlib
 duration: 10m
 enabled: true
+id: a979a2b4-f289-4e49-bcb3-4c771ef0075b

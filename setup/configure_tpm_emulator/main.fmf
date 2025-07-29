@@ -1,15 +1,21 @@
 summary: Configures TPM emulator on a running system
-description: Configures emulated TPM on a tested system using swtpm (implies keylime_ima_emulator).
+description: Configures emulated TPM on a tested system using swtpm (implies 
+    keylime_ima_emulator).
 contact: Karel Srot <ksrot@redhat.com>
 component:
-- keylime
+  - keylime
 test: ./test.sh
 tag:
-- setup
+  - setup
 framework: beakerlib
 require:
-- yum
-- tpm2-abrmd
+  - yum
+  - tpm2-tss
+  - tpm2-abrmd
+  - tpm2-tools
+recommend:
+  - selinux-policy-devel
 duration: 15m
 enabled: true
 extra-nitrate: TC#0611726
+id: 24879bd0-c58e-4306-8553-b3d4851c4abb
