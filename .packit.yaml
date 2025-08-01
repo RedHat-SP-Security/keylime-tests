@@ -12,6 +12,9 @@ jobs:
 #    - centos-stream-10-x86_64
   skip_build: true
   tf_extra_params:
+    test:
+      tmt:
+        name: "/plans/push-attestation-tests"
     environments:
       - tmt:
           context:
