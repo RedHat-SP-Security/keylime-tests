@@ -101,6 +101,18 @@ Environment=\"TCTI=${TPM2TOOLS_TCTI}\"
 _EOF"
         rlRun "systemctl daemon-reload"
 
+        # also add drop-in update for eventual keylime_push_model_agent unit file
+        rlRun "mkdir -p /etc/systemd/system/keylime_push_model_agent.service.d"
+        rlRun "cat > /etc/systemd/system/keylime_push_model_agent.service.d/10-tcti.conf <<_EOF
+[Unit]
+# we want to unset this since there is no /dev/tmp0
+ConditionPathExistsGlob=
+[Service]
+Environment=\"TPM2TOOLS_TCTI=${TPM2TOOLS_TCTI}\"
+Environment=\"TCTI=${TPM2TOOLS_TCTI}\"
+_EOF"
+        rlRun "systemctl daemon-reload"
+
         if [ "${TPM_EMULATOR}" = "swtpm" ]; then
             # now we need to build custom selinux module making swtpm_t a permissive domain
             # since the policy module shipped with swtpm package doesn't seem to work
