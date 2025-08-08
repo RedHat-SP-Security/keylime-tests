@@ -2962,11 +2962,11 @@ set -m
 touch "$__INTERNAL_limeLogCurrentTest"
 if ! grep -q "^$PWD\$" "$__INTERNAL_limeLogCurrentTest"; then
     echo "$PWD" > "$__INTERNAL_limeLogCurrentTest"
-    [ -f "$__INTERNAL_limeLogVerifier" ] && > "$__INTERNAL_limeLogVerifier"
-    [ -f "$__INTERNAL_limeLogRegistrar" ] && > "$__INTERNAL_limeLogRegistrar"
-    [ -f "$__INTERNAL_limeLogAgent" ] && > "$__INTERNAL_limeLogAgent"
-    [ -f "$__INTERNAL_limeLogPush_model_agent" ] && > "$__INTERNAL_limeLogPush_model_agent"
-    [ -f "$__INTERNAL_limeLogIMAEmulator" ] && > "$__INTERNAL_limeLogIMAEmulator" && rm -f "${__INTERNAL_limeLogIMAEmulator}.tpm"*
+    [ -f "$__INTERNAL_limeLogVerifier" ] && true > "$__INTERNAL_limeLogVerifier"
+    [ -f "$__INTERNAL_limeLogRegistrar" ] && true > "$__INTERNAL_limeLogRegistrar"
+    [ -f "$__INTERNAL_limeLogAgent" ] && true > "$__INTERNAL_limeLogAgent"
+    [ -f "$__INTERNAL_limeLogPush_model_agent" ] && true > "$__INTERNAL_limeLogPush_model_agent"
+    [ -f "$__INTERNAL_limeLogIMAEmulator" ] && true > "$__INTERNAL_limeLogIMAEmulator" && rm -f "${__INTERNAL_limeLogIMAEmulator}.tpm"*
 fi
 
 # prepare coveragerc file
