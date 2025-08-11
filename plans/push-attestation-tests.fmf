@@ -9,7 +9,8 @@ discover:
   how: fmf
   test:
    - /setup/apply_workarounds
-   - /setup/configure_tpm_emulator
+   #- /setup/configure_tpm_emulator
+   - /setup/configure_swtpm_device
    - /setup/install_upstream_keylime
    - /setup/install_upstream_rust_keylime
    - /setup/enable_keylime_debug_messages
