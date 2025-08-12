@@ -491,7 +491,7 @@ __limeProcesses() {
     local NAME=$1
 
     pgrep -af "${NAME}([[:space:]]|\$)" \
-       | grep "/${NAME}" | grep -v grep
+       | grep "[^[:alnum:]-]${NAME}" | grep -v grep
 }
 
 __limePIDs() {
