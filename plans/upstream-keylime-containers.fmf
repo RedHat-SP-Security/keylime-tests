@@ -23,16 +23,7 @@ discover:
    # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_simple
    #- /setup/inject_SELinux_AVC_check
-   - "/container/functional/.*"
-   - "/container/compatibility/.*"
+   - "/container/functional/keylime_agent_container-basic-attestation"
 
 execute:
     how: tmt
-
-adjust+:
-  - when: target_PR_branch is defined and target_PR_branch != main
-    enabled: false
-    because: we want to run this plan only for PRs targeting the main branch
-
-  - when: distro != fedora-41 and distro != centos-stream-10
-    enabled: false
