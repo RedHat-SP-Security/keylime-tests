@@ -454,12 +454,13 @@ limeClearData() {
 __limeGetLogName() {
     local NAME=$1
     local LOGSUFFIX
+    local TPMSUFFIX
     [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
     local LOGNAME=__INTERNAL_limeLog${LOGSUFFIX}
     if [ "$NAME" == "ima_emulator" ] && [ "$limeTPMDevNo" != "0" ]; then
-        LOGNAME=${LOGNAME}.tpm${limeTPMDevNo}
+        TPMSUFFIX=".tpm${limeTPMDevNo}"
     fi
-    echo ${!LOGNAME}
+    echo ${!LOGNAME}${TPMSUFFIX}
 }
 
 __limeStartKeylimeService() {
