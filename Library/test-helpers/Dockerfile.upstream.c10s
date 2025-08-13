@@ -1,4 +1,4 @@
-FROM quay.io/centos/centos:stream10-development
+FROM quay.io/centos/centos:stream10
 COPY lime_con_install_upstream.sh /usr/local/bin/lime_con_install_upstream
 RUN \
     rm -f /etc/yum.repos.d/centos.repo && \
