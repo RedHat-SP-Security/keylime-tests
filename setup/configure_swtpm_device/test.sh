@@ -27,6 +27,29 @@ rlJournalStart
 tpm_vtpm_proxy
 _EOF"
 
+        export TPM2TOOLS_TCTI="device:/dev/tpmrm$limeTPMDevNo"
+        rlLogInfo "exported TPM2TOOLS_TCTI=$TPM2TOOLS_TCTI"
+
+        # configure global environment variables if not already configured
+	if ! grep "device:/dev/tpm" /etc/profile.d/limeLib_tcti.sh &> /dev/null; then
+            rlRun "cat > /etc/profile.d/limeLib_tcti.sh <<_EOF
+export TPM2TOOLS_TCTI=${TPM2TOOLS_TCTI}
+export TCTI=${TPM2TOOLS_TCTI}
+_EOF"
+        fi
+
+        # also add drop-in update for eventual keylime_agent unit files
+	for AGENT_DIR in keylime_agent.service.d keylime_push_model_agent.service.d; do
+	    if ! grep "device:/dev/tpm" /etc/systemd/system/${AGENT_DIR}/10-tcti.conf &> /dev/null; then
+                rlRun "mkdir -p /etc/systemd/system/${AGENT_DIR}"
+                rlRun "cat > /etc/systemd/system/${AGENT_DIR}/10-tcti.conf <<_EOF
+[Service]
+Environment=\"TPM2TOOLS_TCTI=${TPM2TOOLS_TCTI}\"
+Environment=\"TCTI=${TPM2TOOLS_TCTI}\"
+_EOF"
+            fi
+        done
+
         # find suffix for a new unit file (just in case it already exists)
         if ls /etc/systemd/system/swtpm*.service 2> /dev/null; then
             SUFFIX=$(( $( find /etc/systemd/system -name "swtpm*.service" | wc -l ) ))
