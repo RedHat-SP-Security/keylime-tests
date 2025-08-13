@@ -74,7 +74,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Test TPM emulator"
-        rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpm${NEW_TPM_DEV_NO} tpm2_pcrread"
+        rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
     rlPhaseEnd
 

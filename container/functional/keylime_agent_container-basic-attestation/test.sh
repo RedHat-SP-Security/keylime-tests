@@ -46,7 +46,7 @@ rlJournalStart
         rlRun "limeTPMDevNo=1 limeStartTPMEmulator"
         rlRun "limeTPMDevNo=1 limeWaitForTPMEmulator"
         # start ima emulator
-        rlRun "limeTPMDevNo=1 TCTI=device:/dev/tpm1 limeStartIMAEmulator"
+        rlRun "limeTPMDevNo=1 TCTI=device:/dev/tpmrm1 limeStartIMAEmulator"
  
         sleep 5
 
