@@ -66,10 +66,21 @@ _EOF'
         # Prepare dirs for drop-in unit file updates
         rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
 
+        # Add drop-in unit file updates for push-attestation agent
+        rlRun "mkdir -p /etc/systemd/system/keylime_push_model_agent.service.d"
+        rlRun "cat > /etc/systemd/system/keylime_push_model_agent.service.d/20-rust_log_trace.conf <<_EOF
+[Service]
+Environment=\"RUST_LOG=keylime_push_model_agent=trace,keylime=trace\"
+_EOF"
+
         # If the TPM_BINARY_MEASUREMENTS env var is set, set the binary
         # measurements location for the service
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
             rlRun "cat > /etc/systemd/system/keylime_agent.service.d/30-measured_boot_location.conf <<_EOF
+[Service]
+Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
+_EOF"
+            rlRun "cat > /etc/systemd/system/keylime_push_model_agent.service.d/30-measured_boot_location.conf <<_EOF
 [Service]
 Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
 _EOF"
@@ -93,6 +104,14 @@ Environment=\"LLVM_PROFILE_FILE=${__INTERNAL_limeCoverageDir}/rust_keylime_codec
 WorkingDirectory=${__INTERNAL_limeCoverageDir}/
 ExecStopPost=sh ${__INTERNAL_limeCoverageDir}/coverage-script-stop.sh
 _EOF"
+            rlRun "cat > /etc/systemd/system/keylime_push_model_agent.service.d/15-coverage.conf <<_EOF
+[Service]
+# set variable containing name of the currently running test
+Environment=\"LLVM_PROFILE_FILE=${__INTERNAL_limeCoverageDir}/rust_keylime_codecoverage.profraw\"
+# we need to change WorkingDirectory since .profraw* files will be stored there
+WorkingDirectory=${__INTERNAL_limeCoverageDir}/
+ExecStopPost=sh ${__INTERNAL_limeCoverageDir}/coverage-script-stop.sh
+_EOF"
             #IMA emulator coverage, graceful shutdown of IMA emulator, allow SIGINT kill
             rlRun "touch $__INTERNAL_limeCoverageDir/enabled"
         fi
@@ -101,6 +120,7 @@ _EOF"
 
     rlPhaseStartTest "Test installed binaries"
         rlRun "keylime_agent --help" 0,1
+        rlRun "keylime_push_model_agent --help" 0,1
     rlPhaseEnd
 
 rlJournalEnd
