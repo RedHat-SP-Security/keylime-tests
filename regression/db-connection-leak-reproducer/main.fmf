@@ -32,7 +32,7 @@ require:
   - yum
   - expect
   - nmap-ncat
-  - sqlite3
+  - sqlite
   - lsof
   - coreutils
 recommend:
