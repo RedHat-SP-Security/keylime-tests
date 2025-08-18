@@ -119,6 +119,8 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
+        rlAssertNotGrep "Traceback" "$(limeRegistrarLogfile)"
+        rlAssertNotGrep "Traceback" "$(limeVerifierLogfile)"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
