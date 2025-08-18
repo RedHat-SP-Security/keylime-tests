@@ -201,6 +201,8 @@ check_db_health() {
     return $fd_result
 }
 
+ARCH=$( rlGetPrimaryArch )
+
 rlJournalStart
 
     rlPhaseStartSetup "Setup keylime with small DB connection pool"
@@ -244,7 +246,10 @@ rlJournalStart
 
         # Create test policies for policy operations
         rlRun "keylime-policy create runtime -o $TESTDIR/test-policy.json"
-        rlRun "keylime-policy create measured-boot -e $TESTDIR/binary_bios_measurements -o $TESTDIR/test-mb-policy.json"
+	# efivar not available on s390x and ppc64le
+	if [ "$ARCH" != "s390x" ] && [ "$ARCH" != "ppc64le" ]; then
+            rlRun "keylime-policy create measured-boot -e $TESTDIR/binary_bios_measurements -o $TESTDIR/test-mb-policy.json"
+	fi
     rlPhaseEnd
 
     rlPhaseStartTest "Test 1: Agent operations stress test with single agent"
@@ -335,23 +340,26 @@ rlJournalStart
             check_db_health "Policy cycle $i" || break
         done
 
-        # Test measured boot policy operations (MbpolicyHandler endpoints)
-        for i in {1..3}; do
-            MB_POLICY_NAME="test-mb-policy-$i"
-            rlLogInfo "Testing MB policy operations cycle $i with policy $MB_POLICY_NAME"
+	# Test measured boot policy operations (MbpolicyHandler endpoints)
+	# efivar not available on s390x and ppc64le
+        if [ "$ARCH" != "s390x" ] && [ "$ARCH" != "ppc64le" ]; then
+		for i in {1..3}; do
+		    MB_POLICY_NAME="test-mb-policy-$i"
+		    rlLogInfo "Testing MB policy operations cycle $i with policy $MB_POLICY_NAME"
 
-            # Create MB policy (addmbpolicy command)
-            rlRun "run_with_timeout 'keylime_tenant -c addmbpolicy --mb-policy $TESTDIR/test-mb-policy.json --mb-policy-name $MB_POLICY_NAME' 'Create MB policy $MB_POLICY_NAME'" 0
+		    # Create MB policy (addmbpolicy command)
+		    rlRun "run_with_timeout 'keylime_tenant -c addmbpolicy --mb-policy $TESTDIR/test-mb-policy.json --mb-policy-name $MB_POLICY_NAME' 'Create MB policy $MB_POLICY_NAME'" 0
 
-            # Read MB policy (showmbpolicy command)
-            rlRun "run_with_timeout 'keylime_tenant -c showmbpolicy --mb-policy-name $MB_POLICY_NAME' 'Read MB policy $MB_POLICY_NAME'" 0
+		    # Read MB policy (showmbpolicy command)
+		    rlRun "run_with_timeout 'keylime_tenant -c showmbpolicy --mb-policy-name $MB_POLICY_NAME' 'Read MB policy $MB_POLICY_NAME'" 0
 
-            # Delete MB policy (deletembpolicy command)
-            rlRun "run_with_timeout 'keylime_tenant -c deletembpolicy --mb-policy-name $MB_POLICY_NAME' 'Delete MB policy $MB_POLICY_NAME'" 0
+		    # Delete MB policy (deletembpolicy command)
+		    rlRun "run_with_timeout 'keylime_tenant -c deletembpolicy --mb-policy-name $MB_POLICY_NAME' 'Delete MB policy $MB_POLICY_NAME'" 0
 
-            # Check database health after MB policy operations
-            check_db_health "MB Policy cycle $i" || break
-        done
+		    # Check database health after MB policy operations
+		    check_db_health "MB Policy cycle $i" || break
+		done
+        fi
 
         # Verify verifier is still responsive
         rlRun "run_with_timeout 'keylime_tenant -c cvlist' 'Post-policy-stress verifier check'" 0
