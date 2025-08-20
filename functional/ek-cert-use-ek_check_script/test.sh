@@ -12,7 +12,6 @@ rlJournalStart
         rlAssertRpm keylime
         # update /etc/keylime.conf
         limeBackupConfig
-        # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert false"
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -24,6 +23,8 @@ rlJournalStart
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         fi
+	rlRun "TMPDIR=\$( mktemp -d )"
+        rlRun "chown keylime:keylime $TMPDIR"
 
         rlRun 'cat > /var/lib/keylime/check_ek_script.sh <<_EOF
 #!/bin/sh
@@ -32,6 +33,9 @@ echo EK=\${EK}
 echo EK_CERT=\${EK_CERT}
 echo EK_TPM=\${EK_TPM}
 echo PROVKEYS=\${PROVKEYS}
+# confirm EK cert
+printf "%s" "\$EK" > $TMPDIR/pubkey.pem
+printf "%s" "\${EK_CERT}" > $TMPDIR/ek_cert.der.b64
 _EOF'
         rlRun "chown keylime:keylime /var/lib/keylime/check_ek_script.sh"
         rlRun "chmod 500 /var/lib/keylime/check_ek_script.sh"
@@ -61,6 +65,14 @@ _EOF"
         rlAssertGrep "EK_CERT=[^ ]+" $rlRun_LOG -E
         rlAssertGrep "EK_TPM=[^ ]+" $rlRun_LOG -E
         rlAssertGrep "PROVKEYS={}" $rlRun_LOG
+        # verify EK cert for swtpm
+        if limeTPMEmulated; then
+            rlRun "openssl rsa -pubin -in $TMPDIR/pubkey.pem -text"
+            rlRun "base64 -d $TMPDIR/ek_cert.der.b64 > $TMPDIR/ek_cert.der"
+            rlRun "openssl x509 -inform der -in $TMPDIR/ek_cert.der > $TMPDIR/ek_cert.pem"
+            rlRun "cat /var/lib/swtpm-localca/issuercert.pem /var/lib/swtpm-localca/swtpm-localca-rootca-cert.pem > $TMPDIR/ca_bundle.pem"
+            rlRun "openssl verify  -CAfile $TMPDIR/ca_bundle.pem $TMPDIR/ek_cert.pem"
+        fi
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
