@@ -68,6 +68,25 @@ ExecStart=/usr/bin/swtpm socket --tpmstate dir=${TPM_RUNTIME_TOPDIR}/swtpm --log
 [Install]
 WantedBy=multi-user.target
 _EOF"
+
+        # create also swtpm-malformed-ek unit file as it doesn't exist.
+        rlRun "yum copr enable scorreia/keylime -y"
+        rlRun "yum install -y swtpm-cert-manager"
+        rlRun "cat > /etc/systemd/system/swtpm-malformed-ek.service <<_EOF
+[Unit]
+Description=swtpm TPM Software emulator with a malformed EK certificate
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/mkdir -p ${TPM_RUNTIME_TOPDIR}/swtpm-malformed-ek
+ExecStartPre=/usr/bin/swtpm_setup --config /usr/share/swtpm-cert-manager/swtpm_setup_malformed.conf --tpm-state ${TPM_RUNTIME_TOPDIR}/swtpm-malformed-ek --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStart=/usr/bin/swtpm socket --tpmstate dir=${TPM_RUNTIME_TOPDIR}/swtpm-malformed-ek --log level=1 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
+
+[Install]
+WantedBy=multi-user.target
+_EOF"
+
+
         # update tpm2-abrmd unit file
         _tcti=swtpm
         [ "${TPM_EMULATOR}" = "ibmswtpm2" ] && _tcti=mssim
@@ -114,6 +133,7 @@ _EOF"
         fi
         # allow tpm2-abrmd to connect to swtpm port
         rlRun "setsebool -P tabrmd_connect_all_unreserved on"
+        rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
     rlPhaseEnd
 
     rlPhaseStartSetup "Start TPM emulator"
@@ -126,13 +146,49 @@ _EOF"
     rlPhaseStartTest "Test TPM emulator"
         rlRun -s "tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+        ek="${TmpDir}/ek.der"
+        rlRun "tpm2_getekcertificate -o ${ek}"
+        [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR
+        rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+        rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
     rlPhaseEnd
+
+    if [ "${TPM_EMULATOR}" = "swtpm" ]; then
+        rlPhaseStartSetup "Start also TPM emulator with malformed EK"
+            rlServiceStop tpm2-abrmd
+            rlServiceStart swtpm-malformed-ek
+            rlRun "limeWaitForTPMEmulator"
+            rlServiceStart tpm2-abrmd
+        rlPhaseEnd
+
+        rlPhaseStartTest "Test also TPM emulator with malformed EK"
+            rlRun -s "tpm2_pcrread"
+            rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+            ek="${TmpDir}"/swtpm-malformed-ek.der
+            rlRun "tpm2_getekcertificate -o ${ek}"
+            [ "$RUNNING" == "0" ] && rlServiceStop swtpm-malformed-ek
+
+            # python-cryptography 35 changed its parsing of x509 certificates
+            # and it became more strict, failing validation for some certificates
+            # openssl would consider OK.
+            # Let's adjust our expectation for the test based on the version
+            # of python-cryptography we have available.
+            _pyc_expected=0
+            rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
+            rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
+
+            rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+            # Recent versions of python-cryptography will consider this certificate invalid.
+            rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
+        rlPhaseEnd
+    fi
 
     rlPhaseStartCleanup
         if [ "$RUNNING" == "0" ]; then
             rlServiceStop $TPM_EMULATOR
             rlServiceStop tpm2-abrmd
         fi
+        rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
 
 rlJournalEnd
