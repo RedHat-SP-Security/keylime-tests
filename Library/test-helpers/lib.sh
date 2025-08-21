@@ -867,14 +867,17 @@ Returns 0 when the start was successful, non-zero otherwise.
 =cut
 
 __limeStartTPMEmulator_swtpm() {
+    _malformed="${1:-}"
+    _unit=swtpm
+    [ -n "${_malformed}" ] && _unit=swtpm-malformed-ek
 
     __limeStopTPMEmulator_swtpm
     if rpm -q swtpm &> /dev/null; then
         mkdir -p /var/lib/swtpm/swtpm
         if [ "$limeTPMDevNo" == "0" ]; then
-            rlServiceStart swtpm
+            rlServiceStart ${_unit}
         else
-            rlServiceStart swtpm${limeTPMDevNo}
+            rlServiceStart ${_unit}${limeTPMDevNo}
         fi
     fi
 }
@@ -942,6 +945,40 @@ limeStartTPMEmulator() {
 true <<'=cut'
 =pod
 
+=head2 limeStartTPMEmulatorMalformedEK
+
+Start the availabe TPM emulator with malformed EK certificate.
+It currentlysupports only swtpm.
+
+    limeStartTPMEmulatorMalformedEK
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeStartTPMEmulatorMalformedEK() {
+    _emulator=$(limeTPMEmulator)
+
+    case "${_emulator}" in
+    swtpm)
+        limeStopTPMEmulator
+        __limeStartTPMEmulator_swtpm "malformed EK certificate"
+        ;;
+    *)
+        rlLogWarning "Unsupported TPM emulator for malformed EK cert (${_emulator})"
+        return 1
+        ;;
+    esac
+}
+
+
+true <<'=cut'
+=pod
+
 =head2 __limeStopTPMEmulator_swtpm
 
 Stop swtpm TPM Emulator.
@@ -960,8 +997,11 @@ __limeStopTPMEmulator_swtpm() {
     if rpm -q swtpm &> /dev/null; then
         if [ "$limeTPMDevNo" == "0" ]; then
             rlServiceStop swtpm
+            rlServiceStop swtpm-malformed-ek
         else
             rlServiceStop swtpm${limeTPMDevNo}
+            rlServiceStop swtpm-malformed-ek${limeTPMDevNo}
+
         fi
     fi
 }
@@ -2933,6 +2973,84 @@ limeconSubmitLogs() {
         podman logs $NAME &> $NAME.log
         limeLogfileSubmit $NAME.log
     done
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeValidateDERCertificateOpenSSL
+
+Validates a DER-formatted x509 certificate with OpenSSL.
+
+    limeValidateDERCertificateOpenSSL CERT
+
+=over
+
+=item CERT
+
+File path for the DER-formatted certificate.
+
+Returns 0.
+
+=cut
+
+limeValidateDERCertificateOpenSSL() {
+    local cert="${1}"
+    [ -e "${cert}" ] || return 1
+
+    local ossl_version
+    ossl_version="$(openssl -version)"
+    if openssl x509 -inform DER -in "${cert}" -noout 2>/dev/null; then
+        echo "✓ ${1} is a valid x.509 DER certificate (${ossl_version})"
+        return 0
+    fi
+    echo "✗ ${1} is NOT a valid x.509 DER certificate (${ossl_version})"
+    return 1
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeValidateDERCertificatePyCrypto
+
+Validates a DER-formatted x509 certificate with python-cryptography.
+
+    limeValidateDERCertificatePyCrypto CERT
+
+=over
+
+=item CERT
+
+File path for the DER-formatted certificate.
+
+Returns 0.
+
+=cut
+
+limeValidateDERCertificatePyCrypto() {
+    local cert="${1}"
+    [ -e "${cert}" ] || return 1
+
+    python3 -c "
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+import cryptography
+
+try:
+    with open('$cert', 'rb') as f:
+        cert_data = f.read()
+
+    x509.load_der_x509_certificate(cert_data, default_backend())
+    print('✓ $cert is a valid x.509 DER certificate (python-cryptography {})'.format(cryptography.__version__))
+    exit(0)
+
+except Exception as e:
+    print('✗ $cert is NOT a valid x.509 DER certificate (python-cryptography {})'.format(cryptography.__version__))
+    print('  Error: {}'.format(str(e)))
+    exit(1)
+"
+    # Return the exit code from the python snippet.
+    return $?
 }
 
 
