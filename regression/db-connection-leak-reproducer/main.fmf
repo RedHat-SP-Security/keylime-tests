@@ -28,6 +28,7 @@ framework: beakerlib
 tag:
   - regression
   - database
+  - not-agent-upstream-CI
 require:
   - yum
   - expect
