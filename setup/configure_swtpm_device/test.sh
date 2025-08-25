@@ -11,6 +11,7 @@
 # Packages list based on the TPM emulator.
 # We use ibmswtpm2 for EL8 and swtpm for the other platforms.
 TPM_EMULATOR=swtpm
+TPM_EMULATOR_BAD_EK=swtpm-malformed-ek
 TPM_RUNTIME_TOPDIR="/var/lib/swtpm"
 
 rlJournalStart
@@ -52,7 +53,7 @@ _EOF"
 
         # find suffix for a new unit file (just in case it already exists)
         if ls /etc/systemd/system/swtpm*.service 2> /dev/null; then
-            SUFFIX=$(( $( find /etc/systemd/system -name "swtpm*.service" | wc -l ) ))
+            SUFFIX=$(( $( find /etc/systemd/system -name "swtpm*.service" | grep -v malformed | wc -l ) ))
         else
             SUFFIX=""
         fi
@@ -72,6 +73,27 @@ ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${SWTPM_DIR} --tpm2
 [Install]
 WantedBy=multi-user.target
 _EOF"
+
+        # Now let's create also a unit that configures swtpm with
+        # a malformed EK certificate as per recent versions of
+        # python-cryptography, but that openssl is able to parse.
+        rlRun "dnf copr enable scorreia/keylime -y"
+        rlRun "dnf install -y swtpm-cert-manager"
+        rlRun "BAD_EK_SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
+        rlLogInfo "Creating unit file /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service"
+        rlRun "cat > /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service <<_EOF
+[Unit]
+Description=swtpm TPM Software emulator with a malformed EK certificate
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/swtpm_setup --config /usr/share/swtpm-cert-manager/swtpm_setup_malformed.conf --tpm-state ${BAD_EK_SWTPM_DIR} --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${BAD_EK_SWTPM_DIR} --tpm2
+
+[Install]
+WantedBy=multi-user.target
+_EOF"
+
         rlRun "systemctl daemon-reload"
 
         # now we need to build custom selinux module making swtpm_t a permissive domain
@@ -82,6 +104,8 @@ _EOF"
             rlAssertExists swtpm_permissive.pp
             rlRun "semodule -i swtpm_permissive.pp"
         fi
+
+	rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
     rlPhaseEnd
 
     if ls /dev/tpmrm* 2> /dev/null; then
@@ -99,12 +123,45 @@ _EOF"
     rlPhaseStartTest "Test TPM emulator"
         rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+        ek="${TmpDir}/swtpm${SUFFIX}-ek.der"
+        rlRun "tpm2_getekcertificate -o ${ek}"
+        rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+        rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
+        [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR${SUFFIX}
+    rlPhaseEnd
+
+    rlPhaseStartSetup "Start TPM emulator with malformed EK"
+        rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
+        rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test TPM emulator with malformed EK"
+        rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
+        rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+        ek="${TmpDir}/swtpm-malformed${SUFFIX}"-ek.der
+        rlRun "tpm2_getekcertificate -o ${ek}"
+
+        # python-cryptography 35 changed its parsing of x509 certificates
+        # and it became more strict, failing validation for some certificates
+        # openssl would consider OK.
+        # Let's adjust our expectation for the test based on the version
+        # of python-cryptography we have available.
+        _pyc_expected=0
+        rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
+        rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
+
+        rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+        # Recent versions of python-crypgraphy will consider this certificate invalid.
+        rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
+        [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
     rlPhaseEnd
 
     rlPhaseStartCleanup
         if [ "$RUNNING" == "0" ]; then
             rlServiceStop $TPM_EMULATOR${SUFFIX}
+            rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
         fi
+        rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
 
 rlJournalEnd
