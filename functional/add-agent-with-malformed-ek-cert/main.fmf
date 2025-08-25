@@ -1,0 +1,28 @@
+summary: Tests adding an agent that has an EK certificate considered malformed by python-cryptography
+description: |
+    swtpm will provide a properly signed (by the swtpm-local) EK certificate that
+    happens to be considered malformed by python-cryptoghraphy, due to its stricter
+    ASN.1 parsing since version 35; OpenSSL considers this certificate valid.
+    Confirms that we are still able to add such an agent that has an EK certificate
+    with these characteristics, by using an external program to perofrm the signature
+    chain verification on the EK certificate (since python-cryptography will refuse to
+    do so).
+    Running all services on localhost.
+contact: Sergio Correia <scorreia@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - expect
+  - openssl
+  - sqlite
+  - swtpm-tools
+recommend:
+  - keylime
+  - python3-tomli
+duration: 5m
+enabled: true
+extra-nitrate: TC#0613885
