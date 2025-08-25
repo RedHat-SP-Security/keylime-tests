@@ -3,7 +3,6 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 [ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="fix"
-[ -z "${IMA_POLICY}" ] && IMA_POLICY="tcb"
 [ -z "${IMA_TEMPLATE}" ] && IMA_TEMPLATE="ima-ng"
 [ -z "${IMA_POLICY_FILE}" ] && IMA_POLICY_FILE="ima-policy-simple"
 
@@ -45,15 +44,10 @@ rlJournalStart
         rlRun "cat /proc/cmdline"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
-        if $SECUREBOOT; then
-            rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=secure_boot ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
-        else
-            rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_policy=${IMA_POLICY} ima_template=${IMA_TEMPLATE}'"
-        fi
+        rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_template=${IMA_TEMPLATE}'"
         rlRun -s "grubby --info DEFAULT | grep '^args'"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
-        rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
         # on s390x run zipl to make change done through grubby effective
         [ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
@@ -79,7 +73,6 @@ rlJournalStart
         rlRun -s "cat /proc/cmdline"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
-        rlAssertGrep "ima_policy=${IMA_POLICY}" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
         rlRun "keyctl show %keyring:.ima"
         rlRun "grubby --info ALL"
