@@ -37,7 +37,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Verify that agent creates mount point when not present and mounts tmpfs."
-        rlRun "findmnt -M $SECURE_DIR && umount $SECURE_DIR"
+        findmnt -M $SECURE_DIR && rlRun "umount $SECURE_DIR"
         rlRun "rm -rf $SECURE_DIR"
         sed -i '/var-lib-keylime-secure.mount/d' $KEYLIME_UNIT_FILE
         rlRun "systemctl daemon-reload"
