@@ -70,9 +70,11 @@ WantedBy=multi-user.target
 _EOF"
 
         # create also swtpm-malformed-ek unit file as it doesn't exist.
-        rlRun "yum copr enable scorreia/keylime -y"
-        rlRun "yum install -y swtpm-cert-manager"
-        rlRun "cat > /etc/systemd/system/swtpm-malformed-ek.service <<_EOF
+        # do not configure TPM with malformed EK on Image mode system
+        if [[ ! -e /run/ostree-booted ]]; then
+            rlRun "yum copr enable scorreia/keylime -y"
+            rlRun "yum install -y swtpm-cert-manager"
+            rlRun "cat > /etc/systemd/system/swtpm-malformed-ek.service <<_EOF
 [Unit]
 Description=swtpm TPM Software emulator with a malformed EK certificate
 
@@ -85,6 +87,7 @@ ExecStart=/usr/bin/swtpm socket --tpmstate dir=${TPM_RUNTIME_TOPDIR}/swtpm-malfo
 [Install]
 WantedBy=multi-user.target
 _EOF"
+        fi
 
 
         # update tpm2-abrmd unit file
@@ -161,26 +164,29 @@ _EOF"
             rlServiceStart tpm2-abrmd
         rlPhaseEnd
 
-        rlPhaseStartTest "Test also TPM emulator with malformed EK"
-            rlRun -s "tpm2_pcrread"
-            rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-            ek="${TmpDir}"/swtpm-malformed-ek.der
-            rlRun "tpm2_getekcertificate -o ${ek}"
-            [ "$RUNNING" == "0" ] && rlServiceStop swtpm-malformed-ek
+        # do not test TPM with malformed EK on Image mode system
+        if [[ ! -e /run/ostree-booted ]]; then
+            rlPhaseStartTest "Test also TPM emulator with malformed EK"
+                rlRun -s "tpm2_pcrread"
+                rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+                ek="${TmpDir}"/swtpm-malformed-ek.der
+                rlRun "tpm2_getekcertificate -o ${ek}"
+                [ "$RUNNING" == "0" ] && rlServiceStop swtpm-malformed-ek
 
-            # python-cryptography 35 changed its parsing of x509 certificates
-            # and it became more strict, failing validation for some certificates
-            # openssl would consider OK.
-            # Let's adjust our expectation for the test based on the version
-            # of python-cryptography we have available.
-            _pyc_expected=0
-            rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
-            rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
+                # python-cryptography 35 changed its parsing of x509 certificates
+                # and it became more strict, failing validation for some certificates
+                # openssl would consider OK.
+                # Let's adjust our expectation for the test based on the version
+                # of python-cryptography we have available.
+                _pyc_expected=0
+                rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
+                rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
 
-            rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
-            # Recent versions of python-cryptography will consider this certificate invalid.
-            rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
-        rlPhaseEnd
+                rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+                # Recent versions of python-cryptography will consider this certificate invalid.
+                rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
+            rlPhaseEnd
+        fi
     fi
 
     rlPhaseStartCleanup
