@@ -133,13 +133,13 @@ _EOF"
         [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR${SUFFIX}
     rlPhaseEnd
 
-    rlPhaseStartSetup "Start TPM emulator with malformed EK"
-        rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
-        rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
-    rlPhaseEnd
-
     # do not test TPM with malformed EK on Image mode system
     if [[ ! -e /run/ostree-booted ]]; then
+        rlPhaseStartSetup "Start TPM emulator with malformed EK"
+            rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
+            rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
+        rlPhaseEnd
+
         rlPhaseStartTest "Test TPM emulator with malformed EK"
             rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
             rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
@@ -165,7 +165,7 @@ _EOF"
     rlPhaseStartCleanup
         if [ "$RUNNING" == "0" ]; then
             rlServiceStop $TPM_EMULATOR${SUFFIX}
-            rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
+            [[ ! -e /run/ostree-booted ]] && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
         fi
         rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
