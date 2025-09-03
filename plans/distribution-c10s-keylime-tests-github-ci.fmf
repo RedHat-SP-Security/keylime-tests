@@ -29,6 +29,7 @@ discover:
    - "^/sanity/.*"
    - "^/regression/.*"
    - "^/compatibility/.*"
+   - /update/basic-attestation-on-localhost/all
 
 execute:
     how: tmt
