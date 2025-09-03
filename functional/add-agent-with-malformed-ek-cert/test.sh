@@ -108,7 +108,7 @@ _EOF"
         rlRun "limeStopVerifier"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
-            rlRun "limeStopTPMEmulator"
+            rlRun "limeStopTPMEmulatorMalformedEK"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs

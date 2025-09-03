@@ -159,7 +159,7 @@ Return success or failure depending on whether TPM emulator is used.
 
 limeTPMEmulated() {
     # naive approach, can be improved in future
-    _emulator=$(limeTPMEmulator)
+    local _emulator=$(limeTPMEmulator)
     rpm -q "${_emulator}" &> /dev/null
 }
 
@@ -274,7 +274,7 @@ Returns the PAE string for the provided signed runtime policy.
 =cut
 
 limeDssePae() {
-    _policy_f="${1}"
+    local _policy_f="${1}"
 
     [ -z "${_policy_f}" ] && return 1
     [ -e "${_policy_f}" ] || return 1
@@ -283,14 +283,14 @@ limeDssePae() {
     jq -er . "${_policy_f}" >/dev/null 2>&1 || return 1
 
     # Now let's extract the required data.
-    _payload_b64="$(jq -er .payload "${_policy_f}")" || return 1
-    _payload_t="$(jq -er .payloadType "${_policy_f}")" || return 1
-    _sig_b64="$(jq -er .signatures[].sig "${_policy_f}")" || return 1
+    local _payload_b64="$(jq -er .payload "${_policy_f}")" || return 1
+    local _payload_t="$(jq -er .payloadType "${_policy_f}")" || return 1
+    local _sig_b64="$(jq -er .signatures[].sig "${_policy_f}")" || return 1
 
-    _payload="$(printf '%s' "${_payload_b64}" | base64 -d)"
-    _payload_len="$(printf '%s' "${_payload}" | wc -c)"
-    _payload_t_len="$(printf '%s' "${_payload_t}" | wc -c)"
-    _dsse_h="DSSEv1"
+    local _payload="$(printf '%s' "${_payload_b64}" | base64 -d)"
+    local _payload_len="$(printf '%s' "${_payload}" | wc -c)"
+    local _payload_t_len="$(printf '%s' "${_payload_t}" | wc -c)"
+    local _dsse_h="DSSEv1"
 
     # Finally, the PAE.
     printf '%s %s %s %s %s' \
@@ -324,13 +324,13 @@ key or certificate.
 
 
 limeVerifyRuntimePolicySignature() {
-    _policy="${1}"
-    _privkey_or_cert="${2}"
+    local _policy="${1}"
+    local _privkey_or_cert="${2}"
 
     [ -e "${_policy}" ] || return 1
     [ -e "${_privkey_or_cert}" ] || return 1
 
-    _pubkey=
+    local _pubkey=
     # Let's check if it is a privkey.
     if ! _pubkey="$(openssl pkey -in "${_privkey_or_cert}" \
                     -pubout 2>/dev/null)" || [ -z "${_pubkey}" ]; then
@@ -340,8 +340,8 @@ limeVerifyRuntimePolicySignature() {
     fi
 
     [ -z "${_pubkey}" ] && return 1
-    _pae=$(limeDssePae "${_policy}") || return 1
-    _sig_b64="$(jq -er .signatures[].sig "${_policy}")" || return 1
+    local _pae=$(limeDssePae "${_policy}") || return 1
+    local _sig_b64="$(jq -er .signatures[].sig "${_policy}")" || return 1
 
     openssl dgst -verify <(printf '%s' "${_pubkey}") \
             -keyform PEM -sha256 \
@@ -503,7 +503,7 @@ __limePIDs() {
 
 __limeStillRunning() {
     local NAME=$1
-    _nproc="$(__limeProcesses "${NAME}" | wc -l)"
+    local _nproc="$(__limeProcesses "${NAME}" | wc -l)"
     [ "${_nproc}" -eq 0 ] && return 1
     return 0
 }
@@ -843,7 +843,7 @@ Returns 0 as exit status.
 limeTPMEmulator() {
     # We use swtpm by default, unless in EL8 -- since tpm2-tss shipped
     # there does not support it, we will use ibmswtpm2 instead.
-    _tpm_emulator=swtpm
+    local _tpm_emulator=swtpm
     if rlIsRHEL 8 || rlIsCentOS 8; then
         _tpm_emulator=ibmswtpm2
     fi
@@ -868,11 +868,11 @@ Returns 0 when the start was successful, non-zero otherwise.
 =cut
 
 __limeStartTPMEmulator_swtpm() {
-    _malformed="${1:-}"
-    _unit=swtpm
+    local _malformed="${1:-}"
+    local _unit=swtpm
     [ -n "${_malformed}" ] && _unit=swtpm-malformed-ek
 
-    __limeStopTPMEmulator_swtpm
+    __limeStopTPMEmulator_swtpm "${_malformed}"
     if rpm -q swtpm &> /dev/null; then
         mkdir -p /var/lib/swtpm/swtpm
         if [ "$limeTPMDevNo" == "0" ]; then
@@ -925,7 +925,7 @@ Returns 0 when the start was successful, non-zero otherwise.
 =cut
 
 limeStartTPMEmulator() {
-    _emulator=$(limeTPMEmulator)
+    local _emulator=$(limeTPMEmulator)
 
     case "${_emulator}" in
     swtpm)
@@ -966,7 +966,7 @@ limeStartTPMEmulatorMalformedEK() {
 
     case "${_emulator}" in
     swtpm)
-        limeStopTPMEmulator
+        __limeStopTPMEmulator_swtpm "malformed EK certificate"
         __limeStartTPMEmulator_swtpm "malformed EK certificate"
         ;;
     *)
@@ -995,14 +995,16 @@ Returns 0 when the stop was successful, non-zero otherwise.
 =cut
 
 __limeStopTPMEmulator_swtpm() {
+
+    local _malformed="${1:-}"
+    local _unit=swtpm
+    [ -n "${_malformed}" ] && _unit=swtpm-malformed-ek
+
     if rpm -q swtpm &> /dev/null; then
         if [ "$limeTPMDevNo" == "0" ]; then
-            rlServiceStop swtpm
-            rlServiceStop swtpm-malformed-ek
+            rlServiceStop ${_unit}
         else
-            rlServiceStop swtpm${limeTPMDevNo}
-            rlServiceStop swtpm-malformed-ek${limeTPMDevNo}
-
+            rlServiceStop ${_unit}${limeTPMDevNo}
         fi
     fi
 }
@@ -1048,7 +1050,7 @@ Returns 0 when the stop was successful, non-zero otherwise.
 =cut
 
 limeStopTPMEmulator() {
-    _emulator=$(limeTPMEmulator)
+    local _emulator=$(limeTPMEmulator)
 
     case "${_emulator}" in
     swtpm)
@@ -1063,6 +1065,40 @@ limeStopTPMEmulator() {
         ;;
     esac
 }
+
+
+true <<'=cut'
+=pod
+
+=head2 limeStopTPMEmulatorMalformedEK
+
+Stops the availabe TPM emulator with malformed EK certificate.
+It currentlysupports only swtpm.
+
+    limeStopTPMEmulatorMalformedEK
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeStopTPMEmulatorMalformedEK() {
+    local _emulator=$(limeTPMEmulator)
+
+    case "${_emulator}" in
+    swtpm)
+        __limeStopTPMEmulator_swtpm "malformed EK certificate"
+        ;;
+    *)
+        rlLogWarning "Unsupported TPM emulator for malformed EK cert (${_emulator})"
+        return 1
+        ;;
+    esac
+}
+
 
 true <<'=cut'
 =pod
@@ -1143,8 +1179,8 @@ Returns 0 when the start was successful, non-zero otherwise.
 
 function limeCheckRemotePort() {
 
-    PORT=$1
-    IP=$2
+    local PORT=$1
+    local IP=$2
 
     echo $IP | grep -q "::" && NMAP_PARAMS="-6"
 

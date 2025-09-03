@@ -12,6 +12,6 @@ require:
 duration: 45m
 enabled: false
 adjust:
-  - when: deployment_mode is defined and deployment_mode == image
+  - when: deployment-mode is defined and deployment-mode == image
     enabled: true
 id: 00098092-455d-4d4a-b12f-878fcbeed56d
