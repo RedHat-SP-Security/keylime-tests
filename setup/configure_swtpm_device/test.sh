@@ -77,11 +77,13 @@ _EOF"
         # Now let's create also a unit that configures swtpm with
         # a malformed EK certificate as per recent versions of
         # python-cryptography, but that openssl is able to parse.
-        rlRun "dnf copr enable scorreia/keylime -y"
-        rlRun "dnf install -y swtpm-cert-manager"
-        rlRun "BAD_EK_SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
-        rlLogInfo "Creating unit file /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service"
-        rlRun "cat > /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service <<_EOF
+	# do not configure TPM with malformed EK on Image mode system
+        if [[ ! -e /run/ostree-booted ]]; then
+            rlRun "dnf copr enable scorreia/keylime -y"
+            rlRun "dnf install -y swtpm-cert-manager"
+            rlRun "BAD_EK_SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
+            rlLogInfo "Creating unit file /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service"
+            rlRun "cat > /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service <<_EOF
 [Unit]
 Description=swtpm TPM Software emulator with a malformed EK certificate
 
@@ -93,6 +95,7 @@ ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${BAD_EK_SWTPM_DIR}
 [Install]
 WantedBy=multi-user.target
 _EOF"
+        fi
 
         rlRun "systemctl daemon-reload"
 
@@ -135,26 +138,29 @@ _EOF"
         rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
     rlPhaseEnd
 
-    rlPhaseStartTest "Test TPM emulator with malformed EK"
-        rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
-        rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-        ek="${TmpDir}/swtpm-malformed${SUFFIX}"-ek.der
-        rlRun "tpm2_getekcertificate -o ${ek}"
+    # do not test TPM with malformed EK on Image mode system
+    if [[ ! -e /run/ostree-booted ]]; then
+        rlPhaseStartTest "Test TPM emulator with malformed EK"
+            rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
+            rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+            ek="${TmpDir}/swtpm-malformed${SUFFIX}"-ek.der
+            rlRun "tpm2_getekcertificate -o ${ek}"
 
-        # python-cryptography 35 changed its parsing of x509 certificates
-        # and it became more strict, failing validation for some certificates
-        # openssl would consider OK.
-        # Let's adjust our expectation for the test based on the version
-        # of python-cryptography we have available.
-        _pyc_expected=0
-        rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
-        rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
+            # python-cryptography 35 changed its parsing of x509 certificates
+            # and it became more strict, failing validation for some certificates
+            # openssl would consider OK.
+            # Let's adjust our expectation for the test based on the version
+            # of python-cryptography we have available.
+            _pyc_expected=0
+            rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
+            rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
 
-        rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
-        # Recent versions of python-crypgraphy will consider this certificate invalid.
-        rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
-        [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
-    rlPhaseEnd
+            rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+            # Recent versions of python-crypgraphy will consider this certificate invalid.
+            rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
+            [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
+        rlPhaseEnd
+    fi
 
     rlPhaseStartCleanup
         if [ "$RUNNING" == "0" ]; then
