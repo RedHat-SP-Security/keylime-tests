@@ -1,0 +1,10 @@
+# base image can be overriden with KEYLIME_BOOTC_BASE_IMAGE test variable
+ARG KEYLIME_BOOTC_BASE_IMAGE="localhost/bootc:latest"
+FROM ${KEYLIME_BOOTC_BASE_IMAGE}
+RUN mkdir -p /keylime-tests /etc/ima/
+COPY 10-ima_kargs.toml /usr/lib/bootc/kargs.d/10-ima_kargs.toml
+COPY ima-policy /etc/ima/ima-policy
+COPY yum.repos.d/* /etc/yum.repos.d/
+ARG KEYLIME_BOOTC_INSTALL_PACKAGES="rsync beakerlib selinux-policy-devel swtpm swtpm-tools nmap keylime expect"
+RUN dnf -y install ${KEYLIME_BOOTC_INSTALL_PACKAGES}
+RUN sed -i '/tss/ d' /usr/lib/group; ls -ld /etc/keylime /var/lib/keylime; ls -l /etc/keylime /var/lib/keylime; /bin/true
