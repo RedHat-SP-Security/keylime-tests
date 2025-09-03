@@ -158,7 +158,6 @@ _EOF"
             rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
             # Recent versions of python-crypgraphy will consider this certificate invalid.
             rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
-            [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
         rlPhaseEnd
     fi
 
