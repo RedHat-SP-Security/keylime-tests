@@ -872,7 +872,7 @@ __limeStartTPMEmulator_swtpm() {
     _unit=swtpm
     [ -n "${_malformed}" ] && _unit=swtpm-malformed-ek
 
-    __limeStopTPMEmulator_swtpm
+    __limeStopTPMEmulator_swtpm "${_malformed}"
     if rpm -q swtpm &> /dev/null; then
         mkdir -p /var/lib/swtpm/swtpm
         if [ "$limeTPMDevNo" == "0" ]; then
