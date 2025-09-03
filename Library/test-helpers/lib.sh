@@ -966,7 +966,7 @@ limeStartTPMEmulatorMalformedEK() {
 
     case "${_emulator}" in
     swtpm)
-        limeStopTPMEmulator
+        __limeStopTPMEmulator_swtpm "malformed EK certificate"
         __limeStartTPMEmulator_swtpm "malformed EK certificate"
         ;;
     *)
@@ -995,14 +995,16 @@ Returns 0 when the stop was successful, non-zero otherwise.
 =cut
 
 __limeStopTPMEmulator_swtpm() {
+
+    _malformed="${1:-}"
+    _unit=swtpm
+    [ -n "${_malformed}" ] && _unit=swtpm-malformed-ek
+
     if rpm -q swtpm &> /dev/null; then
         if [ "$limeTPMDevNo" == "0" ]; then
-            rlServiceStop swtpm
-            rlServiceStop swtpm-malformed-ek
+            rlServiceStop ${_unit}
         else
-            rlServiceStop swtpm${limeTPMDevNo}
-            rlServiceStop swtpm-malformed-ek${limeTPMDevNo}
-
+            rlServiceStop ${_unit}${limeTPMDevNo}
         fi
     fi
 }
@@ -1063,6 +1065,40 @@ limeStopTPMEmulator() {
         ;;
     esac
 }
+
+
+true <<'=cut'
+=pod
+
+=head2 limeStopTPMEmulatorMalformedEK
+
+Stops the availabe TPM emulator with malformed EK certificate.
+It currentlysupports only swtpm.
+
+    limeStopTPMEmulatorMalformedEK
+
+=over
+
+=back
+
+Returns 0 when the start was successful, non-zero otherwise.
+
+=cut
+
+limeStopTPMEmulatorMalformedEK() {
+    _emulator=$(limeTPMEmulator)
+
+    case "${_emulator}" in
+    swtpm)
+        __limeStopTPMEmulator_swtpm "malformed EK certificate"
+        ;;
+    *)
+        rlLogWarning "Unsupported TPM emulator for malformed EK cert (${_emulator})"
+        return 1
+        ;;
+    esac
+}
+
 
 true <<'=cut'
 =pod
