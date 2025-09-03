@@ -193,6 +193,7 @@ _EOF"
         if [ "$RUNNING" == "0" ]; then
             rlServiceStop $TPM_EMULATOR
             rlServiceStop tpm2-abrmd
+            [ "${TPM_EMULATOR}" = "swtpm" ] && [[ ! -e /run/ostree-booted ]] && rlServiceStop swtpm-malformed-ek
         fi
         rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
