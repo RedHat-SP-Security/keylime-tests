@@ -28,6 +28,8 @@ discover:
    - "^/functional/.*"
    - "^/regression/.*"
    - "^/compatibility/.*"
+   - "/sanity/.*"
+   - /update/basic-attestation-on-localhost/all
 
 execute:
     how: tmt
