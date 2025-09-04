@@ -16,6 +16,7 @@ fi
 TPM_PKGS_SWTPM="swtpm swtpm-tools"
 TPM_PKGS_IBMSWTPM="ibmswtpm2"
 TPM_RUNTIME_TOPDIR="/var/lib/swtpm"
+SETUP_MALFORMED_EK=false
 
 rlJournalStart
 
@@ -69,9 +70,18 @@ ExecStart=/usr/bin/swtpm socket --tpmstate dir=${TPM_RUNTIME_TOPDIR}/swtpm --log
 WantedBy=multi-user.target
 _EOF"
 
+        # we won't be doing TPM setup with malformed EK in some cases
+        if [ -e /run/ostree-booted ]; then
+            rlLogInfo "We are in RHEL Image mode, not doing setup of TPM with malformed EK"
+        elif [ "$(rlGetPrimaryArch)" == "ppc64le" ]; then
+            # we don't have all the tools available for ppc64le
+            rlLogInfo "We are on ppc64le, not doing setup of TPM with malformed EK"
+        else
+            SETUP_MALFORMED_EK=true
+        fi
+
         # create also swtpm-malformed-ek unit file as it doesn't exist.
-        # do not configure TPM with malformed EK on Image mode system
-        if [[ ! -e /run/ostree-booted ]]; then
+        if ${SETUP_MALFORMED_EK}; then
             rlRun "yum copr enable scorreia/keylime -y"
             rlRun "yum install -y swtpm-cert-manager"
             rlRun "cat > /etc/systemd/system/swtpm-malformed-ek.service <<_EOF
@@ -164,8 +174,7 @@ _EOF"
             rlServiceStart tpm2-abrmd
         rlPhaseEnd
 
-        # do not test TPM with malformed EK on Image mode system
-        if [[ ! -e /run/ostree-booted ]]; then
+        if ${SETUP_MALFORMED_EK}; then
             rlPhaseStartTest "Test also TPM emulator with malformed EK"
                 rlRun -s "tpm2_pcrread"
                 rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
@@ -193,7 +202,7 @@ _EOF"
         if [ "$RUNNING" == "0" ]; then
             rlServiceStop $TPM_EMULATOR
             rlServiceStop tpm2-abrmd
-            [ "${TPM_EMULATOR}" = "swtpm" ] && [[ ! -e /run/ostree-booted ]] && rlServiceStop swtpm-malformed-ek
+            [ "${TPM_EMULATOR}" = "swtpm" ] && ${SETUP_MALFORMED_EK} && rlServiceStop swtpm-malformed-ek
         fi
         rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd

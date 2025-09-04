@@ -14,6 +14,8 @@ TPM_EMULATOR=swtpm
 TPM_EMULATOR_BAD_EK=swtpm-malformed-ek
 TPM_RUNTIME_TOPDIR="/var/lib/swtpm"
 
+SETUP_MALFORMED_EK=false
+
 rlJournalStart
 
     rlPhaseStartSetup "Install TPM emulator"
@@ -74,11 +76,20 @@ ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${SWTPM_DIR} --tpm2
 WantedBy=multi-user.target
 _EOF"
 
+        # we won't be doing TPM setup with malformed EK in some cases
+        if [ -e /run/ostree-booted ]; then
+            rlLogInfo "We are in RHEL Image mode, not doing setup of TPM with malformed EK"
+        elif [ "$(rlGetPrimaryArch)" == "ppc64le" ]; then
+            # we don't have all the tools available for ppc64le
+            rlLogInfo "We are on ppc64le, not doing setup of TPM with malformed EK"
+        else
+            SETUP_MALFORMED_EK=true
+        fi
+
         # Now let's create also a unit that configures swtpm with
         # a malformed EK certificate as per recent versions of
         # python-cryptography, but that openssl is able to parse.
-	# do not configure TPM with malformed EK on Image mode system
-        if [[ ! -e /run/ostree-booted ]]; then
+        if ${SETUP_MALFORMED_EK}; then
             rlRun "dnf copr enable scorreia/keylime -y"
             rlRun "dnf install -y swtpm-cert-manager"
             rlRun "BAD_EK_SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
@@ -134,7 +145,7 @@ _EOF"
     rlPhaseEnd
 
     # do not test TPM with malformed EK on Image mode system
-    if [[ ! -e /run/ostree-booted ]]; then
+    if ${SETUP_MALFORMED_EK}; then
         rlPhaseStartSetup "Start TPM emulator with malformed EK"
             rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
             rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
@@ -164,7 +175,7 @@ _EOF"
     rlPhaseStartCleanup
         if [ "$RUNNING" == "0" ]; then
             rlServiceStop $TPM_EMULATOR${SUFFIX}
-            [[ ! -e /run/ostree-booted ]] && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
+            ${SETUP_MALFORMED_EK} && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
         fi
         rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
