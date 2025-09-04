@@ -76,6 +76,9 @@ _EOF"
         elif [ "$(rlGetPrimaryArch)" == "ppc64le" ]; then
             # we don't have all the tools available for ppc64le
             rlLogInfo "We are on ppc64le, not doing setup of TPM with malformed EK"
+        elif [ "$(rlGetPrimaryArch)" == "s390x" ]; then
+            # EK extraction fails on s390x
+            rlLogInfo "We are on s390x, not doing setup of TPM with malformed EK"
         else
             SETUP_MALFORMED_EK=true
         fi
@@ -159,11 +162,13 @@ _EOF"
     rlPhaseStartTest "Test TPM emulator"
         rlRun -s "tpm2_pcrread"
         rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-        ek="${TmpDir}/ek.der"
-        rlRun "tpm2_getekcertificate -o ${ek}"
+        if ${SETUP_MALFORMED_EK}; then
+            ek="${TmpDir}/ek.der"
+            rlRun "tpm2_getekcertificate -o ${ek}"
+            rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+            rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
+        fi
         [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR
-        rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
-        rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
     rlPhaseEnd
 
     if [ "${TPM_EMULATOR}" = "swtpm" ]; then
