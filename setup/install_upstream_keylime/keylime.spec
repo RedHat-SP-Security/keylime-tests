@@ -9,6 +9,8 @@ Provides: keylime-verifier = 99
 Provides: keylime-registrar = 99
 Provides: keylime-tenant = 99
 Provides: python3-keylime = 99
+Provides: user(keylime)
+Provides: group(keylime)
 Obsoletes: keylime-base < 99
 
 %description
