@@ -167,14 +167,14 @@ _EOF"
     rlPhaseEnd
 
     if [ "${TPM_EMULATOR}" = "swtpm" ]; then
-        rlPhaseStartSetup "Start also TPM emulator with malformed EK"
-            rlServiceStop tpm2-abrmd
-            rlServiceStart swtpm-malformed-ek
-            rlRun "limeWaitForTPMEmulator"
-            rlServiceStart tpm2-abrmd
-        rlPhaseEnd
-
         if ${SETUP_MALFORMED_EK}; then
+            rlPhaseStartSetup "Start also TPM emulator with malformed EK"
+                rlServiceStop tpm2-abrmd
+                rlServiceStart swtpm-malformed-ek
+                rlRun "limeWaitForTPMEmulator"
+                rlServiceStart tpm2-abrmd
+            rlPhaseEnd
+
             rlPhaseStartTest "Test also TPM emulator with malformed EK"
                 rlRun -s "tpm2_pcrread"
                 rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
