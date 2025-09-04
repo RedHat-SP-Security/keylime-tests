@@ -1,4 +1,5 @@
-summary: Tests adding an agent that has an EK certificate considered malformed by python-cryptography
+summary: Tests adding an agent that has an EK certificate considered malformed 
+    by python-cryptography
 description: |
     swtpm will provide a properly signed (by the swtpm-local) EK certificate that
     happens to be considered malformed by python-cryptoghraphy, due to its stricter
@@ -25,4 +26,12 @@ recommend:
   - python3-tomli
 duration: 5m
 enabled: true
-extra-nitrate: TC#0613885
+id: e97b68b1-ea19-4658-b3ff-3d27167e8084
+
+adjust:
+  - when: swtpm is not defined or swtpm == no
+    enabled: false
+    because: This tests needs SWTPM emulator
+  - when: arch == ppc64le
+    enabled: false
+    because: We do not have tools for creating malformed EK built for ppc64le
