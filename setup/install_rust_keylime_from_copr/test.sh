@@ -8,22 +8,14 @@ rlJournalStart
         rpm -q keylime-agent-rust && rlRun "yum -y remove --noautoremove keylime-agent-rust"
         # backup previous config file
         [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
-        rlRun 'cat > /etc/yum.repos.d/copr-rust-keylime-master.repo <<_EOF
-[copr-rust-keylime-master]
-name=Copr repo for keylime-rust-keylime-master owned by packit
-baseurl=https://download.copr.fedorainfracloud.org/results/packit/keylime-rust-keylime-master/fedora-\$releasever-\$basearch/
-type=rpm-md
-skip_if_unavailable=False
-gpgcheck=1
-gpgkey=https://download.copr.fedorainfracloud.org/results/packit/keylime-rust-keylime-master/pubkey.gpg
-repo_gpgcheck=0
-enabled=1
-enabled_metadata=1
-priority=1
-_EOF'
+        rlIsFedora && rlRun "dnf -y copr enable packit/keylime-rust-keylime-master-fedora"
         if rlIsRHELLike; then
-            rlRun "sed -i 's|keylime-rust-keylime-master/fedora|keylime-rust-keylime-master/centos-stream|' /etc/yum.repos.d/copr-rust-keylime-master.repo"
+            _ARCH=$( rlGetPrimaryArch )
+            _MAJOR=$( rlGetDistroRelease )
+            rlRun "dnf -y copr enable packit/keylime-rust-keylime-master-centos centos-stream-${_MAJOR}-${_ARCH}"
         fi
+        rlRun "echo 'priority=1' >> /etc/yum.repos.d/*keylime-rust-keylime-master*.repo"
+        rlRun "cat /etc/yum.repos.d/*keylime-rust-keylime-master*.repo"
         rlRun "yum -y install keylime-agent-rust"
         rlAssertRpm keylime-agent-rust
         rlAssertExists /etc/keylime/agent.conf
