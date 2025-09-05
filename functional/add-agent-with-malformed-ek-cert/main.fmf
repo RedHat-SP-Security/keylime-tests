@@ -32,6 +32,6 @@ adjust:
   - when: swtpm is not defined or swtpm == no
     enabled: false
     because: This tests needs SWTPM emulator
-  - when: arch == ppc64le
+  - when: arch == ppc64le or arch == s390x
     enabled: false
-    because: We do not have tools for creating malformed EK built for ppc64le
+    because: We do not have tools for creating malformed EK built or functional
