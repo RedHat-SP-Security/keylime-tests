@@ -1,0 +1,57 @@
+summary:
+  Tests used by Packit/TFT CI on Github to test upstream keylime
+
+environment+:
+  TPM_BINARY_MEASUREMENTS: /var/tmp/binary_bios_measurements
+  KEYLIME_RUST_CODE_COVERAGE: 0
+
+discover:
+  how: fmf
+  test:
+   - /setup/apply_workarounds
+   #- /setup/configure_tpm_emulator
+   - /setup/configure_swtpm_device
+   - /setup/install_upstream_keylime
+   - /setup/install_upstream_rust_keylime
+   - /setup/enable_keylime_debug_messages
+   #- /setup/enable_keylime_coverage
+   # change IMA policy to simple and run one attestation scenario
+   # this is to utilize also a different parser
+   - /setup/configure_kernel_ima_module/ima_policy_simple
+   - /functional/push-attestation-on-localhost
+   #- /functional/basic-attestation-on-localhost
+   # now change IMA policy to signing and run all tests
+   #- /setup/configure_kernel_ima_module/ima_policy_signing
+   #- "^/functional/.*"
+   #- "^/compatibility/.*"
+   #- "^/regression/.*"
+   #- /update/basic-attestation-on-localhost/all
+   #- "/sanity/.*"
+   # run upstream test suite
+   - /upstream/run_keylime_tests
+   #- /setup/generate_coverage_report
+   #- /setup/generate_upstream_rust_keylime_code_coverage
+
+execute:
+    how: tmt
+
+adjust+:
+  - when: target_PR_branch is defined and target_PR_branch != main
+    enabled: false
+    because: we want to run this plan only for PRs targeting the main branch
+
+  # discover step adjustments
+  # disable code coverage measurement everywhere except latest fedora and CS
+  - when: distro != centos-stream-10 and distro != fedora-41
+    discover+:
+       test-:
+         - /setup/enable_keylime_coverage
+         - /setup/generate_coverage_report
+
+  # disable code coverage measurement everywhere except latest fedora and CS
+  - when: distro != centos-stream-10 and distro != fedora-41
+    environment+:
+       KEYLIME_RUST_CODE_COVERAGE: 0
+    discover+:
+       test-:
+         - /setup/generate_upstream_rust_keylime_code_coverage
