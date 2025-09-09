@@ -12,4 +12,4 @@ for DIR in /*; do
     fi
 done
 # explicitly add items that may not be present on FS
-echo -e "/sysroot/etc/fstab\n/dracut-state.sh" >> $OUT
+echo -e "memfd:kernel\n/sysroot/etc/fstab\n/dracut-state.sh" >> $OUT
