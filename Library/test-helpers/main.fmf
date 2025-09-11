@@ -7,7 +7,7 @@ framework: beakerlib
 require:
  - openssl
  - jq
- - python-cryptography
+ - python3-cryptography
 duration: 5m
 enabled: true
 adjust:
