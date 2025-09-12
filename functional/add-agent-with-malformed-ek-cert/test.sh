@@ -102,13 +102,34 @@ _EOF"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 
+    rlPhaseStartTest "Use new swtpm and make sure the cached malformed EK is not used"
+        rlRun "limeStopAgent"
+        if limeTPMEmulated; then
+            rlRun "limeStopIMAEmulator"
+            rlRun "limeStopTPMEmulatorMalformedEK"
+            rlRun "limeCondStopAbrmd"
+            # Start a new swtpm with ASN.1 compliant certificates
+            rlRun "limeStartTPMEmulator"
+            rlRun "limeWaitForTPMEmulator"
+            rlRun "limeCondStartAbrmd"
+            rlRun "limeStartIMAEmulator"
+        fi
+        rlRun "limeStartAgent"
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+        rlRun -s "keylime_tenant -c regstatus -u ${AGENT_ID}"
+        # Make sure the new EK certificate is returned by the registrar
+        rlAssertGrep "$(tpm2_getekcertificate | base64 -w0)" "$rlRun_LOG"
+    rlPhaseEnd
+
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
+            # If still running, stop malformed EK cert swtpm service
             rlRun "limeStopTPMEmulatorMalformedEK"
+            rlRun "limeStopTPMEmulator"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
