@@ -75,15 +75,16 @@ rlJournalStart
         rlRun "limeValidateDERCertificatePyCrypto ${EKCERT_REG_DB_STORED}.der" 1 "EK cert Validation with python cryptography should fail"
         rlRun "limeValidateDERCertificateOpenSSL ${EKCERT_REG_DB_STORED}.der" 0 "EK cert Validation with python OpenSSL should succeed"
         # Let's compare also the EK certificate obtained from the tpm directly.
-        EKCERT_TPM="${TmpDir}/ek_cert_tpm.der"
-        rlRun "tpm2_getekcertificate -o ${EKCERT_TPM}"
-        rlAssertNotDiffer "${EKCERT_TPM}" "${EKCERT_REG_DB_STORED}.der"
+        EKCERT_TPM_RSA="${TmpDir}/ek_cert_rsa_tpm.der"
+        EKCERT_TPM_ECC="${TmpDir}/ek_cert_ecc_tpm.der"
+        rlRun "tpm2_getekcertificate -o ${EKCERT_TPM_RSA} -o ${EKCERT_TPM_ECC}"
+        rlAssertNotDiffer "${EKCERT_TPM_RSA}" "${EKCERT_REG_DB_STORED}.der"
 
         # Validate that EK certificate can be verified with the CA chain.
         # This is basically the check the EK_CHECK_SCRIPT will perform.
-        EKCERT_TPM_PEM="${TmpDir}/ek_cert_tpm.pem"
-        rlRun "openssl x509 -inform der -in ${EKCERT_TPM} -outform pem -out ${EKCERT_TPM_PEM}"
-        rlRun "openssl verify -partial_chain -CAfile ${S_LOCALCA_ISSUERCERT} ${EKCERT_TPM_PEM}" 0 "Pre-test EK certificate validation"
+        EKCERT_TPM_RSA_PEM="${TmpDir}/ek_cert_tpm.pem"
+        rlRun "openssl x509 -inform der -in ${EKCERT_TPM_RSA} -outform pem -out ${EKCERT_TPM_RSA_PEM}"
+        rlRun "openssl verify -partial_chain -CAfile ${S_LOCALCA_ISSUERCERT} ${EKCERT_TPM_RSA_PEM}" 0 "Pre-test EK certificate validation"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
@@ -118,7 +119,10 @@ _EOF"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun -s "keylime_tenant -c regstatus -u ${AGENT_ID}"
         # Make sure the new EK certificate is returned by the registrar
-        rlAssertGrep "$(tpm2_getekcertificate | base64 -w0)" "$rlRun_LOG"
+        EXPECTED_EKCERT_RSA="${TmpDir}/expected_ek_cert_rsa_tpm.der"
+        EXPECTED_EKCERT_ECC="${TmpDir}/expected_ek_cert_ecc_tpm.der"
+        rlRun "tpm2_getekcertificate -o ${EXPECTED_EKCERT_RSA} -o ${EXPECTED_EKCERT_ECC}"
+        rlAssertGrep "$(base64 -w0 ${EXPECTED_EKCERT_RSA})" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
