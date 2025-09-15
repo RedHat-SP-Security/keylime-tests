@@ -17,6 +17,7 @@ context+:
 discover:
  - how: fmf
    test:
+    - /setup/bootc_test_prepare
     - /setup/bootc_configure_kernel_ima_module
     - /setup/configure_swtpm_device
     - /functional/basic-attestation-on-localhost
