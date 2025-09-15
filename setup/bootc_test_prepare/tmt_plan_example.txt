@@ -1,0 +1,68 @@
+# These are examples of various image mode related test scenarios
+# Make sure to update BOOTC_INSTALL_PACKAGES with your test requires, preserve rsync and beakerlib
+# Additionally, you can enable task /setup/copy-brew-task-repofile that will configure
+# a repository for a given Brew build TaskID
+
+# schedule on TF e.g. with
+# testing-farm request --tmt-environment TMT_SCRIPTS_DIR=/var/lib/tmt/scripts --compose RHEL-10.0-Nightly --git-url https://path/to/your/plan/repo.git --plan PLAN_NAME --arch x86_64 -c distro=rhel-10 -e BOOTC_BASE_IMAGE="images.paas.redhat.com/bootc/rhel-bootc:latest-10.0"
+
+execute:
+   how: tmt
+
+environment:
+  BOOTC_BASE_IMAGE: "images.paas.redhat.com/bootc/rhel-bootc:latest-10.0"
+  BOOTC_DNF_UPDATE: 1
+  BOOTC_RUN_CMD: "touch /var/tmp/testfile"
+  BOOTC_KERNEL_ARGS: '["console=ttyS0,115200n8"]'
+  #BOOTC_ENV: "LC_ALL=C.UTF-8"
+  #TASKS: 67124821
+  #TASK_REPO_PRIORITY: 1
+
+
+/package-installation-during-image-mode-installation:
+
+  summary: Image mode installation testing including a test package
+
+  discover:
+   - how: fmf
+     url: https://gitlab.cee.redhat.com/rhel-tests/distribution.git
+     adjust-tests:
+      - environment+:
+          BOOTC_INSTALL_PACKAGES: "rsync beakerlib MY_PACKAGE MY_TEST_REQUIRES"
+     test:
+      #- /setup/copy-brew-task-repofile
+      - /setup/bootc_test_prepare
+
+   - how: fmf
+     url: https://gitlab.cee.redhat.com/my/package.git
+     test:
+      - /my/package/test
+
+
+/package-installation-during-image-mode-update:
+
+  summary: Image mode update including a test package installation
+
+  discover:
+   - how: fmf
+     url: https://gitlab.cee.redhat.com/rhel-tests/distribution.git
+     adjust-tests:
+      - environment+:
+          BOOTC_INSTALL_PACKAGES: "rsync beakerlib"
+     test:
+      #- /setup/copy-brew-task-repofile
+      - /setup/bootc_test_prepare
+
+   - how: fmf
+     url: https://gitlab.cee.redhat.com/rhel-tests/distribution.git
+     adjust-tests:
+      - environment+:
+          BOOTC_INSTALL_PACKAGES: "rsync beakerlib MY_PACKAGE MY_TEST_REQUIRES"
+     test:
+      - /setup/bootc_test_prepare
+
+   - how: fmf
+     url: https://gitlab.cee.redhat.com/my/package.git
+     test:
+      - /my/package/test
+
