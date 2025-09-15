@@ -1,0 +1,121 @@
+#!/bin/bash
+set -exo pipefail
+
+# author: Karel Srot, ksrot@redhat.com
+# inspired by https://github.com/henrywang/tmt-bootc-install-switch/blob/main/tests/bootc-install.sh
+
+# you can use BOOTC_BASE_IMAGE variable to override a base image in Containerfile
+# you can use BOOTC_INSTALL_PACKAGES variable to override packages installed in Containerfile
+# you can use BOOTC_RUN_CMD to add custom RUN command to Containerfile
+# you can use BOOTC_DNF_UPDATE set to '1' or 'true' perform dnf update during the build
+# you can use BOOTC_KERNEL_ARGS variable to configure kernel cmdline parameters in the bootc-install-config format
+#   Example: BOOTC_KERNEL_ARGS='["nosmt", "console=tty0"]'
+
+[ -z "${BOOTC_BASE_IMAGE}" ] && BOOTC_BASE_IMAGE="localhost/bootc:latest"
+[ -z "${BOOTC_INSTALL_PACKAGES}" ] && BOOTC_INSTALL_PACKAGES="rsync cloud-init"
+IMPORTED_IMAGE_NAME="localhost/bootc_setup_image"
+
+COOKIE=/var/tmp/bootc_test_prepare-rebooted
+
+if [ ! -e $COOKIE ]; then
+    echo "PHASE: pre-reboot phase"
+    # install bootc and podman just in case it's missing and we are in package mode
+    rpm -q bootc podman || dnf -y install bootc podman system-reinstall-bootc
+
+    # detect image mode
+    if bootc status --format yaml | grep -q 'booted: null'; then
+        IMAGE_MODE=false
+    else
+        IMAGE_MODE=true
+    fi
+
+    TMPDIR=$( mktemp -d )
+    pushd $TMPDIR
+
+    # prepare content to include into an image
+    cp -r /etc/yum.repos.d .
+    cp -r /root/.ssh .
+    TMT_SCRIPTS_DIR="$( dirname $( which tmt-reboot ) )"
+    cp -r "$TMT_SCRIPTS_DIR" bin
+
+	
+    # download bootc image and build and install an update
+    if [ "${BOOTC_BASE_IMAGE}" == "localhost/bootc:latest" ]; then
+        #bootc image copy-to-storage
+        # workaround for https://github.com/containers/bootc/issues/1134
+        BOOTC_BASE_IMAGE=$( bootc status --booted --format json | jq '.spec.image.image' | tr -d '"' )
+	if [ ${BOOTC_BASE_IMAGE} == "null" ]; then
+            echo "Unable to identify base image, define BOOTC_BASE_IMAGE variable"
+	    exit 1
+	fi
+    fi
+
+    # prepare Containerfile
+    cat > Containerfile <<_EOF
+FROM ${BOOTC_BASE_IMAGE}
+RUN mkdir -p -m 0700 /var/roothome && mkdir -p /usr/lib/bootc/kargs.d
+COPY yum.repos.d/* /etc/yum.repos.d
+COPY .ssh /var/roothome/.ssh
+COPY bin /usr/local/bin
+RUN touch $COOKIE && dnf -y install --nogpgcheck ${BOOTC_INSTALL_PACKAGES} && ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants
+_EOF
+
+    # include dnf update if requested
+    if [ "${BOOTC_DNF_UPDATE}" == 'true' ] || [ "${BOOTC_DNF_UPDATE}" == '1' ] || [ "${BOOTC_DNF_UPDATE}" == 'y' ]; then
+        echo "RUN dnf -y update" >> Containerfile
+    fi
+
+    # include RUN cmd if requested
+    if [ -n "${BOOTC_RUN_CMD}" ]; then
+        echo "RUN ${BOOTC_RUN_CMD}" >> Containerfile
+    fi
+
+    # prepare kargs file
+    if [ -n "${BOOTC_KERNEL_ARGS}" ]; then
+        cat >> 10-bootc_kernel_args.toml <<_EOF
+kargs = ${BOOTC_KERNEL_ARGS}
+_EOF
+        echo 'COPY 10-bootc_kernel_args.toml /usr/lib/bootc/kargs.d/10-bootc_kernel_args.toml' >> Containerfile
+    fi
+
+    # copy tmt run dir
+    if ! $IMAGE_MODE; then
+        if [ -d /var/ARTIFACTS ]; then
+	    cp -r /var/ARTIFACTS .
+	    echo 'COPY ARTIFACTS /var/ARTIFACTS' >> Containerfile
+	fi
+        if [ -d /var/tmp/tmt ]; then
+	    cp -r /var/tmp/tmt .
+	    echo 'COPY tmt /var/tmp/tmt' >> Containerfile
+        fi
+    fi
+
+    echo "Using the following Containerfile:"
+    echo -n "---------------------------------"
+    cat Containerfile
+    echo -n "---------------------------------"
+
+    podman build --layers=false -t ${IMPORTED_IMAGE_NAME} .
+
+    # for image mode do an update
+    if ${IMAGE_MODE}; then
+        bootc switch --transport containers-storage ${IMPORTED_IMAGE_NAME}
+    # if not in image mode, do an installation
+    else
+        podman run --rm --tls-verify=false --privileged --pid=host -v /:/target -v /dev:/dev -v /var/lib/containers:/var/lib/containers -v /root/.ssh:/output --security-opt label=type:unconfined_t ${IMPORTED_IMAGE_NAME}:latest bootc install to-existing-root --target-transport containers-storage
+    fi
+
+    touch $COOKIE
+    popd
+    rm -rf $TMPDIR
+
+    tmt-reboot
+
+  else
+    echo "PHASE: post-reboot phase"
+    [ -n "${PACKAGE}" ] && rpm -q ${PACKAGE}
+    uname -a
+    uptime
+    cat /proc/cmdline
+    rm $COOKIE
+  fi
