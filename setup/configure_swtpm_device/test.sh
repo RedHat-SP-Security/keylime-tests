@@ -132,9 +132,17 @@ _EOF"
         NEW_TPM_DEV_NO=0
     fi
 
+    # $1 = service name
+    function print_swtpm_service_debug_logs() {
+        ls -l /dev/tpm*
+	journalctl -u "$1"
+    }
+
     rlPhaseStartSetup "Start TPM emulator"
+        ls -l /dev/tpm*
         rlServiceStart ${TPM_EMULATOR}${SUFFIX}
         rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
+        [ $? -eq 0 ] || print_swtpm_service_debug_logs ${TPM_EMULATOR}${SUFFIX}
     rlPhaseEnd
 
     rlPhaseStartTest "Test TPM emulator"
@@ -159,8 +167,10 @@ _EOF"
     # do not test TPM with malformed EK on Image mode system
     if ${SETUP_MALFORMED_EK}; then
         rlPhaseStartSetup "Start TPM emulator with malformed EK"
+            ls -l /dev/tpm*
             rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
             rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
+            [ $? -eq 0 ] || print_swtpm_service_debug_logs ${TPM_EMULATOR_BAD_EK}${SUFFIX}
         rlPhaseEnd
 
         rlPhaseStartTest "Test TPM emulator with malformed EK"
