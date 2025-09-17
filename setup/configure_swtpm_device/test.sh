@@ -146,7 +146,14 @@ _EOF"
             rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
             rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
         fi
-        [ "$RUNNING" == "0" ] && rlServiceStop $TPM_EMULATOR${SUFFIX}
+        if [ "$RUNNING" == "0" ]; then
+             rlServiceStop $TPM_EMULATOR${SUFFIX}
+	     # wait a bit so kernel removes the device
+             sleep 5
+        else
+             # if we let swtpm running, we should increase NEW_TPM_DEV_NO
+             NEW_TPM_DEV_NO=$(( $NEW_TPM_DEV_NO+1 ))
+	fi
     rlPhaseEnd
 
     # do not test TPM with malformed EK on Image mode system
@@ -160,7 +167,7 @@ _EOF"
             rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
             rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
             ek="${TmpDir}/swtpm-malformed${SUFFIX}"-ek.der
-            rlRun "tpm2_getekcertificate -o ${ek}"
+            rlRun "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_getekcertificate -o ${ek}"
 
             # python-cryptography 35 changed its parsing of x509 certificates
             # and it became more strict, failing validation for some certificates
