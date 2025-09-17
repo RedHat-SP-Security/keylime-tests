@@ -69,7 +69,7 @@ Description=swtpm TPM Software emulator
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${SWTPM_DIR} --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${SWTPM_DIR} --createek --decryption --create-ek-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
 ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${SWTPM_DIR} --tpm2
 
 [Install]
