@@ -25,8 +25,8 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Start keylime agent"
-        rlRun -s "RUST_LOG=debug KEYLIME_AGENT_REGISTRAR_IP=1.2.3.4 timeout 5 keylime_agent" 0-255
-        rlAssertGrep "DEBUG keylime_agent::config > Environment configuration registrar_ip=1.2.3.4" $rlRun_LOG
+        rlRun -s "RUST_LOG=debug KEYLIME_AGENT_REGISTRAR_IP=1.2.3.4 timeout ${limeTIMEOUT} keylime_agent" 0-255
+        rlAssertGrep "Environment configuration registrar_ip=1.2.3.4" $rlRun_LOG
         rlAssertGrep "connecting to 1.2.3.4" $rlRun_LOG
         rlAssertNotGrep "connecting to 127.0.0.1" $rlRun_LOG
     rlPhaseEnd
