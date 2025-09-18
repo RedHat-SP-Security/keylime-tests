@@ -58,7 +58,9 @@ rlJournalStart
     rlPhaseStartTest "Add keylime agent with old API version"
         rlRun "limeUpdateConf agent api_versions \"\\\"${OLD_VERSION}\\\"\""
         rlRun "limeStartAgent"
-        sleep 3
+        # agent restart with HW TPM can be slow
+        sleep 10
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlAssertGrep "Starting server with API versions: ${OLD_VERSION}$" "$(limeAgentLogfile)" -E
         rlRun "cat > script.expect <<_EOF
 set timeout 20
@@ -78,10 +80,12 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeUpdateConf agent api_versions \"\\\"${LATEST_VERSION}\\\"\""
         rlRun "limeStartAgent"
-        sleep 3
+        # agent restart with HW TPM can be slow
+        sleep 10
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlAssertGrep "Starting server with API versions: ${LATEST_VERSION}$" "$(limeAgentLogfile)" -E
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID API version updated\"' -m 10 -d 1 -t 10"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
     rlPhaseEnd
@@ -90,9 +94,9 @@ _EOF"
         rlRun "limeStopAgent"
         rlRun "limeUpdateConf agent api_versions \"\\\"${OLD_VERSION}\\\"\""
         rlRun "limeStartAgent"
-        sleep 3
-        rlAssertGrep "Starting server with API versions: ${OLD_VERSION}$" "$(limeAgentLogfile)" -E
+        sleep 10
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlAssertGrep "Starting server with API versions: ${OLD_VERSION}$" "$(limeAgentLogfile)" -E
         rlAssertGrep "WARNING - Agent $AGENT_ID API version $OLD_VERSION is lower or equal to previous version" "$(limeVerifierLogfile)"
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" "$(limeVerifierLogfile)"
     rlPhaseEnd
