@@ -50,7 +50,9 @@ rlJournalStart
         rlPhaseStartTest "Add keylime agent with API version ${VERSION}"
             rlRun "limeUpdateConf agent api_versions \"\\\"${VERSION}\\\"\""
             rlRun "limeStartAgent"
-            sleep 3
+            # starting agent with HW TPM may take longer
+            sleep 10
+            rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
             #rlAssertGrep "Starting server with API versions: ${VERSION}$" "$(limeAgentLogfile)" -E
             rlRun "cat > script.expect <<_EOF
 set timeout 20
