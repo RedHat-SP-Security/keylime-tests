@@ -8,6 +8,9 @@ WEBHOOK_SERVER_PORT=8980
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 MY_IP=127.0.0.1
 HOSTNAME=$( hostname )
+# When testing PQC, set the agent algorithm with something else due to
+# https://issues.redhat.com/browse/RHEL-117439
+[ -n "${AGENT_CRYPTO_ALG}" ] || AGENT_CRYPTO_ALG="${CRYPTO_ALG}"
 
 rlJournalStart
 
@@ -28,6 +31,7 @@ rlJournalStart
         # registrar = webserver cert used for the registrar server
         # tenant = webclient cert used (twice) by the tenant, running on AGENT server
         # webhook = webserver cert used for the revocation notification webhook
+        # agent = webserver cert used for mTLS connection
         # btw, we could live with just one key instead of generating multiple keys.. but that's just how openssl/certgen works
         rlRun "x509KeyGen -t ${CRYPTO_ALG} ca" 0 "Generating Root CA ${CRYPTO_ALG} key pair"
         rlRun "x509KeyGen -t ${CRYPTO_ALG} intermediate-ca" 0 "Generating Intermediate CA ${CRYPTO_ALG} key pair"
@@ -36,7 +40,7 @@ rlJournalStart
         rlRun "x509KeyGen -t ${CRYPTO_ALG} registrar" 0 "Generating registrar ${CRYPTO_ALG} key pair"
         rlRun "x509KeyGen -t ${CRYPTO_ALG} tenant" 0 "Generating tenant ${CRYPTO_ALG} key pair"
         rlRun "x509KeyGen -t ${CRYPTO_ALG} webhook" 0 "Generating webhook ${CRYPTO_ALG} key pair"
-        #rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
+        rlRun "x509KeyGen -t ${AGENT_CRYPTO_ALG} agent" 0 "Generating agent ${AGENT_CRYPTO_ALG} key pair"
         rlRun "x509SelfSign ca" 0 "Selfsigning Root CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = ${HOSTNAME}' -t CA --subjectAltName 'IP = ${MY_IP}' intermediate-ca" 0 "Signing intermediate CA certificate with our Root CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' verifier" 0 "Signing verifier certificate with intermediate CA key"
@@ -44,7 +48,7 @@ rlJournalStart
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' registrar" 0 "Signing registrar certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webclient --subjectAltName 'IP = ${MY_IP}' tenant" 0 "Signing tenant certificate with intermediate CA key"
         rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' webhook" 0 "Signing webhook certificate with intermediate CA key"
-        #rlRun "x509SelfSign --DN 'CN = ${HOSTNAME}' -t webserver agent" 0 "Self-signing agent certificate"
+        rlRun "x509CertSign --CA intermediate-ca --DN 'CN = ${HOSTNAME}' -t webserver --subjectAltName 'IP = ${MY_IP}' agent" 0 "Signing agent certificate with intermediate CA key"
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
@@ -61,8 +65,8 @@ rlJournalStart
         rlRun "cp $(x509Key tenant) $CERTDIR/tenant-key.pem"
         rlRun "cp $(x509Cert webhook) $CERTDIR/webhook-cert.pem"
         rlRun "cp $(x509Key webhook) $CERTDIR/webhook-key.pem"
-        #rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
-        #rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
+        rlRun "cp $(x509Cert agent) $CERTDIR/agent-cert.pem"
+        rlRun "cp $(x509Key agent) $CERTDIR/agent-key.pem"
         # assign cert ownership to keylime user if it exists
         id keylime && rlRun "chown -R keylime:keylime $CERTDIR"
 
@@ -94,8 +98,8 @@ rlJournalStart
         rlRun "limeUpdateConf registrar server_key registrar-key.pem"
         # agent
         rlRun "limeUpdateConf agent trusted_client_ca '\"['${CERTDIR}/intermediate-cacert.pem', '${CERTDIR}/cacert.pem']\"'"
-        rlRun "limeUpdateConf agent server_key '\"agent-key.pem\"'"
-        rlRun "limeUpdateConf agent server_cert '\"agent-cert.pem\"'"
+        rlRun "limeUpdateConf agent server_key '\"${CERTDIR}/agent-key.pem\"'"
+        rlRun "limeUpdateConf agent server_cert '\"${CERTDIR}/agent-cert.pem\"'"
         if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
             rlRun "limeUpdateConf agent enable_revocation_notifications false"

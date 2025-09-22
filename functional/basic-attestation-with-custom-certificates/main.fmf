@@ -39,6 +39,7 @@ extra-nitrate: TC#0611725
 /pqc_alg:
     environment:
         CRYPTO_ALG: mldsa65
+        AGENT_CRYPTO_ALG: ecdsa
     continue: false
     adjust+:
       - enabled: false
