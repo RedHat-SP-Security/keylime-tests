@@ -107,8 +107,10 @@ _EOF"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
-            rlRun "tail -20 $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
+            rlRun "AGENT_LOG=\$( limeAgentLogfile )"
+            tail -20 "$AGENT_LOG"
+            rlAssertGrep 'Executing revocation action local_action_modify_payload' "$AGENT_LOG"
+            rlAssertGrep 'A node in the network has been compromised: 127.0.0.1' "$AGENT_LOG"
             rlAssertNotExists /var/tmp/test_payload_file
         fi
     rlPhaseEnd

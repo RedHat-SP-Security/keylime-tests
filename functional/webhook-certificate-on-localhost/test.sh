@@ -178,8 +178,10 @@ _EOF"
             rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" "$(limeVerifierLogfile)"
             rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" "$(limeVerifierLogfile)"
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
-            rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
+            rlRun "AGENT_LOG=\$( limeAgentLogfile )"
+            tail -20 "$AGENT_LOG"
+            rlAssertGrep 'Executing revocation action local_action_modify_payload' "$AGENT_LOG"
+            rlAssertGrep 'A node in the network has been compromised: 127.0.0.1' "$AGENT_LOG"
             rlAssertNotExists /var/tmp/test_payload_file
             if [ "${EXPECTED_RESULT}" = "bad" ]; then
                 # We expect the verifier was not successful to connect to the

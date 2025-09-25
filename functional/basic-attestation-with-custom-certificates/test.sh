@@ -158,8 +158,10 @@ _EOF"
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
-            rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: 127.0.0.1'"
+            rlRun "AGENT_LOG=\$( limeAgentLogfile )"
+            tail -20 "$AGENT_LOG"
+            rlAssertGrep 'Executing revocation action local_action_modify_payload' "$AGENT_LOG"
+            rlAssertGrep 'A node in the network has been compromised: 127.0.0.1' "$AGENT_LOG"
             rlAssertNotExists /var/tmp/test_payload_file
             cat ${WEBHOOK_SERVER_LOG}
             rlAssertGrep '\\"type\\": \\"revocation\\", \\"ip\\": \\"127.0.0.1\\", \\"agent_id\\": \\"d432fbb3-d2f1-4a97-9ef7-75bd81c00000\\"' ${WEBHOOK_SERVER_LOG} -i
