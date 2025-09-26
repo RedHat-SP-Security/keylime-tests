@@ -2080,6 +2080,7 @@ __limeServiceLogfile() {
     if limeServiceUnitFileExists keylime_${NAME}; then
         local DATE=$( stat -c '%Y' $__INTERNAL_limeLogCurrentTest ) 2> /dev/null
         journalctl -u keylime_${NAME} --since "@${DATE}" &> $LOGNAME
+        tail -20 $LOGNAME >&2
     fi
     # print a path to the log
     echo $LOGNAME
