@@ -123,3 +123,20 @@ jobs:
       - tmt:
           context:
             target_PR_branch: "fedora-rawhide"
+- job: tests
+  trigger: pull_request
+  identifier: push
+  branch: main
+  targets:
+    - fedora-all
+    - centos-stream-10-x86_64
+  skip_build: true
+  tf_extra_params:
+    test:
+      tmt:
+        name: "/plans/upstream-push-attestation-tests"
+    environments:
+      - tmt:
+          context:
+            target_PR_branch: "main"
+            multihost: "no"
