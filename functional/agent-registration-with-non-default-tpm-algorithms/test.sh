@@ -5,6 +5,7 @@
 # these 2 variables should be set from the outside
 #TPM_ENCRYPTION_ALG=ecc
 #TPM_SIGNING_ALG=ecschnorr
+SKIP_ATTESTATION="${SKIP_ATTESTATION:-}"
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
@@ -51,12 +52,15 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
 
-    # Not doing the actual attestation as those algorithms are not supported by the verifier
-    #rlPhaseStartTest "Attestation by the verifier"
-    #    rlRun "limeCreateTestPolicy"
-    #    rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
-    #    rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-    #rlPhaseEnd
+    rlPhaseStartTest "Attestation by the verifier"
+        if [ -n "${SKIP_ATTESTATION}" ]; then
+            rlLogInfo "Skipping attestation for combination of alg/sig (${TPM_ENCRYPTION_ALG} / ${TPM_SIGNING_ALG})"
+        else
+            rlRun "limeCreateTestPolicy"
+            rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
+            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        fi
+    rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"
