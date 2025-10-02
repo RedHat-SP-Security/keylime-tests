@@ -219,6 +219,16 @@ rlJournalStart
         done
     rlPhaseEnd
 
+    if [ -d rpm/repo/filelist-ext-match ]; then
+        rlPhaseStartTest "Generate runtime policy from remote RPM repo containing filelist-ext.xml"
+            rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/filelist-ext-match\" 8080 &"
+            SERVER_PID=$!
+            rlRun "keylime-policy create runtime --remote-rpm-repo http://localhost:8080"
+            rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
+            rlRun "kill ${SERVER_PID}"
+        rlPhaseEnd
+    fi
+
     # Sign runtime policies.
 
     rlPhaseStartTest "Sign runtime policy with the ECDSA DSSE backend"
