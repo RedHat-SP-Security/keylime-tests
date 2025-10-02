@@ -24,34 +24,71 @@ adjust+:
   - when: swtpm == no
     enabled: false
 
+# As of now (Keylime tip of tree being e558fe3b425c6e79419ede5ecd8427ce06ef4dd6):
+# For attestation:
+# - ECC is supported with ECDSA
+# - RSA is supported with RSASSA
+# Missing support:
+# - schnorr is not supported by OpenSSL (and hence not by python-cryptography either)
+#   > https://github.com/pyca/cryptography/issues/8202
+#   > https://github.com/openssl/openssl/issues/8440
+# - RSAPSS support is missing, but may be implemented in the future
+
+
 # this is not a complete set possible variants
+# RSA with RSASSA - should be supported for both registration and attestation.
 /rsa2048-rsassa:
   summary: Tests agent registration with rsa2048-rsassa TPM algorithms
   environment:
     TPM_ENCRYPTION_ALG: rsa2048
     TPM_SIGNING_ALG: rsassa
 
+/rsa3072-rsassa:
+  summary: Tests agent registration with rsa3072-rsassa TPM algorithms
+  environment:
+    TPM_ENCRYPTION_ALG: rsa3072
+    TPM_SIGNING_ALG: rsassa
+
+# RSAPSS is missing support in the server side, so it will only work for
+# registration, not attestation.
 /rsa3072-rsapss:
   summary: Tests agent registration with rsa3072-rsapss TPM algorithms
   environment:
     TPM_ENCRYPTION_ALG: rsa3072
     TPM_SIGNING_ALG: rsapss
+    SKIP_ATTESTATION: yes
 
+# ECC with ECDSA should work for both registration and attestation.
+/ecc256-ecdsa:
+  summary: Tests agent registration with ecc256-ecdsa TPM algorithms
+  environment:
+    TPM_ENCRYPTION_ALG: ecc256
+    TPM_SIGNING_ALG: ecdsa
+
+/ecc384-ecdsa:
+  summary: Tests agent registration with ecc384-ecdsa TPM algorithms
+  environment:
+    TPM_ENCRYPTION_ALG: ecc384
+    TPM_SIGNING_ALG: ecdsa
+
+/ecc521-ecdsa:
+  summary: Tests agent registration with ecc521-ecdsa TPM algorithms
+  environment:
+    TPM_ENCRYPTION_ALG: ecc521
+    TPM_SIGNING_ALG: ecdsa
+
+# schnorr is not supported by either OpenSSL or python-cryptography, so
+# only registration works here.
 /ecc256-ecschnorr:
   summary: Tests agent registration with ecc256-ecschnorr TPM algorithms
   environment:
     TPM_ENCRYPTION_ALG: ecc256
     TPM_SIGNING_ALG: ecschnorr
+    SKIP_ATTESTATION: yes
 
 /ecc384-ecschnorr:
   summary: Tests agent registration with ecc384-ecschnorr TPM algorithms
   environment:
     TPM_ENCRYPTION_ALG: ecc384
     TPM_SIGNING_ALG: ecschnorr
-
-# not working yet
-#/ecc521-ecdsa:
-#  summary: Tests agent registration with ecc521-ecdsa TPM algorithms
-#  environment:
-#    TPM_ENCRYPTION_ALG: ecc521
-#    TPM_SIGNING_ALG: ecdsa
+    SKIP_ATTESTATION: yes
