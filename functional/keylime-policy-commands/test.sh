@@ -211,21 +211,30 @@ rlJournalStart
 
     rlPhaseStartTest "Generate runtime policy from remote RPM repo with --remote-rpm-repo REPO"
         for repo in signed-rsa signed-ecc; do
-            rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/${repo}\" 8080 &"
+            rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/${repo}\" 8080 &> server.log &"
             SERVER_PID=$!
-            rlRun "keylime-policy create runtime --remote-rpm-repo http://localhost:8080"
+            rlRun -s "keylime-policy create runtime --remote-rpm-repo http://localhost:8080"
             rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
+            # check that individual RPMs are downloaded
+            rlAssertGrep "filelist-ext.xml not present in the repo" "$rlRun_LOG"
             rlRun "kill ${SERVER_PID}"
+            cat server.log
+            rlAssertGrep "GET /DUMMY-foo" server.log
+            rlAssertGrep "GET /DUMMY-bar" server.log
+            rlAssertGrep "GET /DUMMY-empty" server.log
         done
     rlPhaseEnd
 
     if [ -d rpm/repo/filelist-ext-match ]; then
         rlPhaseStartTest "Generate runtime policy from remote RPM repo containing filelist-ext.xml"
-            rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/filelist-ext-match\" 8080 &"
+            rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/filelist-ext-match\" 8080 &> server.log &"
             SERVER_PID=$!
-            rlRun "keylime-policy create runtime --remote-rpm-repo http://localhost:8080"
+            rlRun -s "keylime-policy create runtime --remote-rpm-repo http://localhost:8080"
             rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
+            # check that filelist-ext was downloaded
             rlRun "kill ${SERVER_PID}"
+            cat server.log
+            rlAssertGrep "GET /repodata/.*filelists-ext.xml.gz" server.log -E
         rlPhaseEnd
     fi
 
