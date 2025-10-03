@@ -54,9 +54,13 @@ if [ ! -e $COOKIE ]; then
 	
     # download bootc image and build and install an update
     if [ "${BOOTC_BASE_IMAGE}" == "localhost/bootc:latest" ]; then
-        #bootc image copy-to-storage
-        # workaround for https://github.com/containers/bootc/issues/1134
-        BOOTC_BASE_IMAGE=$( bootc status --booted --format json | jq '.spec.image.image' | tr -d '"' )
+        if rlIsRHEL '<=10.1' || rlIsRHEL '<=9.7'; then
+            echo "Applying workaround for https://github.com/containers/bootc/issues/1134"
+            BOOTC_BASE_IMAGE=$( bootc status --booted --format json | jq '.spec.image.image' | tr -d '"' )
+            echo "Using BOOTC_BASE_IMAGE=${BOOTC_BASE_IMAGE} instead"
+        else
+            bootc image copy-to-storage
+        fi
 	if [ ${BOOTC_BASE_IMAGE} == "null" ]; then
             echo "Unable to identify base image, define BOOTC_BASE_IMAGE variable"
 	    exit 1
@@ -95,7 +99,7 @@ _EOF
 RUN touch $COOKIE && \
     dnf -y install --nogpgcheck ${BOOTC_INSTALL_PACKAGES} && \
     ( [ -z "${BOOTC_DEBUGINFO_INSTALL_PACKAGES}" ] || dnf -y debuginfo-install --nogpgcheck ${BOOTC_DEBUGINFO_INSTALL_PACKAGES} ) && \
-    ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants
+    ln -f -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants
 _EOF
 
     # include dnf update if requested
