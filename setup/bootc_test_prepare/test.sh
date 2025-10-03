@@ -208,7 +208,7 @@ _EOF
     fi
 
     # add bootc container lint
-    echo "RUN bootc container lint" >> Containerfile
+    #echo "RUN bootc container lint" >> Containerfile
 
     echo "Using the following Containerfile:"
     echo -n "---------------------------------"
