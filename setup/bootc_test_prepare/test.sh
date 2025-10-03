@@ -54,7 +54,7 @@ if [ ! -e $COOKIE ]; then
 	
     # download bootc image and build and install an update
     if [ "${BOOTC_BASE_IMAGE}" == "localhost/bootc:latest" ]; then
-        if rlIsRHEL '<=10.1' || rlIsRHEL '<=9.7'; then
+        if redhat-release-10.1 || redhat-release-9.7; then
             echo "Applying workaround for https://github.com/containers/bootc/issues/1134"
             BOOTC_BASE_IMAGE=$( bootc status --booted --format json | jq '.spec.image.image' | tr -d '"' )
             echo "Using BOOTC_BASE_IMAGE=${BOOTC_BASE_IMAGE} instead"
