@@ -25,7 +25,7 @@ rlJournalStart
         rlRun "cp ${limeLibraryDir}/${IMA_POLICY_FILE} ima-policy"
 	# prepare extra kernel arguments
 	rlRun "cat > 10-ima_kargs.toml <<EOF
-kargs = [\"ima_appraise=${IMA_APPRAISE}, ima_canonical_fmt, ima_policy=${IMA_POLICY}, ima_template=${IMA_TEMPLATE}\"]
+kargs = [\"ima_appraise=${IMA_APPRAISE}, ima_canonical_fmt, ima_policy=${IMA_POLICY}, ima_template=${IMA_TEMPLATE}, selinux=0\"]
 EOF"
         # copy dnf repos
 	rlRun "cp -r /etc/yum.repos.d yum.repos.d"
