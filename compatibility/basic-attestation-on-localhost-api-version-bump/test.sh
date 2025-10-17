@@ -85,7 +85,7 @@ _EOF"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlAssertGrep "Starting server with API versions: ${LATEST_VERSION}$" "$(limeAgentLogfile)" -E
-        rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID API version updated\"' -m 10 -d 1 -t 10"
+        rlRun "rlWaitForCmd 'grep -q \"Agent $AGENT_ID API version updated\" \$(limeVerifierLogfile)' -m 10 -d 1 -t 10"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
     rlPhaseEnd
