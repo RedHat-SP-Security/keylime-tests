@@ -15,14 +15,6 @@ rlJournalStart
         rlRun "limeUpdateConf verifier mode 'push'"
         rlRun "limeUpdateConf verifier challenge_lifetime 1800"
 
-        # Set the configuration for the agent
-        rlRun "limeUpdateConf agent measuredboot_ml_path '\"/var/tmp/binary_bios_measurements\"'"
-        # TODO: this is not used anywhere
-        #rlRun "limeUpdateConf agent uefi_logs_binary_path '\"/var/tmp/binary_bios_measurements\"'"
-
-        # Copy the fake UEFI log
-        rlRun "cp binary_bios_measurements /var/tmp"
-
         # Disable EK certificate verification on the tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
 
@@ -56,15 +48,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
-        rlRun "cat > script.expect <<_EOF
-set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add --push-model
-expect \"Please enter the password to decrypt your keystore:\"
-send \"keylime\n\"
-expect eof
-_EOF"
-        rlRun "expect script.expect"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
         # Check that agent appears in verifier's agent list
         rlRun -s "keylime_tenant -c cvlist"
         # shellcheck disable=SC2154  # rlRun_LOG is set by BeakerLib's rlRun -s
