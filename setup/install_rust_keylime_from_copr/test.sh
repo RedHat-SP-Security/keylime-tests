@@ -29,7 +29,11 @@ rlJournalStart
 [Service]
 Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
 _EOF"
-            rlRun "cp /etc/systemd/system/keylime_agent.service.d/30-measured_boot_location.conf /etc/systemd/system/keylime_push_model_agent.service.d/30-measured_boot_location.conf"
+            rlRun "cat > /etc/systemd/system/keylime_push_model_agent.service.d/30-measured_boot_location.conf <<_EOF
+[Service]
+Environment=\"KEYLIME_AGENT_MEASUREDBOOT_ML_PATH=${TPM_BINARY_MEASUREMENTS}\"
+_EOF"
+
         fi
         rlRun "systemctl daemon-reload"
     rlPhaseEnd
