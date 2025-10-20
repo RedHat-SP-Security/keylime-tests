@@ -80,9 +80,10 @@ _EOF"
 [Service]
 Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
 _EOF"
+            # push agent uses KEYLIME_AGENT_MEASUREDBOOT_ML_PATH instead
             rlRun "cat > /etc/systemd/system/keylime_push_model_agent.service.d/30-measured_boot_location.conf <<_EOF
 [Service]
-Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
+Environment=\"KEYLIME_AGENT_MEASUREDBOOT_ML_PATH=${TPM_BINARY_MEASUREMENTS}\"
 _EOF"
         fi
 

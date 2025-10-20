@@ -27,7 +27,6 @@ recommend:
   - efivar-libs
 duration: 15m
 enabled: true
-extra-nitrate: TC#0613892
 adjust:
   - when: swtpm is not defined or swtpm != yes
     enabled: false
@@ -46,4 +45,11 @@ adjust:
     enabled: false
     because: For Rust agent we are not able to fake measuredboot log during 
         runtime
-id: a416a48b-3fd6-447f-82a7-6a305b6f7bc6
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+    id: c22d8d63-6df8-4723-9c6b-7a790afd4a93
+/pull:
+    environment:
+        AGENT_SERVICE: Agent
+    id: a416a48b-3fd6-447f-82a7-6a305b6f7bc6
