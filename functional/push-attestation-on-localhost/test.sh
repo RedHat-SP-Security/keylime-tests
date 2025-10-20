@@ -2,6 +2,7 @@
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
+ATTESTATION_INTERVAL=30
 
 rlJournalStart
     rlPhaseStartSetup "Setup push attestation environment"
@@ -14,14 +15,8 @@ rlJournalStart
         # Set the verifier to run in PUSH mode
         rlRun "limeUpdateConf verifier mode 'push'"
         rlRun "limeUpdateConf verifier challenge_lifetime 1800"
-
-        # Set the configuration for the agent
-        rlRun "limeUpdateConf agent measuredboot_ml_path '\"/var/tmp/binary_bios_measurements\"'"
-        # TODO: this is not used anywhere
-        #rlRun "limeUpdateConf agent uefi_logs_binary_path '\"/var/tmp/binary_bios_measurements\"'"
-
-        # Copy the fake UEFI log
-        rlRun "cp binary_bios_measurements /var/tmp"
+        rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
+        rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
 
         # Disable EK certificate verification on the tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
@@ -56,26 +51,12 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
-        rlRun "cat > script.expect <<_EOF
-set timeout 20
-spawn keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add --push-model
-expect \"Please enter the password to decrypt your keystore:\"
-send \"keylime\n\"
-expect eof
-_EOF"
-        rlRun "expect script.expect"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
         # Check that agent appears in verifier's agent list
         rlRun -s "keylime_tenant -c cvlist"
         # shellcheck disable=SC2154  # rlRun_LOG is set by BeakerLib's rlRun -s
         rlAssertGrep "$AGENT_ID" "$rlRun_LOG"
-
-        # TODO: For now the agent dies after starting because it tries to send
-        # measurements and fails. Restart the agent.
-        rlRun "limeStartPushAgent"
-        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-
-        rlAssertGrep "Attestation [0-9]+ for agent .${AGENT_ID}. " "$(limeVerifierLogfile)" -E
+	rlRun "rlWaitForCmd 'grep -qE \"Attestation [0-9]+ for agent .${AGENT_ID}.\" \$(limeVerifierLogfile)' -m $(( ${ATTESTATION_INTERVAL}*2 )) -d 1"
 
         # Store the index of the first attestation
         INDEX=$(grep -oE "Attestation [0-9]+ for agent .${AGENT_ID}. successfully passed verification" "$(limeVerifierLogfile)" | tail -1 |  grep -oE "Attestation [0-9]+" | grep -oE "[0-9]+")
@@ -87,15 +68,14 @@ _EOF"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script1.sh"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script2.sh"
         rlRun "sleep 5"
-
-        rlRun "rlWaitForCmd 'grep -qE \"Attestation $((INDEX + 1)) for agent .${AGENT_ID}. successfully passed verification\" \$(limeVerifierLogfile)' -m 120 -d 1"
+        rlRun "rlWaitForCmd 'grep -qE \"Attestation $((INDEX + 1)) for agent .${AGENT_ID}. successfully passed verification\" \$(limeVerifierLogfile)' -m $(( ${ATTESTATION_INTERVAL}*2 )) -d 1"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/bad-script.sh && chmod a+x $TESTDIR/bad-script.sh"
         rlRun "$TESTDIR/bad-script.sh"
 
-        rlRun "rlWaitForCmd 'grep -qE \"Attestation [0-9]+ for agent .${AGENT_ID}. failed verification\" \$(limeVerifierLogfile)' -m 120 -d 1"
+        rlRun "rlWaitForCmd 'grep -qE \"Attestation [0-9]+ for agent .${AGENT_ID}. failed verification\" \$(limeVerifierLogfile)' -m $(( ${ATTESTATION_INTERVAL}*2 )) -d 1"
         rlAssertGrep "File not found in allowlist: $TESTDIR/bad-script.sh" "$(limeVerifierLogfile)"
     rlPhaseEnd
 
