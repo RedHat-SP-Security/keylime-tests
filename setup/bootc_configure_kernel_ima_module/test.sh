@@ -27,7 +27,9 @@ rlJournalStart
 	rlRun "cat > 10-ima_kargs.toml <<EOF
 kargs = [\"ima_appraise=${IMA_APPRAISE}, ima_canonical_fmt, ima_policy=${IMA_POLICY}, ima_template=${IMA_TEMPLATE}\"]
 EOF"
-        # copy dnf repos
+        # copy various data to CWD so we can add them to the image
+        rlRun "cp -r /root/.ssh ."
+        rlRun "cp /etc/resolv.conf ."
 	rlRun "cp -r /etc/yum.repos.d yum.repos.d"
         # download bootc image and build and install an update
 	[ "${KEYLIME_BOOTC_BASE_IMAGE}" == "localhost/bootc:latest" ] && rlRun "bootc image copy-to-storage"
