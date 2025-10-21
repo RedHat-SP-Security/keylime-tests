@@ -8,3 +8,4 @@ COPY yum.repos.d/* /etc/yum.repos.d/
 ARG KEYLIME_BOOTC_INSTALL_PACKAGES="rsync beakerlib selinux-policy-devel swtpm swtpm-tools nmap keylime expect"
 RUN dnf -y install ${KEYLIME_BOOTC_INSTALL_PACKAGES}
 RUN sed -i '/tss/ d' /usr/lib/group; ls -ld /etc/keylime /var/lib/keylime; ls -l /etc/keylime /var/lib/keylime; /bin/true
+RUN restorecon -Rv /usr /etc; /bin/true
