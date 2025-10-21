@@ -7,7 +7,7 @@ context:
 environment:
   #KEYLIME_UPSTREAM_URL: "https://github.com/keylime/keylime.git"
   #KEYLIME_UPSTREAM_BRANCH: "master"
-  KEYLIME_UPSTREAM_URL: https://github.com/hse-aurora/keylime-oss
+  KEYLIME_UPSTREAM_URL: https://github.com/sarroutbi-test-organization/keylime-oss.git
   KEYLIME_UPSTREAM_BRANCH: push-attestation
   # variables below impact only plans that use /setup/install_upstream_rust_keylime
   # task, not plans using /setup/install_rust_keylime_from_copr
