@@ -14,6 +14,13 @@
 
 [ -n "$REGISTRY" ] || REGISTRY=quay.io
 
+TENANT_ARGS=""
+AGENT_CMD="keylime_agent"
+if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+    TENANT_ARGS="--push-model"
+    AGENT_CMD="keylime_push_model_agent"
+fi
+
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
@@ -34,6 +41,16 @@ rlJournalStart
 
         #verifier
         rlRun "limeUpdateConf verifier ip $SERVER_IP"
+        rlRun "limeUpdateConf verifier quote_interval 10"
+
+        # configure push attestation
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            # Set the verifier to run in PUSH mode
+            rlRun "limeUpdateConf verifier mode 'push'"
+            rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+            rlRun "limeUpdateConf agent attestation_interval_seconds 10"
+            rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
+        fi
 
         # start tpm emulator
         rlRun "limeStartTPMEmulator"
@@ -45,8 +62,8 @@ rlJournalStart
         # start tpm emulator
         rlRun "limeTPMDevNo=1 limeStartTPMEmulator"
         rlRun "limeTPMDevNo=1 limeWaitForTPMEmulator"
-        # start ima emulator
-        rlRun "limeTPMDevNo=1 TCTI=device:/dev/tpmrm1 limeStartIMAEmulator"
+        # start ima emulator, use --no-stop so we won't stop the previous one
+        rlRun "limeTPMDevNo=1 TPM2TOOLS_TCTI=device:/dev/tpmrm1 limeStartIMAEmulator --no-stop"
  
         sleep 5
 
@@ -82,7 +99,7 @@ rlJournalStart
         rlRun "limeconPrepareAgentConfdir $AGENT_ID_FIRST $IP_AGENT_FIRST confdir_$CONT_AGENT_FIRST"
 
         #run of first agent 
-        rlRun "limeconRunAgent $CONT_AGENT_FIRST $TAG_AGENT $IP_AGENT_FIRST $CONT_NETWORK_NAME $TESTDIR_FIRST keylime_agent $PWD/confdir_$CONT_AGENT_FIRST $PWD/cv_ca"
+        rlRun "limeconRunAgent $CONT_AGENT_FIRST $TAG_AGENT $IP_AGENT_FIRST $CONT_NETWORK_NAME $TESTDIR_FIRST $AGENT_CMD $PWD/confdir_$CONT_AGENT_FIRST $PWD/cv_ca"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID_FIRST}"
 
         #setup of second agent
@@ -92,7 +109,7 @@ rlJournalStart
         rlRun "limeconPrepareAgentConfdir $AGENT_ID_SECOND $IP_AGENT_SECOND confdir_$CONT_AGENT_SECOND"
 
         #run of second agent
-        rlRun "limeTPMDevNo=1 limeconRunAgent $CONT_AGENT_SECOND $TAG_AGENT $IP_AGENT_SECOND $CONT_NETWORK_NAME $TESTDIR_SECOND keylime_agent $PWD/confdir_$CONT_AGENT_SECOND $PWD/cv_ca"
+        rlRun "limeTPMDevNo=1 limeconRunAgent $CONT_AGENT_SECOND $TAG_AGENT $IP_AGENT_SECOND $CONT_NETWORK_NAME $TESTDIR_SECOND $AGENT_CMD $PWD/confdir_$CONT_AGENT_SECOND $PWD/cv_ca"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID_SECOND}"
 
         # create allowlist and excludelist for each agent
@@ -103,12 +120,12 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agents"
-        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_FIRST -u $AGENT_ID_FIRST --runtime-policy policy1.json -f /etc/hosts -c add"
+        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_FIRST -u $AGENT_ID_FIRST --runtime-policy policy1.json -f /etc/hosts -c add ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID_FIRST'" $rlRun_LOG -E
         #check second agent
-        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_SECOND -u $AGENT_ID_SECOND --runtime-policy policy2.json -f /etc/hosts -c add"
+        rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_SECOND -u $AGENT_ID_SECOND --runtime-policy policy2.json -f /etc/hosts -c add ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
     rlPhaseEnd
 
@@ -124,7 +141,7 @@ rlJournalStart
     rlPhaseStartTest "Fail first keylime agent and check second"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR_FIRST/bad-script.sh && chmod a+x $TESTDIR_FIRST/bad-script.sh"
         rlRun "$TESTDIR_FIRST/bad-script.sh"
-        rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID_FIRST failed\"' -m 10 -d 1 -t 10"
+        rlRun "rlWaitForCmd 'tail -30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID_FIRST failed\"' -m 30 -d 2 -t 60"
         rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR_FIRST/bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID_FIRST failed, stopping polling" $(limeVerifierLogfile)
@@ -135,7 +152,7 @@ rlJournalStart
     rlPhaseStartTest "Fail second keylime agent"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR_SECOND/bad-script.sh && chmod a+x $TESTDIR_SECOND/bad-script.sh"
         rlRun "$TESTDIR_SECOND/bad-script.sh"
-        rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID_SECOND failed\"' -m 10 -d 1 -t 10"
+        rlRun "rlWaitForCmd 'tail -30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID_SECOND failed\"' -m 30 -d 2 -t 60"
         rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND '(Failed|Invalid Quote)'"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR_SECOND/bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID_SECOND failed, stopping polling" $(limeVerifierLogfile)
