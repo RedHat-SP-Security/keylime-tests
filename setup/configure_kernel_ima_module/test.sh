@@ -2,8 +2,8 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-[ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="fix"
 [ -z "${IMA_POLICY}" ] && IMA_POLICY="tcb"
+[ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="log"
 [ -z "${IMA_TEMPLATE}" ] && IMA_TEMPLATE="ima-ng"
 [ -z "${IMA_POLICY_FILE}" ] && IMA_POLICY_FILE="ima-policy-simple"
 
