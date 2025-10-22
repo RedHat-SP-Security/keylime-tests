@@ -9,7 +9,7 @@ KEYLIME_PODMAN_BUILD_ARGS="${KEYLIME_PODMAN_BUILD_ARGS} --build-arg KEYLIME_BOOT
 # you can use KEYLIME_BOOTC_INSTALL_PACKAGES variable to override packages installed in Containerfile
 [ -n "${KEYLIME_BOOTC_INSTALL_PACKAGES}" ] && KEYLIME_PODMAN_BUILD_ARGS="${KEYLIME_PODMAN_BUILD_ARGS} --build-arg KEYLIME_BOOTC_INSTALL_PACKAGES='${KEYLIME_BOOTC_INSTALL_PACKAGES}'"
 
-[ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="fix"
+[ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="log"
 [ -z "${IMA_POLICY}" ] && IMA_POLICY="tcb"
 [ -z "${IMA_TEMPLATE}" ] && IMA_TEMPLATE="ima-ng"
 [ -z "${IMA_POLICY_FILE}" ] && IMA_POLICY_FILE="ima-policy-simple"
