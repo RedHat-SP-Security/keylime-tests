@@ -124,9 +124,11 @@ User=tss
 [Install]
 WantedBy=multi-user.target
 _EOF"
-        # also add drop-in update for eventual keylime_agent unit file
-        rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
-        rlRun "cat > /etc/systemd/system/keylime_agent.service.d/10-tcti.conf <<_EOF
+
+        # also add drop-in update for eventual keylime_agent unit files
+        for AGENT_DIR in keylime_agent.service.d keylime_push_model_agent.service.d; do
+            rlRun "mkdir -p /etc/systemd/system/${AGENT_DIR}"
+            rlRun "cat > /etc/systemd/system/${AGENT_DIR}/10-tcti.conf <<_EOF
 [Unit]
 # we want to unset this since there is no /dev/tmp0
 ConditionPathExistsGlob=
@@ -134,6 +136,7 @@ ConditionPathExistsGlob=
 Environment=\"TPM2TOOLS_TCTI=${TPM2TOOLS_TCTI}\"
 Environment=\"TCTI=${TPM2TOOLS_TCTI}\"
 _EOF"
+        done
         rlRun "systemctl daemon-reload"
 
         if [ "${TPM_EMULATOR}" = "swtpm" ]; then
