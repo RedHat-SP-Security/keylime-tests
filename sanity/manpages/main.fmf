@@ -17,7 +17,3 @@ recommend:
   - keylime
 duration: 5m
 enabled: true
-adjust:
-  - enabled: false
-    when: distro < rhel-10.2
-    continue: false
