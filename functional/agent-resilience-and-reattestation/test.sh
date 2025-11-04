@@ -4,12 +4,15 @@
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00001"
 
+TENANT_ARGS=""
+[ "${AGENT_SERVICE}" == "PushAgent" ] && TENANT_ARGS="--push-model"
 DELAY=5
 
 rlJournalStart
 
     rlPhaseStartSetup "Do the keylime setup"
-        rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        [ "${AGENT_SERVICE}" != "Agent" ] && [ "${AGENT_SERVICE}" != "PushAgent" ] && rlDie "Error: AGENT_SERVICE variable is not set. Value 'Agent' or 'PushAgent' expected!"
+        rlRun 'rlImport "./test-helpers"' || rlDie "Error: Cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
 
         # update /etc/keylime.conf
@@ -21,6 +24,13 @@ rlJournalStart
         rlRun "limeUpdateConf agent uuid \\\"${AGENT_ID}\\\""
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        # configure push attestation
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            # Set the verifier to run in PUSH mode
+            rlRun "limeUpdateConf verifier mode 'push'"
+            rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+            rlRun "limeUpdateConf agent attestation_interval_seconds 20"
+        fi
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -37,13 +47,13 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        rlRun "limeStartAgent"
+        rlRun "limeStart${AGENT_SERVICE}"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "limeCreateTestPolicy"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
@@ -51,8 +61,8 @@ rlJournalStart
 
     rlPhaseStartTest "Test agent restart - agent should re-establish attestation"
         rlLogInfo "Restarting agent service"
-        rlRun "limeStopAgent"
-        rlRun "limeStartAgent"
+        rlRun "limeStop${AGENT_SERVICE}"
+        rlRun "limeStart${AGENT_SERVICE}"
 	sleep "${DELAY}"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "keylime_tenant -c reglist"
@@ -73,7 +83,7 @@ rlJournalStart
 
     rlPhaseStartTest "Delete agent from registrar and restart agent - should re-register and attest"
         rlLogInfo "Deleting agent from registrar"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c regdelete"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c regdelete ${TENANT_ARGS}"
         # verify agent is deleted
         rlRun -s "keylime_tenant -c reglist"
         rlAssertNotGrep "$AGENT_ID" $rlRun_LOG
@@ -96,21 +106,21 @@ rlJournalStart
         # create new policy including the new script
         rlRun "limeCreateTestPolicy ${TESTDIR}/*"
         rlLogInfo "Removing agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c delete"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID -c delete ${TENANT_ARGS}"
         rlRun -s "keylime_tenant -c cvlist"
         # run the new script
         rlRun "${TESTDIR}/new-script.sh"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep new-script.sh"
         # re-add agent with updated policy
         rlLogInfo "Re-adding agent with updated policy"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
         rlRun "sleep ${DELAY}"
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'" 0 "Agent should remain attested after running new allowed script"
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
-        rlRun "limeStopAgent"
+        rlRun "limeStop${AGENT_SERVICE}"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         rlAssertNotGrep "Traceback" "$(limeRegistrarLogfile)"

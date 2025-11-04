@@ -22,3 +22,10 @@ recommend:
   - keylime
 duration: 10m
 enabled: true
+
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+/pull:
+    environment:
+        AGENT_SERVICE: Agent

@@ -16,7 +16,7 @@ discover:
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_signing
-   - "agent-resilience-and-reattestation"
+   - "agent-resilience-and-reattestation/pull"
 
 execute:
     how: tmt
