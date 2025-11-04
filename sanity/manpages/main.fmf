@@ -1,0 +1,23 @@
+summary: Test keylime manpages
+description: |
+    Tests for keylime manpages:
+    - keylime_tenant
+    - keylime_verifier
+    - keylime_registrar
+    - keylime-policy
+contact: Marek Šafařík <msafarik@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+
+recommend:
+  - keylime
+duration: 5m
+enabled: true
+adjust:
+  - enabled: false
+    when: distro < rhel-10.2
+    continue: false
