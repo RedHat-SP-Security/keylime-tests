@@ -63,12 +63,8 @@ _EOF'
         rlRun "cp tests/actions/shim.py /usr/libexec/keylime"
         rlRun "popd"
 
-        # Add drop-in unit file updates
+        # Prepare dirs for drop-in unit file updates
         rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
-        rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-rust_log_trace.conf <<_EOF
-[Service]
-Environment=\"RUST_LOG=keylime_agent=trace,keylime=trace\"
-_EOF"
 
         # If the TPM_BINARY_MEASUREMENTS env var is set, set the binary
         # measurements location for the service

@@ -22,10 +22,6 @@ rlJournalStart
         # prepare directory for drop-in adjustments
         rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
         rlRun "mkdir -p /etc/keylime/agent.conf.d"
-        rlRun "cat > /etc/systemd/system/keylime_agent.service.d/20-rust_log_trace.conf <<_EOF
-[Service]
-Environment=\"RUST_LOG=keylime_agent=trace,keylime=trace\"
-_EOF"
         # If the TPM_BINARY_MEASUREMENTS env var is set, set the binary
         # measurements location for the service
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
