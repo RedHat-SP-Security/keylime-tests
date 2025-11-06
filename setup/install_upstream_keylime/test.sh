@@ -84,7 +84,7 @@ _EOF'
         rlRun "cp -r scripts /usr/share/keylime/"
 
         # install manpages - convert from .rst to man format
-        rlRun "yum install -y python3-docutils" 0 "Install rst2man tool"
+        rlRun "yum install -y python3-docutils python3-pygments"
         rlRun "mkdir -p /usr/share/man/man1 /usr/share/man/man8"
         rlRun "rst2man docs/man/keylime_tenant.1.rst /usr/share/man/man1/keylime_tenant.1"
         rlRun "rst2man docs/man/keylime-policy.1.rst /usr/share/man/man1/keylime-policy.1"
