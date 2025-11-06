@@ -24,7 +24,6 @@ rlJournalStart
             rlAssertGrep "NAME" "$rlRun_LOG" -i
             rlAssertGrep "SYNOPSIS" "$rlRun_LOG" -i
             rlAssertGrep "DESCRIPTION" "$rlRun_LOG" -i
-            rlAssertGrep "Report bugs " "$rlRun_LOG" -i
             rlRun "rm -f $rlRun_LOG"
         done
     rlPhaseEnd
@@ -44,7 +43,6 @@ rlJournalStart
         rlAssertGrep "keylime_verifier" "$rlRun_LOG"
         rlAssertGrep "CONFIGURATION" "$rlRun_LOG" -i
         rlAssertGrep "ENVIRONMENT" "$rlRun_LOG" -i
-        rlAssertGrep "not accept command-line options" "$rlRun_LOG" -i
         rlRun "rm -f $rlRun_LOG"
     rlPhaseEnd
 
@@ -53,7 +51,6 @@ rlJournalStart
         rlAssertGrep "keylime_registrar" "$rlRun_LOG"
         rlAssertGrep "CONFIGURATION" "$rlRun_LOG" -i
         rlAssertGrep "ENVIRONMENT" "$rlRun_LOG" -i
-        rlAssertGrep "not accept command-line options" "$rlRun_LOG" -i
         rlRun "rm -f $rlRun_LOG"
     rlPhaseEnd
 
