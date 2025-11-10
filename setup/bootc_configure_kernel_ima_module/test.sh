@@ -2,9 +2,20 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
-# you can use BOOTC_BASE_IMAGE variable to override a base image in Containerfile
+# you can use KEYLIME_BOOTC_BASE_IMAGE variable to override a base image in Containerfile
 KEYLIME_PODMAN_BUILD_ARGS=""
-[ -n "${KEYLIME_BOOTC_BASE_IMAGE}" ] || KEYLIME_BOOTC_BASE_IMAGE="localhost/bootc:latest"
+
+SHORT_IMAGE_NAME=bootc_setup_image
+IMPORTED_IMAGE_NAME="localhost/${SHORT_IMAGE_NAME}"
+# set the default base image based on what's available on the system
+if [ -z "${KEYLIME_BOOTC_BASE_IMAGE}" ]; then
+    if podman images | grep -q "${IMPORTED_IMAGE_NAME}"; then
+        KEYLIME_BOOTC_BASE_IMAGE="${IMPORTED_IMAGE_NAME}"
+    else
+        KEYLIME_BOOTC_BASE_IMAGE="localhost/bootc:latest"
+    fi
+fi
+
 KEYLIME_PODMAN_BUILD_ARGS="${KEYLIME_PODMAN_BUILD_ARGS} --build-arg KEYLIME_BOOTC_BASE_IMAGE='${KEYLIME_BOOTC_BASE_IMAGE}'"
 # you can use KEYLIME_BOOTC_INSTALL_PACKAGES variable to override packages installed in Containerfile
 [ -n "${KEYLIME_BOOTC_INSTALL_PACKAGES}" ] && KEYLIME_PODMAN_BUILD_ARGS="${KEYLIME_PODMAN_BUILD_ARGS} --build-arg KEYLIME_BOOTC_INSTALL_PACKAGES='${KEYLIME_BOOTC_INSTALL_PACKAGES}'"
@@ -23,7 +34,7 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         # copy IMA policy file
         rlRun "cp ${limeLibraryDir}/${IMA_POLICY_FILE} ima-policy"
-	# prepare extra kernel arguments
+        # prepare extra kernel arguments
 	rlRun "cat > 10-ima_kargs.toml <<EOF
 kargs = [\"ima_appraise=${IMA_APPRAISE}, ima_canonical_fmt, ima_policy=${IMA_POLICY}, ima_template=${IMA_TEMPLATE}\"]
 EOF"
