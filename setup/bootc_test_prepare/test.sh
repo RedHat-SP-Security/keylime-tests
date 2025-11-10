@@ -13,16 +13,24 @@ set -exo pipefail
 # you can use BOOTC_KERNEL_ARGS variable to configure kernel cmdline parameters in the bootc-install-config format
 #   Example: BOOTC_KERNEL_ARGS='["nosmt", "console=tty0"]'
 
-[ -z "${BOOTC_BASE_IMAGE}" ] && BOOTC_BASE_IMAGE="localhost/bootc:latest"
-[ -z "${BOOTC_INSTALL_PACKAGES}" ] && BOOTC_INSTALL_PACKAGES="rsync cloud-init"
-IMPORTED_IMAGE_NAME="localhost/bootc_setup_image"
+SHORT_IMAGE_NAME=bootc_setup_image
+IMPORTED_IMAGE_NAME="localhost/${SHORT_IMAGE_NAME}"
+# set the default base image based on what's available on the system
+if [ -z "${BOOTC_BASE_IMAGE}" ]; then
+    if podman images | grep -q "${IMPORTED_IMAGE_NAME}"; then
+        BOOTC_BASE_IMAGE="${IMPORTED_IMAGE_NAME}"
+    else
+        BOOTC_BASE_IMAGE="localhost/bootc:latest"
+    fi
+fi
+BOOTC_INSTALL_PACKAGES="rsync bootc cloud-init ${BOOTC_INSTALL_PACKAGES}"
 
 COOKIE=/var/tmp/bootc_test_prepare-rebooted
 
 if [ ! -e $COOKIE ]; then
     echo "PHASE: pre-reboot phase"
     # install bootc and podman just in case it's missing and we are in package mode
-    rpm -q bootc podman || dnf -y install bootc podman system-reinstall-bootc
+    rpm -q bootc podman || dnf -y install bootc cloud-init podman system-reinstall-bootc
 
     # detect image mode
     if bootc status --format yaml | grep -q 'booted: null'; then
@@ -74,8 +82,10 @@ COPY resolv.conf /etc/resolv.conf
 RUN chmod -R a+x ${TMT_SCRIPTS_DIR} /usr/local/bin
 _EOF
 
-    # copy /var/tmp/brew-build-repo* and /var/tmp/opt-brew-build-repo* repos when present
-    REPODIRS=$( ls -d /var/tmp/{,opt-}brew-build-repo-* || : )
+    # copy /var/tmp/brew-build-repo* and /var/tmp/opt-brew-build-repo* repos when present,
+    # as well as /var/share/test-artifacts (repository of all downloaded artifacts)
+    # https://docs.testing-farm.io/Testing%20Farm/0.1/test-environment.html#test-artifacts-repository
+    REPODIRS=$( ls -d /var/tmp/{,opt-}brew-build-repo-* /var/share/test-artifacts || : )
     for REPODIR in $REPODIRS; do
 	cp -r ${REPODIR} .
 	echo "COPY $( basename $REPODIR ) $REPODIR" >> Containerfile
@@ -95,7 +105,7 @@ _EOF
 RUN touch $COOKIE && \
     dnf -y install --nogpgcheck ${BOOTC_INSTALL_PACKAGES} && \
     ( [ -z "${BOOTC_DEBUGINFO_INSTALL_PACKAGES}" ] || dnf -y debuginfo-install --nogpgcheck ${BOOTC_DEBUGINFO_INSTALL_PACKAGES} ) && \
-    ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants
+    (ln -s ../cloud-init.target /usr/lib/systemd/system/default.target.wants || true )
 _EOF
 
     # include dnf update if requested
@@ -203,6 +213,9 @@ _EOF
         echo "RUN ${BOOTC_RUN_CMD}" >> Containerfile
     fi
 
+    # fix selinux context
+    echo "RUN restorecon -Rv /usr /etc || true" >> Containerfile
+
     # add bootc container lint
     echo "RUN bootc container lint" >> Containerfile
 
@@ -216,8 +229,20 @@ _EOF
     # for image mode do an update
     if ${IMAGE_MODE}; then
         bootc switch --transport containers-storage ${IMPORTED_IMAGE_NAME}
-    # if not in image mode, do an installation
+    # if not in image mode
     else
+        # now, this is a bit ugly but there doesn't seem to be a better way of doing this locally
+        # We are going to build one more image that would contain a copy of the previously built one
+        # so that we can import it to a local registry after the installation and use it
+        # as a base image for future updates.
+        podman save "${IMPORTED_IMAGE_NAME}" -o "${SHORT_IMAGE_NAME}.tar"
+        cat > Containerfile <<_EOF
+FROM ${IMPORTED_IMAGE_NAME}
+COPY ${SHORT_IMAGE_NAME}.tar /var/tmp/${SHORT_IMAGE_NAME}.tar
+_EOF
+        podman build --layers=false -t ${IMPORTED_IMAGE_NAME} .
+
+        # do the installation
         podman run --rm --tls-verify=false --privileged --pid=host -v /:/target -v /dev:/dev -v /var/lib/containers:/var/lib/containers -v /root/.ssh:/output --security-opt label=type:unconfined_t ${IMPORTED_IMAGE_NAME}:latest bootc install to-existing-root --target-transport containers-storage
     fi
 
@@ -248,9 +273,15 @@ _EOF
 
   else
     echo "PHASE: post-reboot phase"
-    [ -n "${PACKAGE}" ] && rpm -q ${PACKAGE}
+    [ -n "${PACKAGE}" ] && rpm -q "${PACKAGE}"
     uname -a
     uptime
     cat /proc/cmdline
     rm $COOKIE
+    # import built image into a registry
+    if [ -f "/var/tmp/${SHORT_IMAGE_NAME}.tar" ]; then
+      podman load -i "/var/tmp/${SHORT_IMAGE_NAME}.tar"
+      rm -f "/var/tmp/${SHORT_IMAGE_NAME}.tar"
+      podman images
+    fi
   fi
