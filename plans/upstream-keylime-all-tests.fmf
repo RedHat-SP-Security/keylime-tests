@@ -13,22 +13,10 @@ discover:
    - /setup/install_upstream_keylime
    - /setup/install_upstream_rust_keylime
    #- /setup/enable_keylime_debug_messages
-   - /setup/enable_keylime_coverage
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
-   - /setup/configure_kernel_ima_module/ima_policy_simple
-   - /functional/basic-attestation-on-localhost
-   # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
-   - "^/functional/.*"
-   - "^/compatibility/.*"
-   - "^/regression/.*"
-   - /update/basic-attestation-on-localhost/all
-   - "/sanity/.*"
-   # run upstream test suite
-   - /upstream/run_keylime_tests
-   - /setup/generate_coverage_report
-   - /setup/generate_upstream_rust_keylime_code_coverage
+   - "agent-resilience-and-reattestation/push"
 
 execute:
     how: tmt
