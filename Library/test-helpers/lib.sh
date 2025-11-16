@@ -1879,6 +1879,68 @@ limeExtendNextExcludelist() {
 true <<'=cut'
 =pod
 
+=head2 limeSyncIMAExcludelist
+
+Synchronizes the base exclude list with test directories found in the IMA log.
+This function scans the IMA log for any /keylime-tests/ paths and automatically
+adds missing directories to the exclude list. This prevents attestation failures
+caused by measurements from previous test runs that failed to complete cleanup.
+
+Should be called early in test setup phase, after IMA emulator is started.
+
+    limeSyncIMAExcludelist
+
+=over
+
+=back
+
+Returns 0 when successful, non-zero otherwise.
+
+=cut
+
+limeSyncIMAExcludelist() {
+    local IMA_LOG="/sys/kernel/security/ima/ascii_runtime_measurements"
+
+    # Check if IMA log exists
+    if [ ! -f "$IMA_LOG" ]; then
+        rlLogWarning "IMA log not found at $IMA_LOG, skipping sync"
+        return 0
+    fi
+
+    # Extract unique /keylime-tests/ directories from IMA log
+    local DIRS=$(grep -oE '/keylime-tests/[^/]+' "$IMA_LOG" 2>/dev/null | sort -u)
+
+    if [ -z "$DIRS" ]; then
+        rlLogInfo "No /keylime-tests/ directories found in IMA log"
+        return 0
+    fi
+
+    # Ensure base exclude list exists
+    touch "$__INTERNAL_limeBaseExcludeList"
+
+    local ADDED=0
+    for DIR in $DIRS; do
+        # Check if directory is already in exclude list (escape special regex chars in DIR)
+        local ESCAPED_DIR=$(echo "$DIR" | sed 's/[]\/$*.^[]/\\&/g')
+        if ! grep -Eq "^${ESCAPED_DIR}\(/\.\*\)\?\$" "$__INTERNAL_limeBaseExcludeList" 2>/dev/null; then
+            echo "${DIR}(/.*)?" >> "$__INTERNAL_limeBaseExcludeList"
+            rlLogInfo "Added missing directory to exclude list: $DIR"
+            ADDED=$((ADDED + 1))
+        fi
+    done
+
+    if [ $ADDED -gt 0 ]; then
+        rlLogInfo "Added $ADDED missing directories to exclude list"
+    else
+        rlLogInfo "All IMA log directories already in exclude list"
+    fi
+
+    return 0
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeCreateTestDir
 
 Creates a directory under /keylime-tests directory with a unique name
