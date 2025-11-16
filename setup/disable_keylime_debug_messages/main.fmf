@@ -1,0 +1,13 @@
+summary: Updates keylime configuration to log on INFO level
+description: Updates keylime configuration to log on INFO level
+contact: Sergio Correia <scorreia@redhat.com>
+component:
+  - keylime
+recommend:
+  - keylime
+test: ./test.sh
+tag:
+  - setup
+framework: beakerlib
+duration: 3m
+enabled: true
