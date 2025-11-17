@@ -16,6 +16,9 @@ rlJournalStart
         rlRun "rm -rf /root/.gnupg/"
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        # increase max_retries to handle slow agent deletion
+        # (7 retries = ~4 min max wait)
+        rlRun "limeUpdateConf tenant max_retries 7"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
