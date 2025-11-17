@@ -36,6 +36,8 @@ rlJournalStart
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf verifier measured_boot_policy_name accept-all"
+        # Reducing quote interval to speed up the test a bit.
+        rlRun "limeUpdateConf verifier quote_interval 20"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         rlRun "limeUpdateConf agent enable_revocation_notifications false"
         # start keylime_verifier

@@ -25,7 +25,7 @@ require:
 recommend:
   - keylime
   - efivar-libs
-duration: 5m
+duration: 15m
 enabled: true
 extra-nitrate: TC#0613892
 adjust:
