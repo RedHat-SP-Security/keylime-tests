@@ -19,7 +19,7 @@ require:
   - tpm2-tools
 recommend:
   - keylime
-duration: 5m
+duration: 15m
 enabled: true
 extra-nitrate: TC#0613123
 id: 1d66a2c1-1de9-48f5-8487-90bc33c691a6
