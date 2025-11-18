@@ -2065,10 +2065,25 @@ limeCopyKeylimeFile(){
         cp ${FILEPATH} ${DEST}
     # source file that was not found on a system will be downloaded
     elif [ "${OPTION}" == "-s" ] || [ "${OPTION}" == "--source" ]; then
-        echo "Downloading https://raw.githubusercontent.com/keylime/keylime/master/${NAME} to ${DEST}"
-        pushd ${DEST}
-        curl -O https://raw.githubusercontent.com/keylime/keylime/master/${NAME}
+        echo "Cloning keylime repository to fetch ${NAME}"
+        local TMPDIR=$(mktemp -d)
+        pushd ${TMPDIR}
+        git clone --depth 1 --filter=blob:none --sparse \
+            "${KEYLIME_UPSTREAM_URL:-https://github.com/keylime/keylime}" \
+            -b "${KEYLIME_UPSTREAM_BRANCH:-master}"
+        cd keylime
+        git sparse-checkout set "$(dirname ${NAME})"
+        if [ -f "${NAME}" ]; then
+            cp "${NAME}" "${DEST}/"
+            echo "Successfully copied ${NAME} to ${DEST}"
+        else
+            echo "ERROR: Could not find ${NAME} in cloned repository"
+            popd
+            rm -rf ${TMPDIR}
+            return 1
+        fi
         popd
+        rm -rf ${TMPDIR}
     else
         echo "Could not find file matching ${NAME} on a local system"
         return 1
