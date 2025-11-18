@@ -3298,6 +3298,37 @@ limePushAgentLogfile() {
 
 }
 
+true <<'=cut'
+=pod
+
+=head2 limePushAuthGetToken
+
+Extract the authentication token from push agent log file.
+This extracts the Bearer token from authorization headers in the log.
+
+    limePushAuthGetToken [LOGFILE]
+
+=over
+
+=item LOGFILE
+
+Optional path to agent log file. If not provided, uses limePushAgentLogfile.
+
+=back
+
+Returns the token string to STDOUT, or empty string if no token found.
+
+Note: This function relies on DEBUG-level log messages from the agent.
+The agent must be running with RUST_LOG=keylime_agent=trace,keylime=trace
+or equivalent log level to capture authorization headers.
+
+=cut
+
+limePushAuthGetToken() {
+    local log_file="${1:-$(limePushAgentLogfile)}"
+    grep "authorization: \"Bearer" "$log_file" | tail -1 | sed -n 's/.*Bearer \([^"]*\).*/\1/p'
+}
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Verification
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

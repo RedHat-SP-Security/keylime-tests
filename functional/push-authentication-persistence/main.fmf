@@ -1,0 +1,25 @@
+summary: Token persistence in push mode authentication
+description: |
+    Test authentication token persistence and behavior during failures.
+
+    Tests:
+    - Token persistence across verifier restarts (database)
+    - Token remains valid during failed attestations
+    - Agent continues to submit attestations in push mode
+
+contact: Sergio Correia <scorreia@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - expect
+  - jq
+recommend:
+  - keylime
+  - python3-tomli
+duration: 8m
+enabled: true

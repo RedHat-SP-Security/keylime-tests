@@ -1,0 +1,27 @@
+summary: Authentication rate limiting in push mode
+description: |
+    Test authentication rate limiting to prevent DoS attacks.
+
+    Tests:
+    - Agent-based rate limiting (requests per agent)
+    - IP-based rate limiting (requests per IP address)
+    - Rate limit reset after block expiration
+    - Retry-After header presence
+
+contact: Sergio Correia <scorreia@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - yum
+  - expect
+  - jq
+  - curl
+recommend:
+  - keylime
+  - python3-tomli
+duration: 3m
+enabled: true
