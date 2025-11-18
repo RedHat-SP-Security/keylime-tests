@@ -1,0 +1,27 @@
+summary: Test unreachability of verifier and registrar
+description: |
+    Running just keylime agent.
+    Check that registration failed.
+    Start and stop verifier for generating certs.
+    Start registrar and check that registration fails.
+    Start verifier and check that registration is completed.
+    Stop verifier and try to add agent to attestation.
+    Verifies that adding agent will cause error.
+    Start verifier and add agent to attestation.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+recommend:
+  - keylime
+duration: 10m
+enabled: true
+#/unreachability-push:
+#    environment:
+#        AGENT_SERVICE: PushAgent
+/unreachability-pull:
+    environment:
+        AGENT_SERVICE: Agent
