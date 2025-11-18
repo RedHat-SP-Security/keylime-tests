@@ -1,0 +1,28 @@
+summary: Test agent resilience when verifier and registrar are unreachable
+description: |
+    This test verifies that the Keylime agent handles scenarios where the verifier
+    and registrar services are temporarily unavailable or unreachable. It tests:
+    - Agent behavior when attempting to start without registrar/verifier running
+    - Successful registration when only registrar is available
+    - Successful attestation establishment when verifier becomes available
+    - Agent resilience and recovery when verifier is repeatedly stopped and restarted
+    The test ensures the agent properly handles connection failures and can recover
+    when services become available again.
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+recommend:
+  - keylime
+  - keylime-agent-rust-push
+duration: 10m
+enabled: true
+/unreachability-push:
+    environment:
+        AGENT_SERVICE: PushAgent
+/unreachability-pull:
+    environment:
+        AGENT_SERVICE: Agent
