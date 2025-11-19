@@ -15,11 +15,9 @@ tag:
   - CI-Tier-1
 require:
   - yum
-  - expect
   - jq
   - curl
 recommend:
   - keylime
-  - python3-tomli
 duration: 5m
 enabled: true
