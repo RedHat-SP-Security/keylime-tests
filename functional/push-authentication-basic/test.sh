@@ -82,11 +82,7 @@ rlJournalStart
 
         # Create a simple policy that allows everything (for authentication testing)
         # We don't need actual files for authentication testing, just a valid policy
-
-        TESTDIR=$(limeCreateTestDir)
-        # Create a dummy file so limeCreateTestPolicy doesn't fail
-        rlRun "touch ${TESTDIR}/dummy.txt"
-        rlRun "limeCreateTestPolicy ${TESTDIR}/*"
+        rlRun "limeCreateTestPolicy"
 
         # Enroll the agent
         rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
@@ -137,6 +133,5 @@ rlJournalStart
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
-        limeExtendNextExcludelist $TESTDIR
     rlPhaseEnd
 rlJournalEnd
