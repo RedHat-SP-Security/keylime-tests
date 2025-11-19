@@ -372,7 +372,14 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 
 limeBackupConfig() {
 
-    rlFileBackup --clean --namespace limeConf --missing-ok /etc/keylime/agent.conf /etc/keylime /etc/ima/ima-policy
+    rlFileBackup --clean --namespace limeConf --missing-ok \
+        /etc/keylime/agent.conf \
+        /etc/keylime \
+        /etc/ima/ima-policy \
+        /etc/systemd/system/keylime_agent.service.d \
+        /etc/systemd/system/keylime_verifier.service.d \
+        /etc/systemd/system/keylime_registrar.service.d \
+        /etc/systemd/system/keylime_push_model_agent.service.d
 
 }
 
@@ -393,6 +400,89 @@ Returns 0 if the restore passed, non-zero otherwise.
 
 limeRestoreConfig() {
     rlFileRestore --namespace limeConf
+    # Reload systemd if any service drop-in files were restored
+    if systemctl --version &>/dev/null; then
+        systemctl daemon-reload
+    fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeEnableDebugLog
+
+Enable DEBUG level logging for keylime services.
+For Python-based services, sets logger levels to DEBUG in configuration.
+For Rust-based agents, creates systemd drop-in files with RUST_LOG environment variable.
+
+    limeEnableDebugLog
+
+=over
+
+=back
+
+Returns 0 when the debug logging was successfully enabled.
+
+=cut
+
+limeEnableDebugLog() {
+    # Enable DEBUG logging for Python services via configuration
+    limeUpdateConf logger_root level DEBUG
+    limeUpdateConf logger_keylime level DEBUG
+    limeUpdateConf handler_consoleHandler level DEBUG
+
+    # Enable TRACE logging for Rust agents via systemd drop-ins
+    for AGENT in keylime_agent keylime_push_model_agent; do
+        if limeServiceUnitFileExists ${AGENT}; then
+            mkdir -p /etc/systemd/system/${AGENT}.service.d
+            cat > /etc/systemd/system/${AGENT}.service.d/20-rust_log_trace.conf <<'_EOF'
+[Service]
+Environment="RUST_LOG=keylime_agent=trace,keylime=trace"
+_EOF
+        fi
+    done
+
+    # Reload systemd to pick up drop-in changes
+    if systemctl --version &>/dev/null; then
+        systemctl daemon-reload
+    fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeDisableDebugLog
+
+Disable DEBUG level logging for keylime services by removing configuration
+overrides and systemd drop-in files. This effectively restores default logging.
+Note: It's recommended to use limeBackupConfig/limeRestoreConfig instead for
+proper restoration of original configuration.
+
+    limeDisableDebugLog
+
+=over
+
+=back
+
+Returns 0 when the debug logging was successfully disabled.
+
+=cut
+
+limeDisableDebugLog() {
+    # Reset logging levels to INFO (default) for Python services
+    limeUpdateConf logger_root level INFO
+    limeUpdateConf logger_keylime level INFO
+    limeUpdateConf handler_consoleHandler level INFO
+
+    # Remove RUST_LOG drop-in files for Rust agents
+    for AGENT in keylime_agent keylime_push_model_agent; do
+        rm -f /etc/systemd/system/${AGENT}.service.d/20-rust_log_trace.conf
+    done
+
+    # Reload systemd to pick up changes
+    if systemctl --version &>/dev/null; then
+        systemctl daemon-reload
+    fi
 }
 
 true <<'=cut'
