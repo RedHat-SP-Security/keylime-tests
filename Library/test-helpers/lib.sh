@@ -3341,6 +3341,7 @@ or equivalent log level to capture authorization headers.
 
 limePushAuthGetToken() {
     local log_file="${1:-$(limePushAgentLogfile)}"
+    grep -q DEBUG "$log_file" || rlLogWarning "Agent does not seem to have DEBUG-level log enabled"
     grep "authorization: \"Bearer" "$log_file" | tail -1 | sed -n 's/.*Bearer \([^"]*\).*/\1/p'
 }
 
