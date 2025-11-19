@@ -54,9 +54,7 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 
         # Enroll agent with verifier after it's registered
-        TESTDIR=$(limeCreateTestDir)
-        rlRun "touch ${TESTDIR}/dummy.txt"
-        rlRun "limeCreateTestPolicy ${TESTDIR}/*"
+        rlRun "limeCreateTestPolicy"
         rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
     rlPhaseEnd
 
@@ -225,7 +223,6 @@ rlJournalStart
         limeSubmitCommonLogs
         limeClearData
         limeRestoreConfig
-        limeExtendNextExcludelist $TESTDIR
         limeExtendNextExcludelist $TESTDIR2
         limeExtendNextExcludelist $BAD_TESTDIR
     rlPhaseEnd
