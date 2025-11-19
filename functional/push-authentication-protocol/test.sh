@@ -11,6 +11,9 @@ rlJournalStart
         # Backup original configuration
         limeBackupConfig
 
+        # The authentication tests rely on DEBUG-level logging.
+        limeEnableDebugLog
+
         # Set the verifier to run in PUSH mode
         rlRun "limeUpdateConf verifier mode 'push'"
         rlRun "limeUpdateConf verifier challenge_lifetime 1800"
