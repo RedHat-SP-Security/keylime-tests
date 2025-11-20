@@ -1,0 +1,35 @@
+summary: Tests that the registrar rejects duplicate UUIDs
+description: |
+    This scenario tests if the registrar explicitly rejects attempts
+    to register different system using an already existing UUID,
+    in case the agent isn't configured for re-use or recovery.
+    Test covers both pull model and push model.
+contact: Natália Bubáková <nbubakov@redhat.com>
+tag:
+  - container
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - podman
+recommend:
+  - keylime
+duration: 15m
+enabled: true
+
+adjust:
+  - when: swtpm != yes
+    enabled: false
+    because: We need to emulate multiple TPM devices with swtpm
+
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+    id: b78eae26-af45-4804-970a-b2f727532731
+
+/pull:
+    environment:
+        AGENT_SERVICE: Agent
+    id: e276ee6d-f964-489d-bc90-3cab4c7e4407
