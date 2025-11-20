@@ -76,18 +76,15 @@ rlJournalStart
         # Start Verifier FIRST (creates CA certificates)
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
-        VERIFIER_LOG=$(limeVerifierLogfile)
 
         # Start Registrar SECOND (uses existing CA certificates)
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        REGISTRAR_LOG=$(limeRegistrarLogfile)
 
         # Start PULL-mode agent (verifier-driven attestation)
         rlLogInfo "Starting PULL-based agent (verifier-driven attestation)"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        AGENT_LOG=$(limeAgentLogfile)
 
         sleep 5
 
