@@ -89,27 +89,37 @@ rlJournalStart
         sleep 5
 
         # Attempt to add pull-agent to push-verifier (mode mismatch)
+        # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add pull-based agent to push-model verifier..."
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add" 1-255
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add" 0
 
-        # Assertion: The operation should fail due to mode mismatch
-        RESULT=$?
-        if [ $RESULT -ne 0 ]; then
-            rlPass "Registration/attestation failed as expected (exit code: $RESULT)"
-        else
-            # If it didn't fail immediately, check if attestation actually succeeds
-            rlLogInfo "Command succeeded, checking if attestation actually works..."
-            sleep ${TIMEOUT}
+        # Registration succeeded, now wait and verify that attestation fails due to mode mismatch
+        rlLogInfo "Registration succeeded, checking if attestation fails due to mode mismatch..."
+        sleep ${TIMEOUT}
 
-            if ! grep -qE "Attestation.*successfully passed" "$VERIFIER_LOG"; then
-                rlPass "Attestation failed due to mode mismatch (no successful attestation in logs)"
-            else
-                rlFail "Attestation succeeded despite mode mismatch!"
+        if ! grep -qE "Attestation.*successfully passed" "$VERIFIER_LOG"; then
+            rlPass "Attestation failed due to mode mismatch (no successful attestation in logs)"
+            # Log diagnostic information about the failure
+            rlLogInfo "Checking logs for mode mismatch errors..."
+            if grep -qE "(mode|push|pull)" "$VERIFIER_LOG" 2>/dev/null; then
+                rlLogInfo "Mode-related messages in verifier log:"
+                grep -iE "(mode|push|pull|error|fail)" "$VERIFIER_LOG" | tail -20 || true
             fi
+            if grep -qE "(mode|push|pull)" "$AGENT_LOG" 2>/dev/null; then
+                rlLogInfo "Mode-related messages in agent log:"
+                grep -iE "(mode|push|pull|error|fail)" "$AGENT_LOG" | tail -20 || true
+            fi
+        else
+            rlFail "Attestation succeeded despite mode mismatch!"
         fi
 
         # Cleanup scenario 1
+        # Stop agent first to ensure clean deletion from verifier
         rlRun "limeStopAgent"
+
+        # Delete agent from verifier to ensure clean state for scenario 2
+        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID -c delete" 0-255
+
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
 
@@ -146,31 +156,34 @@ rlJournalStart
 
         sleep 5
 
-        # Push agent auto-registers with the verifier. Delete it first to properly test
-        # mode mismatch validation (otherwise we'd get 409 conflict for duplicate registration)
-        rlLogInfo "Push agent auto-registered. Deleting to test mode mismatch validation..."
+        # Push agent auto-registers with verifier on startup, delete it first
+        # so we can add it with our test policy
+        rlLogInfo "Deleting auto-registered push agent from verifier..."
         rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID -c delete" 0-255
 
-        sleep 2
-
         # Attempt to add push-agent to pull-verifier (mode mismatch)
+        # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add push-model agent to pull-based verifier..."
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model" 1-255
+        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model" 0
 
-        # Assertion: The operation should fail due to mode mismatch
-        RESULT=$?
-        if [ $RESULT -ne 0 ]; then
-            rlPass "Registration/attestation failed as expected (exit code: $RESULT)"
-        else
-            # If it didn't fail immediately, check if attestation actually succeeds
-            rlLogInfo "Command succeeded, checking if attestation actually works..."
-            sleep ${TIMEOUT}
+        # Registration succeeded, now wait and verify that attestation fails due to mode mismatch
+        rlLogInfo "Registration succeeded, checking if attestation fails due to mode mismatch..."
+        sleep ${TIMEOUT}
 
-            if ! grep -qE "Attestation.*successfully passed" "$VERIFIER_LOG"; then
-                rlPass "Attestation failed due to mode mismatch (no successful attestation in logs)"
-            else
-                rlFail "Attestation succeeded despite mode mismatch!"
+        if ! grep -qE "Attestation.*successfully passed" "$VERIFIER_LOG"; then
+            rlPass "Attestation failed due to mode mismatch (no successful attestation in logs)"
+            # Log diagnostic information about the failure
+            rlLogInfo "Checking logs for mode mismatch errors..."
+            if grep -qE "(mode|push|pull)" "$VERIFIER_LOG" 2>/dev/null; then
+                rlLogInfo "Mode-related messages in verifier log:"
+                grep -iE "(mode|push|pull|error|fail)" "$VERIFIER_LOG" | tail -20 || true
             fi
+            if grep -qE "(mode|push|pull)" "$PUSH_AGENT_LOG" 2>/dev/null; then
+                rlLogInfo "Mode-related messages in push agent log:"
+                grep -iE "(mode|push|pull|error|fail)" "$PUSH_AGENT_LOG" | tail -20 || true
+            fi
+        else
+            rlFail "Attestation succeeded despite mode mismatch!"
         fi
 
         # Cleanup scenario 2
