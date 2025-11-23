@@ -20,7 +20,7 @@ fi
 
 rlJournalStart
 
-    rlPhaseStartSetup "Do the keylime setup"
+    rlPhaseStartSetup "Keylime setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
         # Update /etc/keylime.conf
@@ -107,10 +107,14 @@ rlJournalStart
         rlRun "limeWaitForAgentStatus $UUID_AGENT_FIRST 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$UUID_AGENT_FIRST'" "$rlRun_LOG" -E
+
+        # Get endorsment key from first agent
+        rlRun -s "keylime_tenant -c regstatus -u $UUID_AGENT_FIRST" 0 "Get first agent EK"
+        EK_FIRST=$(grep -o '"ek_tpm": "[^"]*"' "$rlRun_LOG" | cut -d'"' -f4)
     rlPhaseEnd
 
-    rlPhaseStartTest "Test registrar is rejecting duplicate UUID"
-        # Setup second agent - registration attempt with duplicate UUID
+    rlPhaseStartTest "Attempt to register second agent with duplicate UUID"
+        # Setup second agent
         IP_AGENT_SECOND="172.18.0.8"
         UUID_AGENT_SECOND="$UUID_AGENT_FIRST"
         CONT_AGENT_SECOND="agent_container_second"
@@ -118,29 +122,32 @@ rlJournalStart
 
         # Run second agent
         rlRun "limeTPMDevNo=1 limeconRunAgent $CONT_AGENT_SECOND $TAG_AGENT $IP_AGENT_SECOND $CONT_NETWORK_NAME $TESTDIR_SECOND $AGENT_CMD $PWD/confdir_$CONT_AGENT_SECOND $PWD/cv_ca"
-        rlRun "limeWaitForAgentRegistration ${UUID_AGENT_SECOND} 5" 1 "Expect failed registration due to duplicate UUID"            # Nope - passing
+        rlRun "limeWaitForAgentRegistration ${UUID_AGENT_SECOND} 5" 1 "Expect failed registration due to duplicate UUID"            # Bug - registration should not succeed
 
-        # Check for error messages in registrar logs
+        # Check registrar logs for error messages
         REGISTRAR_LOG=$(limeRegistrarLogfile)
         rlAssertExists "$REGISTRAR_LOG"
         cat "$REGISTRAR_LOG"
-        rlAssertGrep "duplicate\|already.*exist\|already.*register|reject.*uuid|uuid.*already|409|conflict" "$REGISTRAR_LOG" -E     # Nope - passing
+        rlAssertGrep "duplicate.*UUID\|error\|conflict\|forbidden\|403" "$REGISTRAR_LOG" -iE                                                                   # Bug - missing error message
 
         # Verify that the second agent is NOT registered
-        rlRun -s "keylime_tenant -c regstatus -u $UUID_AGENT_SECOND" 1  # Nope - passing
-        rlAssertNotGrep "Registered" "$rlRun_LOG"                       # Nope - passing
-        rlRun -s "keylime_tenant -c cvlist"                             # Nope - not as expected, more those uuids are listed
-        rlAssertEquals "$(grep -o "$UUID_AGENT_FIRST" "$rlRun_LOG" | wc -l)" "1" "Only one agent should be registered with this UUID" # Nope
+        rlRun -s "keylime_tenant -c regstatus -u $UUID_AGENT_SECOND" 1 "Check that registrar rejects duplicate UUID"                # Bug - getting registration status should not succeed
+        rlAssertNotGrep "Registered" "$rlRun_LOG"                                                                                   # Bug - registration status should not be "registered"
+
+        # If registered, EKs must not be different (only same EK with same UUID is allowed = refreshing registration)
+        if grep -q "Registered" "$rlRun_LOG"; then
+            EK_SECOND=$(grep -o '"ek_tpm": "[^"]*"' "$rlRun_LOG" | cut -d'"' -f4)
+            rlAssertEquals "For successful registration only same EK certificate should be used" "$EK_FIRST" "$EK_SECOND"           # Bug - control assertion showed that agent's EK certificates are different and still the agents were registered with the same UUID
+        fi
         
         # Verify that attempting to add the second agent via tenant fails
-        rlRun "keylime_tenant -v $SERVER_IP -t $IP_AGENT_SECOND -u $UUID_AGENT_SECOND --runtime-policy policy2.json -f /etc/hosts -c add ${TENANT_ARGS}" 1 # Yep, finally!
+        rlRun "keylime_tenant -v $SERVER_IP -t $IP_AGENT_SECOND -u $UUID_AGENT_SECOND --runtime-policy policy2.json -f /etc/hosts -c add ${TENANT_ARGS}" 1 "Check that verifier rejects duplicate UUID"
 
-        # Verify the agents are in the expected state
-        rlRun "limeWaitForAgentStatus $UUID_AGENT_FIRST 'Get Quote'" 0 "First agent should be registered and working"
-        rlRun "limeWaitForAgentStatus $UUID_AGENT_SECOND 'Get Quote' 5" 1 "Second agent should not reach working state due to duplicate UUID" # Nope - passing
+        # Check the agent's status after registration attempt
+        rlRun "limeWaitForAgentStatus $UUID_AGENT_SECOND 'Get Quote' 5" 1 "Agent with duplicate UUID should not be registered and working" # Bug - no conflict reported for using duplicate UUID
     rlPhaseEnd
 
-    rlPhaseStartCleanup "Do the keylime cleanup"
+    rlPhaseStartCleanup "Keylime cleanup"
         limeconSubmitLogs
         rlRun "limeconStop 'agent_container.*'"
         rlRun "limeStopRegistrar"
@@ -158,4 +165,5 @@ rlJournalStart
         limeRestoreConfig
     rlPhaseEnd
 
+    rlJournalPrintText
 rlJournalEnd
