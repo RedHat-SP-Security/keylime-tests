@@ -1513,9 +1513,13 @@ true <<'=cut'
 Run 'keylime_tenant -c status' wrapper repeatedly up to TIMEOUT seconds
 until the expected agent status is returned.
 
-    limeWaitForAgentStatus UUID STATUS [TIMEOUT]
+    limeWaitForAgentStatus [--field NAME] UUID VALUE [TIMEOUT]
 
 =over
+
+=item
+
+    NAME - Name of the field to check, the default is 'operational_state'
 
 =item
 
@@ -1523,7 +1527,7 @@ until the expected agent status is returned.
 
 =item
 
-    STATUS - Expected status.
+    VALUE - Expected field value (e.g. status).
 
 =item
 
@@ -1536,10 +1540,12 @@ Returns 0 when the start was successful, 1 otherwise.
 =cut
 
 limeWaitForAgentStatus() {
+    local FIELD='operational_state'
     local TIMEOUT=${limeTIMEOUT}
     local UUID="$1"
-    local STATUS="$2"
+    local VALUE="$2"
     local OUTPUT=`mktemp`
+    [ "$1" == "--field" ] && FIELD="$2" && shift 2
     [ -z "$1" ] && return 3
     [ -z "$2" ] && return 4
     [ -n "$3" ] && TIMEOUT=$3
@@ -1547,8 +1553,8 @@ limeWaitForAgentStatus() {
     local START=$SECONDS
     for I in `seq $TIMEOUT`; do
         limeTimeoutCommand $TIMEOUT "limeKeylimeTenant -c status -u $UUID" &> $OUTPUT
-        AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].operational_state")
-        if echo "$AGTSTATE" | grep -E -q "$STATUS"; then
+        AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].${FIELD}")
+        if echo "$AGTSTATE" | grep -E -q "$VALUE"; then
             cat $OUTPUT
             rm $OUTPUT
             return 0
