@@ -115,6 +115,11 @@ _EOF"
             rlRun "limeCondStartAbrmd"
             rlRun "limeStartIMAEmulator"
         fi
+        # Delete the old agent record from BOTH verifier and registrar before re-registering with new TPM
+        # This is required because registrar prevents re-registration with different TPM identity
+        # to protect against UUID spoofing attacks (security fix in keylime #1820)
+        rlRun "keylime_tenant -c delete -u ${AGENT_ID}"
+        rlRun "keylime_tenant -c regdelete -u ${AGENT_ID}"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun -s "keylime_tenant -c regstatus -u ${AGENT_ID}"
