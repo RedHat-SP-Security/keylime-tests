@@ -1577,9 +1577,13 @@ true <<'=cut'
 Run 'keylime_tenant -c regstatus' wrapper repeatedly up to TIMEOUT seconds
 until the expected agent is registered.
 
-    limeWaitForAgentRegistration UUID [TIMEOUT]
+    limeWaitForAgentRegistration [--local-ek-check] UUID [TIMEOUT]
 
 =over
+
+=item
+
+    --local-ek-check - Also verify that EK cert obtained from local TPM matches.
 
 =item
 
@@ -1597,6 +1601,21 @@ Returns 0 when the start was successful, 1 otherwise.
 
 limeWaitForAgentRegistration() {
     local TIMEOUT=${limeTIMEOUT}
+    local EK_CERT=""
+    if [ "$1" == "--local-ek-check" ]; then
+        # on s390x workaround issue RHEL-113400
+        if [ "$(rlGetPrimaryArch)" == "s390x" ]; then
+            EK_CERT=$( tpm2_nvread 0x01c00002 -C o | base64 -w 0 )
+        else
+            EK_CERT=$( tpm2_getekcertificate | base64 -w 0 )
+        fi
+        if [ -z "${EK_CERT}" ]; then
+            echo "Failed to read local TPM EK CERT"
+            return 99
+        fi
+        echo "Checking local TPM EK: ${EK_CERT}"
+        shift
+    fi
     local UUID="$1"
     local OUTPUT=`mktemp`
     [ -z "$1" ] && return 3
@@ -1605,11 +1624,17 @@ limeWaitForAgentRegistration() {
     local START=$SECONDS
     for I in `seq $TIMEOUT`; do
         limeTimeoutCommand $TIMEOUT "limeKeylimeTenant -c regstatus -u $UUID" &> $OUTPUT
-        REGSTATE=$(cat $OUTPUT | grep "^{" | jq -r ".[].operational_state")
+        REGSTATE=$(grep "^{" "$OUTPUT" | jq -r ".[].operational_state")
         if [ "$REGSTATE" == "Registered" ]; then
-            cat $OUTPUT
-            rm $OUTPUT
-            return 0
+            # do also EK_CERT check if required
+            QUOTE_EK=$(grep "^{" "$OUTPUT" | jq -r ".[].ekcert")
+            if [ -z "${EK_CERT}" ] || [ "${QUOTE_EK}" == "${EK_CERT}" ]; then
+                cat "$OUTPUT"
+                rm "$OUTPUT"
+                return 0
+            else
+                echo "TPM EK cert doesn't match 'ekcert' field content from the quote"
+            fi
         fi
         if [[ "$((SECONDS - START))" -ge $TIMEOUT ]]; then
             break
