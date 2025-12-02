@@ -142,6 +142,7 @@ _EOF"
             rlServiceRestore tpm2-abrmd
         fi
         rlRun "rm -rf /var/log/keylime"
+        limeClearData
         rlFileRestore
         limeRestoreConfig
         rlServiceRestore rsyslog
