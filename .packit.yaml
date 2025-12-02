@@ -10,4 +10,4 @@ jobs:
     environments:
       - tmt:
           context:
-            target_PR_branch: "rhel-9.4.0"
+            target_PR_branch: "rhel-9.5.0"
