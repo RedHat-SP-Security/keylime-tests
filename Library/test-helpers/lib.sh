@@ -1267,7 +1267,7 @@ limeWaitForAgentRegistration() {
         REGSTATE=$( grep -oE '\{".*' "$OUTPUT" | jq -r '.results[] | .operational_state' )
         if [ "$REGSTATE" == "Registered" ]; then
             # do also EK_CERT check if required
-            QUOTE_EK==$( grep -oE '\{".*' "$OUTPUT" | jq -r '.results[] | .ekcert' )
+            QUOTE_EK=$( grep -oE '\{".*' "$OUTPUT" | jq -r '.results[] | .ekcert' )
             if [ -z "${EK_CERT}" ] || [ "${QUOTE_EK}" == "${EK_CERT}" ]; then
                 cat "$OUTPUT"
                 rm "$OUTPUT"
