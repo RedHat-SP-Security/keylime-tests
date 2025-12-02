@@ -140,6 +140,7 @@ _EOF"
             rlRun "limeCondStopAbrmd"
         fi
         rlRun "rm -rf /var/log/keylime"
+        limeClearData
         rlFileRestore
         limeRestoreConfig
         rlServiceRestore rsyslog
