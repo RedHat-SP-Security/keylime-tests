@@ -23,7 +23,7 @@ discover:
    # this is to utilize also a different parser
    - /setup/configure_kernel_ima_module/ima_policy_simple
    #- /setup/inject_SELinux_AVC_check
-   - "/container/functional/keylime_agent_container-basic-attestation"
+   - "/container/functional/registrar_rejecting_duplicate_uuid/pull" # temporary for running new test
 
 execute:
     how: tmt
