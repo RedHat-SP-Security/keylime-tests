@@ -92,23 +92,16 @@ RPMPKG=$( awk '/Wrote:/ { print $2 }' build.log )
 rpm -ivh $RPMPKG
 
 # enable rust agent COPR repo and install agent
-cat > /etc/yum.repos.d/copr-rust-keylime-master.repo <<_EOF
-[copr-rust-keylime-master]
-name=Copr repo for keylime-rust-keylime-master owned by packit
-baseurl=https://download.copr.fedorainfracloud.org/results/packit/keylime-rust-keylime-master/fedora-\$releasever-\$basearch/
-type=rpm-md
-skip_if_unavailable=True
-gpgcheck=1
-gpgkey=https://download.copr.fedorainfracloud.org/results/packit/keylime-rust-keylime-master/pubkey.gpg
-repo_gpgcheck=0
-enabled=1
-enabled_metadata=1
-priority=1
-_EOF
-sed -i 's|keylime-rust-keylime-master/fedora|keylime-rust-keylime-master/centos-stream|' /etc/yum.repos.d/copr-rust-keylime-master.repo
-yum -y install keylime-agent-rust
+if [ -f /etc/fedora-release ]; then
+    dnf -y copr enable packit/keylime-rust-keylime-master-fedora
+else
+    _MAJOR=$( rpm -q --qf '%{VERSION}' centos-stream-release | cut -d '.' -f 1 )
+    _ARCH=$( arch )
+    dnf -y copr enable packit/keylime-rust-keylime-master-centos centos-stream-${_MAJOR}-${_ARCH}
+fi
+yum -y install keylime-agent-rust keylime-agent-rust-push
 curl -o /etc/keylime/keylime-agent.conf https://raw.githubusercontent.com/keylime/rust-keylime/master/keylime-agent.conf
-mkdir -p /etc/systemd/system/keylime_agent.service.d
+mkdir -p /etc/systemd/system/keylime_agent.service.d /etc/systemd/system/keylime_push_model_agent.service.d
 mkdir -p /etc/keylime/agent.conf.d
 
 # fix conf file ownership

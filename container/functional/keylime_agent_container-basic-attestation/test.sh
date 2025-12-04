@@ -50,6 +50,7 @@ rlJournalStart
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
             rlRun "limeUpdateConf agent attestation_interval_seconds 10"
             rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
+            rlRun "limeUpdateConf agent verifier_url '\"https://$SERVER_IP:8881\"'"
         fi
 
         # start tpm emulator
@@ -121,41 +122,59 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agents"
         rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_FIRST -u $AGENT_ID_FIRST --runtime-policy policy1.json -f /etc/hosts -c add ${TENANT_ARGS}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST 'Get Quote'"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_FIRST 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST 'Get Quote'"
+        fi
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID_FIRST'" $rlRun_LOG -E
         #check second agent
         rlRun -s "keylime_tenant -v $SERVER_IP  -t $IP_AGENT_SECOND -u $AGENT_ID_SECOND --runtime-policy policy2.json -f /etc/hosts -c add ${TENANT_ARGS}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_SECOND 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Execute good scripts"
         rlRun "$TESTDIR_FIRST/good-script.sh"
         rlRun "$TESTDIR_SECOND/good-script.sh"
-        sleep 5
-        rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST 'Get Quote'"
-        rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
+        sleep $limeTimeout
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_FIRST 'PASS'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_SECOND 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST 'Get Quote'"
+            rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
+        fi
     rlPhaseEnd
-
 
     rlPhaseStartTest "Fail first keylime agent and check second"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR_FIRST/bad-script.sh && chmod a+x $TESTDIR_FIRST/bad-script.sh"
         rlRun "$TESTDIR_FIRST/bad-script.sh"
-        rlRun "rlWaitForCmd 'tail -30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID_FIRST failed\"' -m 30 -d 2 -t 60"
-        rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST '(Failed|Invalid Quote)'"
+        rlRun "rlWaitForCmd 'tail -30 \$(limeVerifierLogfile) | grep -Eiq \"Agent.*$AGENT_ID_FIRST.*failed\"' -m 30 -d 2 -t 60"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR_FIRST/bad-script.sh" $(limeVerifierLogfile)
-        rlAssertGrep "WARNING - Agent $AGENT_ID_FIRST failed, stopping polling" $(limeVerifierLogfile)
-        #check status of first agent
-        rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_FIRST 'FAIL'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_SECOND 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID_FIRST '(Failed|Invalid Quote)'"
+            rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND 'Get Quote'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Fail second keylime agent"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR_SECOND/bad-script.sh && chmod a+x $TESTDIR_SECOND/bad-script.sh"
         rlRun "$TESTDIR_SECOND/bad-script.sh"
-        rlRun "rlWaitForCmd 'tail -30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID_SECOND failed\"' -m 30 -d 2 -t 60"
-        rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND '(Failed|Invalid Quote)'"
+        rlRun "rlWaitForCmd 'tail -30 \$(limeVerifierLogfile) | grep -Eiq \"Agent.*$AGENT_ID_SECOND.*failed\"' -m 30 -d 2 -t 60"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR_SECOND/bad-script.sh" $(limeVerifierLogfile)
-        rlAssertGrep "WARNING - Agent $AGENT_ID_SECOND failed, stopping polling" $(limeVerifierLogfile)
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID_SECOND 'FAIL'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID_SECOND '(Failed|Invalid Quote)'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
