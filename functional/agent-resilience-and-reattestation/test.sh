@@ -24,13 +24,15 @@ rlJournalStart
         rlRun "limeUpdateConf agent uuid \\\"${AGENT_ID}\\\""
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        # disable exponential_backoff to speed up verifier response
+        rlRun "limeUpdateConf verifier exponential_backoff False"
         # configure push attestation
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
             # Set the verifier to run in PUSH mode
             rlRun "limeUpdateConf verifier mode 'push'"
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
-            rlRun "limeUpdateConf verifier quote_interval 10"
-            rlRun "limeUpdateConf agent attestation_interval_seconds 10"
+            rlRun "limeUpdateConf verifier quote_interval 15"
+            rlRun "limeUpdateConf agent attestation_interval_seconds 15"
             #rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
             rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         fi
@@ -57,7 +59,11 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agent"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'"
+        fi
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
@@ -69,7 +75,11 @@ rlJournalStart
 	sleep "${DELAY}"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "keylime_tenant -c reglist"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'" 0 "Agent should re-establish attestation after restart"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'" 0 "Agent should re-establish attestation after restart"
+        else
+            rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'" 0 "Agent should re-establish attestation after restart"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Test verifier restart - agent should remain attested"
@@ -80,7 +90,11 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         # give some time for verifier to reload agents from database
         rlRun "sleep ${DELAY}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'" 0 "Agent should remain attested after verifier restart"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'" 0 "Agent should remain attested after verifier restart"
+        else
+            rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'" 0 "Agent should remain attested after verifier restart"
+        fi
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
 
@@ -98,7 +112,11 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 	rlRun "sleep ${DELAY}"
         # verify the agent is attested
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'" 0 "Agent should re-register and attest after restart"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'" 0 "Agent should re-register and attest after restart"
+        else
+            rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'" 0 "Agent should re-register and attest after restart"
+        fi
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
 
@@ -118,7 +136,23 @@ rlJournalStart
         rlLogInfo "Re-adding agent with updated policy"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
         rlRun "sleep ${DELAY}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'" 0 "Agent should remain attested after running new allowed script"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'" 0 "Agent should remain attested after running new allowed script"
+        else
+            rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'" 0 "Agent should remain attested after running new allowed script"
+        fi
+        rlRun -s "keylime_tenant -c cvlist"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Stop agent so it stops sending quotes - should fail attestation"
+        rlLogInfo "Stopping agent"
+        rlRun "limeStop${AGENT_SERVICE}"
+        # verify the agent is not attested
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeTIMEOUT=90 limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'FAIL'" 0 "Agent should fail attestation"
+        else
+            rlRun "limeTIMEOUT=90 limeWaitForAgentStatus '$AGENT_ID' '(Failed|Invalid Quote)'" 0 "Agent should fail attestation"
+        fi
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
 

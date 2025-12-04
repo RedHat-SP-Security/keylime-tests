@@ -9,6 +9,7 @@ description: |
     Tests verifier restart - ensures agent remains attested after verifier service restart.
     Tests agent deletion from registrar and restart - ensures agent re-registers and attests.
     Tests agent removal and re-addition with updated policy - ensures agent attests with new policy.
+    Verifies that agent fails attestation when it stops sending quotes.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
@@ -21,7 +22,7 @@ require:
 recommend:
   - keylime
   - keylime-agent-rust-push
-duration: 10m
+duration: 15m
 enabled: true
 
 /push:
