@@ -16,11 +16,11 @@ rlJournalStart
         fi
         rlRun "echo 'priority=1' >> /etc/yum.repos.d/*keylime-rust-keylime-master*.repo"
         rlRun "cat /etc/yum.repos.d/*keylime-rust-keylime-master*.repo"
-        rlRun "yum -y install keylime-agent-rust"
+        rlRun "yum -y install keylime-agent-rust keylime-agent-rust-push"
         rlAssertRpm keylime-agent-rust
         rlAssertExists /etc/keylime/agent.conf
         # prepare directory for drop-in adjustments
-        rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d"
+        rlRun "mkdir -p /etc/systemd/system/keylime_agent.service.d /etc/systemd/system/keylime_push_model_agent.service.d/"
         rlRun "mkdir -p /etc/keylime/agent.conf.d"
         # If the TPM_BINARY_MEASUREMENTS env var is set, set the binary
         # measurements location for the service
@@ -29,6 +29,7 @@ rlJournalStart
 [Service]
 Environment=\"TPM_BINARY_MEASUREMENTS=${TPM_BINARY_MEASUREMENTS}\"
 _EOF"
+            rlRun "cp /etc/systemd/system/keylime_agent.service.d/30-measured_boot_location.conf /etc/systemd/system/keylime_push_model_agent.service.d/30-measured_boot_location.conf"
         fi
         rlRun "systemctl daemon-reload"
     rlPhaseEnd
