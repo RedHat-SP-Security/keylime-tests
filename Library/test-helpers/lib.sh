@@ -1541,11 +1541,11 @@ Returns 0 when the start was successful, 1 otherwise.
 
 limeWaitForAgentStatus() {
     local FIELD='operational_state'
+    [ "$1" == "--field" ] && FIELD="$2" && shift 2
     local TIMEOUT=${limeTIMEOUT}
     local UUID="$1"
     local VALUE="$2"
     local OUTPUT=`mktemp`
-    [ "$1" == "--field" ] && FIELD="$2" && shift 2
     [ -z "$1" ] && return 3
     [ -z "$2" ] && return 4
     [ -n "$3" ] && TIMEOUT=$3
