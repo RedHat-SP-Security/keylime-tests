@@ -19,7 +19,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
 
         rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
-        rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
+        rlRun "limeUpdateConf agent tls_accept_invalid_hostnames false"
 
         # Disable EK certificate verification on the tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
