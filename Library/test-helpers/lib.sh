@@ -1628,7 +1628,13 @@ limeWaitForAgentRegistration() {
         if [ "$REGSTATE" == "Registered" ]; then
             # do also EK_CERT check if required
             QUOTE_EK=$(grep "^{" "$OUTPUT" | jq -r ".[].ekcert")
-            if [ -z "${EK_CERT}" ] || [ "${QUOTE_EK}" == "${EK_CERT}" ]; then
+            # When --local-ek-check is used, verify the registrar's EK cert matches the local TPM
+            # Note: tpm2_getekcertificate may return multiple certs (RSA+ECC) concatenated,
+            # but the registrar typically stores only the first (RSA) cert.
+            # Base64 concatenation may strip padding (=) from the first cert, so we need to
+            # check if the local cert starts with the registrar cert (ignoring trailing =).
+            local QUOTE_EK_STRIPPED="${QUOTE_EK%=*}"
+            if [ -z "${EK_CERT}" ] || [[ "${EK_CERT}" == "${QUOTE_EK}"* ]] || [[ "${EK_CERT}" == "${QUOTE_EK_STRIPPED}"* ]] || [ "${QUOTE_EK}" == "${EK_CERT}" ]; then
                 cat "$OUTPUT"
                 rm "$OUTPUT"
                 return 0
