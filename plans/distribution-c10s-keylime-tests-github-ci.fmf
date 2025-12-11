@@ -1,4 +1,4 @@
-summary: Run tests from the rhel-10-main branch on the distribution keylime
+summary: Run tests from the rhel-10.1 branch on the distribution keylime
 
 # unfortunately, filtering using adjust doesn't work for plan for context defined
 # in the very same plan. We need to update packit.yaml
@@ -8,7 +8,7 @@ context:
   faked_measured_boot_log: no
 
 adjust+:
- - when: target_PR_branch is defined and target_PR_branch != rhel-10-main
+ - when: target_PR_branch is defined and target_PR_branch != rhel-10.1
    enabled: false
    because: we want to run this plan only for PRs targeting the rhel branch
 

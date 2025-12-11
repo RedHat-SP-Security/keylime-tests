@@ -2,25 +2,24 @@ jobs:
 - job: tests
   trigger: pull_request
   identifier: singlehost
-  branch: rhel-10-main
+  branch: rhel-10.1
   targets:
-    - centos-stream-10-x86_64
+    centos-stream-10-x86_64:
+      distros: [RHEL-10.1-Nightly]
+  use_internal_tf: True
   skip_build: true
   tf_extra_params:
     environments:
       - tmt:
           context:
-            target_PR_branch: "rhel-10-main"
-            multihost: "no"
-        #artifacts:
-        #   - type: repository-file
-        #     id: "https://raw.githubusercontent.com/RedHat-SP-Security/keylime-tests/main/tools/c9s.repo"
+            target_PR_branch: "rhel-10.1"
 - job: tests
   trigger: pull_request
   identifier: multihost
-  branch: rhel-10-main
+  branch: rhel-10.1
   targets:
-    - centos-stream-10-x86_64
+    centos-stream-10-x86_64:
+      distros: [RHEL-10.1-Nightly]
   skip_build: true
   env:
     SYNC_DEBUG: "1"
@@ -28,13 +27,12 @@ jobs:
   tf_extra_params:
     test:
       tmt:
-        name: "/plans/distribution-c10s-keylime-multihost"
+        name: "/plans/distribution-c10s-keylime-multihost.*"
     environments:
       - tmt:
           context:
-            target_PR_branch: "rhel-10-main"
+            target_PR_branch: "rhel-10.1"
             multihost: "yes"
     settings:
       pipeline:
         type: tmt-multihost
-
