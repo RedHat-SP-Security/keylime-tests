@@ -33,10 +33,10 @@ if [ ! -e $COOKIE ]; then
     rpm -q bootc podman || dnf -y install bootc cloud-init podman system-reinstall-bootc
 
     # detect image mode
-    if bootc status --format yaml | grep -q 'booted: null'; then
-        IMAGE_MODE=false
-    else
+    if bootc status --format yaml | grep -qi 'ostree'; then
         IMAGE_MODE=true
+    else
+        IMAGE_MODE=false
     fi
 
     TMPDIR=$( mktemp -d -p /var/tmp)
