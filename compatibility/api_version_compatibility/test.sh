@@ -44,6 +44,7 @@ rlJournalStart
         mapfile -t SUPPORTED_VERSIONS< <(grep -ohE '> Starting server with API version.*' "$(limeAgentLogfile)" | grep -ohE '[0-9]+\.[0-9]+' | sort -V)
         rlLog "Agent supported versions: ${SUPPORTED_VERSIONS[*]}"
         rlRun "limeStopAgent"
+        rlRun "keylime_tenant -c regdelete -u ${AGENT_ID}"
     rlPhaseEnd
 
     for VERSION in "${SUPPORTED_VERSIONS[@]}"; do
@@ -66,6 +67,11 @@ _EOF"
             rlRun -s "keylime_tenant -c cvlist"
             rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
             rlRun "limeStopAgent"
+            # Delete the old agent record from BOTH verifier and registrar before re-registering with new TPM
+            # This is required because registrar prevents re-registration with different TPM identity
+            # to protect against UUID spoofing attacks (security fix in keylime #1820)
+            rlRun "keylime_tenant -c delete -u ${AGENT_ID}"
+            rlRun "keylime_tenant -c regdelete -u ${AGENT_ID}"
         rlPhaseEnd
     done
 
