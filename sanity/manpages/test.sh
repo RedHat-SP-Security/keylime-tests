@@ -80,7 +80,7 @@ rlJournalStart
         for manpage in $MANPAGES; do
             rlRun -s "man $manpage"
             # Verify that NAME comes before SYNOPSIS
-            NAME_LINE=$(grep -n "^NAME" "$rlRun_LOG" | head -1 | cut -d: -f1)
+            NAME_LINE=$(grep -ni "^NAME" "$rlRun_LOG" | head -1 | cut -d: -f1)
             SYNOPSIS_LINE=$(grep -n "^SYNOPSIS" "$rlRun_LOG" | head -1 | cut -d: -f1)
             rlRun "[ -n \"$NAME_LINE\" ]" 0 "Section NAME must exist in $manpage"
             rlRun "[ -n \"$SYNOPSIS_LINE\" ]" 0 "Section SYNOPSIS must exist in $manpage"
