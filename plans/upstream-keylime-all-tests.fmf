@@ -40,14 +40,14 @@ adjust+:
 
   # discover step adjustments
   # disable code coverage measurement everywhere except latest fedora and CS
-  - when: distro != centos-stream-10 and distro != fedora-41
+  - when: distro != centos-stream-10 and distro != fedora-43
     discover+:
        test-:
          - /setup/enable_keylime_coverage
          - /setup/generate_coverage_report
 
   # disable code coverage measurement everywhere except latest fedora and CS
-  - when: distro != centos-stream-10 and distro != fedora-41
+  - when: distro != centos-stream-10 and distro != fedora-43
     environment+:
        KEYLIME_RUST_CODE_COVERAGE: 0
     discover+:
