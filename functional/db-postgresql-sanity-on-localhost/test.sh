@@ -28,7 +28,8 @@ rlJournalStart
         # configure user authentication with md5
         rlRun "sed -i '/host.*all.*all.*127.0.0.1.*ident/ s/ident/md5/' /var/lib/pgsql/data/pg_hba.conf"
         rlServiceStart postgresql
-        sleep 3
+        # Wait for PostgreSQL to be fully ready before running setup
+        rlRun "rlWaitForCmd 'sudo -u postgres psql -c \"SELECT 1\"' -m 30 -d 1" 0 "Wait for PostgreSQL to be ready"
         rlRun "sudo -u postgres psql -f setup.psql"
         # configure keylime
         limeBackupConfig
@@ -42,10 +43,16 @@ rlJournalStart
 
     rlPhaseStartTest "Test service start with updated configuration"
         # start keylime services
+        # Use extended timeout for verifier/registrar startup as DB migrations can take several minutes
+        ORIG_TIMEOUT=${limeTIMEOUT}
+        export limeTIMEOUT=300  # 5 minutes for Alembic migrations on fresh database
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
+        export limeTIMEOUT=${ORIG_TIMEOUT}
+        # Give services time to establish database connections
+        sleep 2
         rlRun -s "sudo -u postgres psql -c 'SELECT datname FROM pg_database;'"
         rlAssertGrep "verifierdb" $rlRun_LOG
         rlAssertGrep "registrardb" $rlRun_LOG
