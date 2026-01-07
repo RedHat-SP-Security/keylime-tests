@@ -182,6 +182,15 @@ rlJournalStart
         rlAssertGrep "68b0115a1ccce90691f62df3053bd6601ad258e02ee6b5cee07f2a19144f253f" "$rlRun_LOG"
     rlPhaseEnd
 
+    rlPhaseStartTest "Get keyrings from IMA measurement list on a default location"
+        # to test https://issues.redhat.com/browse/RHEL-130158
+        rlRun "keylime-policy create runtime  --ima-measurement-list --keyrings -o policy.json"
+        rlRun -s "jq '.keyrings' policy.json"
+        # accept {} eventually since the default measurement list may not contain keyrings
+        rlAssertGrep "(\.ima|\{\})" "$rlRun_LOG" -E
+        rlAssertNotGrep Traceback "$rlRun_LOG" -i
+    rlPhaseEnd
+
     rlPhaseStartTest "Ignore keyrings from IMA measurement list with --ignored-keyrings"
         # TODO: Currently, the output is not parseable as JSON directly with a pipe.
         # Possibly related to https://github.com/keylime/keylime/issues/1613
