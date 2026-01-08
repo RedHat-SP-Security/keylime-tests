@@ -29,6 +29,9 @@ enabled: true
 id: e97b68b1-ea19-4658-b3ff-3d27167e8084
 
 adjust:
+  - when: distro == rhel-10.0
+    enabled: false
+    because: This test was written for keylime from RHEL-10.1
   - when: swtpm is not defined or swtpm == no
     enabled: false
     because: This tests needs SWTPM emulator
