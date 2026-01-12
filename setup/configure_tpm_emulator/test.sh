@@ -63,7 +63,7 @@ Description=swtpm TPM Software emulator
 [Service]
 Type=simple
 ExecStartPre=/usr/bin/mkdir -p ${TPM_RUNTIME_TOPDIR}/swtpm
-ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${TPM_RUNTIME_TOPDIR}/swtpm --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${TPM_RUNTIME_TOPDIR}/swtpm --createek --decryption --create-ek-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
 ExecStart=/usr/bin/swtpm socket --tpmstate dir=${TPM_RUNTIME_TOPDIR}/swtpm --log level=1 --ctrl type=tcp,port=2322 --server type=tcp,port=2321 --flags startup-clear --tpm2
 
 [Install]
