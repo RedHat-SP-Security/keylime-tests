@@ -7,6 +7,7 @@ AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00001"
 TENANT_ARGS=""
 [ "${AGENT_SERVICE}" == "PushAgent" ] && TENANT_ARGS="--push-model"
 DELAY=10
+ATTESTATION_INTERVAL=15
 
 rlJournalStart
 
@@ -31,8 +32,8 @@ rlJournalStart
             # Set the verifier to run in PUSH mode
             rlRun "limeUpdateConf verifier mode 'push'"
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
-            rlRun "limeUpdateConf verifier quote_interval 15"
-            rlRun "limeUpdateConf agent attestation_interval_seconds 15"
+            rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
+            rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
             #rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
             rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         fi
@@ -120,6 +121,36 @@ rlJournalStart
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
 
+function check_time_diffs() {
+    # Convert the string of times into an array
+    local timestamps=($1)
+    local prev_epoch
+    local lower_limit=$(( ${ATTESTATION_INTERVAL}-1 ))
+    local upper_limit=$(( ${ATTESTATION_INTERVAL}+1 ))
+
+    # Loop through the array using indices
+    for i in "${!timestamps[@]}"; do
+        # Convert HH:MM:SS to Unix Epoch seconds
+        current_epoch=$(date -d "${timestamps[$i]}" +%s)
+
+        if [[ $i -gt 0 ]]; then
+            diff=$(( current_epoch - prev_epoch ))
+	    rlRun "test $diff -ge ${lower_limit} && test $diff -le ${upper_limit}" 0 "Measured attestation interval should be between ${lower_limit} and ${upper_limit} seconds, measured $diff seconds"
+        fi
+        prev_epoch=$current_epoch
+    done
+}
+
+    if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+        rlPhaseStartTest "Verify that push agent keeps attestation interval"
+            rlRun "sleep $(( 3*${ATTESTATION_INTERVAL} ))"
+	    rlLogInfo "Extracting recent attestation initiation times"
+	    TIMES=$( grep 'Phase 1' /var/tmp/limeLib/agent.log | tail -n 4 | cut -d ' ' -f 3 | xargs )
+	    rlLogInfo "TIMES=$TIMES"
+	    check_time_diffs "$TIMES"
+        rlPhaseEnd
+    fi
+
     rlPhaseStartTest "Remove agent and re-add with updated policy"
         # create a script that will be allowed
         TESTDIR=`limeCreateTestDir`
@@ -149,9 +180,9 @@ rlJournalStart
         rlRun "limeStop${AGENT_SERVICE}"
         # verify the agent is not attested
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeTIMEOUT=90 limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'FAIL'" 0 "Agent should fail attestation"
+            rlRun "limeTIMEOUT=$(( ${ATTESTATION_INTERVAL}*6 )) limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'FAIL'" 0 "Agent should fail attestation"
         else
-            rlRun "limeTIMEOUT=90 limeWaitForAgentStatus '$AGENT_ID' '(Failed|Invalid Quote)'" 0 "Agent should fail attestation"
+            rlRun "limeTIMEOUT=$(( ${ATTESTATION_INTERVAL}*6 )) limeWaitForAgentStatus '$AGENT_ID' '(Failed|Invalid Quote)'" 0 "Agent should fail attestation"
         fi
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
