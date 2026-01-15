@@ -16,8 +16,7 @@ Individual tests are supposed to be executed using the [Test management tool](ht
 Test execution and troubleshooting is described in detail in [TESTING](TESTING.md) and [TEST_TROUBLESHOOTING.md](TEST_TROUBLESHOOTING.md).
 
 ## Commit / merge policy
-
-Every change to tests must be submited as a pull-request and undergo a review and testing.
+Every change to tests must be submitted as a pull request and undergo review and testing.
 
 #### new tests
 It is recommended to push new tests via PR with review as well as a check for covering all the agreed acceptance criteria is more than welcome.
