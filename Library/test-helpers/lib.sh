@@ -94,7 +94,9 @@ export limeIMAPrivateKey=${__INTERNAL_limeIMAKeysDir}/privkey_evm.pem
 export limeIMAPublicKey=${__INTERNAL_limeIMAKeysDir}/x509_evm.pem
 export limeIMACertificateDER=${__INTERNAL_limeIMAKeysDir}/x509_evm.der
 
-[ -n "$limeTIMEOUT" ] || limeTIMEOUT=20
+# Default timeout for agent status checks should account for quote_interval (default 30s)
+# Set to 2x quote_interval to allow for state transitions: START -> GET_QUOTE -> PROVIDE_V -> GET_QUOTE
+[ -n "$limeTIMEOUT" ] || limeTIMEOUT=60
 export limeTIMEOUT
 
 export limeTPMDevNo=0

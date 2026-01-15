@@ -26,7 +26,8 @@ rlJournalStart
         rlFileBackup --clean --missing-ok /var/lib/mysql
         rlRun "rm -rf /var/lib/mysql/*"
         rlServiceStart mariadb
-        sleep 3
+        # Wait for MariaDB to be fully ready before running setup
+        rlRun "rlWaitForCmd 'mysql -u root -e \"SELECT 1\"' -m 30 -d 1" 0 "Wait for MariaDB to be ready"
         rlRun "cat setup.sql | mysql -u root"
         # configure keylime
         limeBackupConfig
@@ -40,10 +41,16 @@ rlJournalStart
 
     rlPhaseStartTest "Test service start with updated configuration"
         # start keylime services
+        # Use extended timeout for verifier/registrar startup as DB migrations can take several minutes
+        ORIG_TIMEOUT=${limeTIMEOUT}
+        export limeTIMEOUT=300  # 5 minutes for Alembic migrations on fresh database
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
+        export limeTIMEOUT=${ORIG_TIMEOUT}
+        # Give services time to establish database connections
+        sleep 2
         rlRun -s "echo 'show databases;' | mysql -u root"
         rlAssertGrep "verifierdb" $rlRun_LOG
         rlAssertGrep "registrardb" $rlRun_LOG
