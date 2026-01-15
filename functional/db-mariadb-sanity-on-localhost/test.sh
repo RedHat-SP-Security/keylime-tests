@@ -25,6 +25,14 @@ rlJournalStart
         rlServiceStop mariadb
         rlFileBackup --clean --missing-ok /var/lib/mysql
         rlRun "rm -rf /var/lib/mysql/*"
+        # Initialize MariaDB data directory
+        rlRun "mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql"
+        # Ensure proper ownership and SELinux contexts
+        rlRun "chown -R mysql:mysql /var/lib/mysql"
+        selinuxenabled && rlRun "restorecon -R /var/lib/mysql"
+        # Ensure runtime directory exists
+        rlRun "mkdir -p /var/run/mariadb"
+        rlRun "chown mysql:mysql /var/run/mariadb"
         rlServiceStart mariadb
         sleep 3
         rlRun "cat setup.sql | mysql -u root"
