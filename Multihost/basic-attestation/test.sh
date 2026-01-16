@@ -328,7 +328,8 @@ expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
 _EOF"
-        rlRun "expect script.expect"
+        rlRun -s "expect script.expect"
+        rlAssertNotGrep "ERROR" $rlRun_LOG -i
         rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
@@ -347,7 +348,8 @@ expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
 _EOF"
-        rlRun "expect script.expect"
+        rlRun -s "expect script.expect"
+        rlAssertNotGrep "ERROR" $rlRun_LOG -i
         rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
