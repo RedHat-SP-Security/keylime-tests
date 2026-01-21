@@ -1,0 +1,24 @@
+summary: Test that tenant cannot access agent-only endpoints
+description: |
+    End-to-end test to confirm that the tenant cannot access
+    agent-only endpoints (attestation endpoints).
+    Starts keylime in push mode (verifier, registrar, push agent).
+    Verifies:
+    - Tenant CANNOT access agent-only endpoint POST /v3/agents/:agent_id/attestations
+      (tenant certificate should be rejected when trying to submit attestations)
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - curl
+recommend:
+  - keylime
+  - python3-tomli
+  - keylime-agent-rust-push
+adjust:
+  - when: swtpm == no
+    enabled: false
+duration: 5m
+enabled: true
