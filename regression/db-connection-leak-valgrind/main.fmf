@@ -1,0 +1,47 @@
+summary: Database connection leak reproducer test (Valgrind-based)
+description: |
+    Tests that database connections are properly managed and released under high load.
+    This test is based on the existing regression/db-connection-leak-reproducer test
+    and reproduces scenarios that would have caused connection leaks before the fix
+    from PR https://github.com/keylime/keylime/pull/1782.
+
+    Configures a small database connection pool and performs intensive operations:
+    - Multiple agent registrations and deletions
+    - Policy creation, updates, and deletions
+    - Concurrent API requests
+    - Agent processing cycles
+
+    test.sh: Uses Valgrind for reliable leak detection. Runs the verifier under
+       valgrind with FD tracking enabled, performing phase-isolated analysis
+       where each test phase gets its own verifier instance and log directory.
+       This provides definitive leak detection by analyzing valgrind's FD tracking
+       output, eliminating false positives from timing issues and SQLite caching.
+
+    The valgrind-based approach provides:
+    - Definitive leak detection (FD tracking from open to close)
+    - Complete call stacks showing where leaked FDs were created
+    - No race conditions (analysis at process exit)
+    - Clear phase correlation (which operations caused which leaks)
+
+    The test verifies that the connection pool doesn't get exhausted and operations
+    complete successfully, confirming that the DB connection leak fix is working properly.
+contact: Sergio Correia <scorreia@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - regression
+  - database
+  - valgrind
+  - leak-detection
+require:
+  - yum
+  - sqlite
+  - coreutils
+  - valgrind
+recommend:
+  - keylime
+  - python3-tomli
+duration: 30m
+enabled: true
