@@ -1,0 +1,39 @@
+summary: Test that one agent cannot send attestations on behalf of another agent
+description: |
+    Running all services on localhost in push mode with authentication.
+
+    Threat model:
+    - Agent B (attacker) has its own valid Bearer token
+    - Agent B attempts to submit attestation for Agent A (victim) using its own token
+    - The verifier MUST reject because Token B belongs to Agent B, not Agent A
+
+    Test scenario:
+    1. Start Agent A, enroll it in verifier
+    2. Stop Agent A, restart TPM (creates new TPM identity)
+    3. Start Agent B with different UUID, authenticate, get Token B
+    4. Use Token B to attempt attestation for Agent A
+    5. Verify the request is rejected with 401/403
+
+    This tests the authorization boundary ensuring tokens are bound to
+    the agent_id and cannot be used for cross-agent attestation attacks.
+contact: Anderson Sasaki <ansasaki@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - url: https://github.com/RedHat-SP-Security/keylime-tests
+    ref: '@.tmt/dynamic_ref.fmf'
+    name: /Library/test-helpers
+  - yum
+  - curl
+  - jq
+  - sqlite
+recommend:
+  - keylime
+duration: 10m
+enabled: true
+adjust:
+  - when: swtpm == no
+    enabled: false
+id: 89a7c430-6141-4760-bcb1-b98e0e793937
