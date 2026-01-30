@@ -29,8 +29,8 @@
 
 # Agent UUID for testing (both agent types use the same UUID)
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
-ATTESTATION_INTERVAL=15
-TIMEOUT=$((ATTESTATION_INTERVAL * 3))
+ATTESTATION_INTERVAL=5
+TIMEOUT=$((ATTESTATION_INTERVAL * 5))
 
 rlJournalStart
 
@@ -42,8 +42,12 @@ rlJournalStart
         limeBackupConfig
 
         # Configure basic settings
+        rlRun "limeUpdateConf verifier max_retries 1"
+        rlRun "limeUpdateConf verifier request_timeout 3"
+        rlRun "limeUpdateConf verifier exponential_backoff False"
         rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
         rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
+        rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         rlRun "limeUpdateConf tenant require_ek_cert False"
 
         # Configure TPM if needed
@@ -86,25 +90,9 @@ rlJournalStart
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add" 0
 
         # Registration succeeded, now wait and verify that attestation fails due to mode mismatch
-        rlLogInfo "Checking if attestation fails due to mode mismatch..."
-        rlRun "sleep ${TIMEOUT}"
-
-        VERIFIER_LOG=$(limeVerifierLogfile)
-        if ! grep -qE "Attestation.*successfully passed" "$VERIFIER_LOG"; then
-            rlPass "Attestation failed due to mode mismatch (no successful attestation in logs)"
-            # Log diagnostic information about the failure
-            rlLogInfo "Checking logs for mode mismatch errors..."
-            if grep -qE "(mode|push|pull)" "$VERIFIER_LOG" 2>/dev/null; then
-                rlLogInfo "Mode-related messages in verifier log:"
-                grep -iE "(mode|push|pull|error|fail)" "$VERIFIER_LOG" | tail -20 || true
-            fi
-            if grep -qE "(mode|push|pull)" "$AGENT_LOG" 2>/dev/null; then
-                rlLogInfo "Mode-related messages in agent log:"
-                grep -iE "(mode|push|pull|error|fail)" "$AGENT_LOG" | tail -20 || true
-            fi
-        else
-            rlFail "Attestation succeeded despite mode mismatch!"
-        fi
+        rlLogInfo "Checking if attestation is not performed due to mode mismatch..."
+	rlRun "limeTIMEOUT=${TIMEOUT} limeWaitForAgentStatus --field attestation_status '$AGENT_ID' '(FAIL|PASS)'" 1 "Agent should not pass nor fail attestation"
+	rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PENDING'"
 
         # Cleanup scenario 1
         # Stop agent first to ensure clean deletion from verifier
@@ -112,6 +100,7 @@ rlJournalStart
 
         # Delete agent from verifier to ensure clean state for scenario 2
         rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID -c delete" 0-255
+        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID -c regdelete" 0-255
 
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
@@ -138,32 +127,19 @@ rlJournalStart
         rlLogInfo "Starting PUSH-MODEL agent (agent-driven attestation)"
         rlRun "limeStartPushAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        PUSH_AGENT_LOG=$(limePushAgentLogfile)
 
         # Attempt to add push-agent to pull-verifier (mode mismatch)
         # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add push-model agent to pull-based verifier..."
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model" 0
 
-        rlLogInfo "Checking if attestation fails due to mode mismatch..."
-        rlRun "sleep ${TIMEOUT}"
+        rlLogInfo "Checking if attestation fails due to the agent not responding"
 
+	rlRun "limeTIMEOUT=${TIMEOUT} limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'FAIL'"
         VERIFIER_LOG=$(limeVerifierLogfile)
-        if ! grep -qE "Attestation.*successfully passed" "${VERIFIER_LOG}"; then
-            rlPass "Attestation failed due to mode mismatch (no successful attestation in logs)"
-            # Log diagnostic information about the failure
-            rlLogInfo "Checking logs for mode mismatch errors..."
-            if grep -qE "(mode|push|pull)" "$VERIFIER_LOG" 2>/dev/null; then
-                rlLogInfo "Mode-related messages in verifier log:"
-                grep -iE "(mode|push|pull|error|fail)" "$VERIFIER_LOG" | tail -20 || true
-            fi
-            if grep -qE "(mode|push|pull)" "$PUSH_AGENT_LOG" 2>/dev/null; then
-                rlLogInfo "Mode-related messages in push agent log:"
-                grep -iE "(mode|push|pull|error|fail)" "$PUSH_AGENT_LOG" | tail -20 || true
-            fi
-        else
-            rlFail "Attestation succeeded despite mode mismatch!"
-        fi
+        PUSH_AGENT_LOG=$(limePushAgentLogfile)
+	rlAssertGrep "Attestation failed: Negotiation failed with status code: 404 Not Found"  "$PUSH_AGENT_LOG"
+	rlAssertGrep "Agent.*was not reachable.*setting state to FAILED"  "$VERIFIER_LOG" -E
 
         # Cleanup scenario 2
         rlRun "limeStopPushAgent"
