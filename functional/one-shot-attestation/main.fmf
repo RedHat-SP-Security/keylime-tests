@@ -1,0 +1,32 @@
+summary: Tests one-shot attestation feature
+description: |
+    Tests one-shot attestation scenarios without requiring agent registration.
+    Starts only the verifier service (no agent or registrar needed).
+    Uses keylime_oneshot_attestation script to gather and send evidence.
+    For emulated TPM, extends PCRs with tsseventextend to match boot event log.
+
+    Test scenarios:
+    1. Valid attestation with runtime policy, TPM policy, and measured boot policy
+    2. Policy failure - TPM policy mismatch (wrong PCR value)
+    3. Policy failure - file not in allowlist (evil-script.sh)
+    4. Policy failure - file hash mismatch (modified allowed-script.sh)
+    5. Error handling - invalid policy file (malformed JSON)
+    6. Error handling - untrusted CA certificate
+    7. Error handling - connection to invalid verifier endpoint
+contact: Patrik Koncity <pkoncity@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - functional
+require:
+  - yum
+  - vim-common
+  - tss2
+recommend:
+  - keylime
+  - tpm2-tools
+duration: 5m
+enabled: true
+tier: 1
