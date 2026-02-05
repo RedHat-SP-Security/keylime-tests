@@ -15,6 +15,20 @@ rlJournalStart
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlAssertRpm keylime
 
+        # Resolve path to custom-agent directory BEFORE changing to temp directory
+        SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+        CUSTOM_AGENT_DIR="${SCRIPT_DIR}/custom-agent"
+
+        # Compile custom agent helper tools for token acquisition
+        # These tools use TPM proof-of-possession to get authentication tokens
+        rlRun "pushd $CUSTOM_AGENT_DIR"
+        rlRun "make clean" 0 "Clean previous custom agent builds"
+        rlRun "make" 0 "Compile custom agent TPM certify helper"
+        rlRun "make test" 0 "Test custom agent TPM certify helper"
+        rlRun "test -x tpm_certify_simple" 0 "Verify TPM helper is executable"
+        rlRun "test -x setup_test_agent.sh" 0 "Verify agent setup script is executable"
+        rlRun "popd"
+
         # Create temporary directory
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         rlRun "pushd $TmpDir"
@@ -57,6 +71,10 @@ rlJournalStart
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
+
+        # Define URLs for custom agent setup
+        VERIFIER_URL="https://127.0.0.1:8881"
+        REGISTRAR_URL="https://127.0.0.1:8891"
     rlPhaseEnd
 
     rlPhaseStartSetup "Setup Agent A (victim)"
@@ -87,28 +105,20 @@ rlJournalStart
         rlServiceStart tpm2-abrmd
         sleep 5
 
-        # Count Bearer occurrences before Agent B starts (to detect new authentications)
-        BEARER_COUNT_BEFORE=$(grep -c "authorization: \"Bearer" "$(limePushAgentLogfile)" 2>/dev/null || echo 0)
+        # Copy policy.json from Agent A to custom-agent directory
+        # (setup_test_agent.sh looks for policy.json in its own directory)
+        rlRun "cp policy.json ${CUSTOM_AGENT_DIR}/policy.json" 0 "Copy policy.json to custom-agent directory"
 
-        # Configure and start Agent B with different UUID
-        rlRun "limeUpdateConf agent uuid '\"${AGENT_B_ID}\"'"
-        rlRun "limeStartPushAgent"
-        rlRun "limeWaitForAgentRegistration ${AGENT_B_ID}"
-
-        # Create policy and enroll Agent B
-        rlRun "limeCreateTestPolicy"
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_B_ID --runtime-policy policy.json -c add --push-model"
-
-        # Wait for Agent B to authenticate - check for MORE Bearer occurrences than before
-        rlRun "rlWaitForCmd '[ \$(grep -c \"authorization: \\\"Bearer\" \$(limePushAgentLogfile) 2>/dev/null || echo 0) -gt ${BEARER_COUNT_BEFORE} ]' -m 60 -d 1" \
-            0 "Agent B authenticated and received Bearer token"
-
-        # Get Agent B's token from the database
+        # Use custom agent setup script to register Agent B and get authentication token
         # This simulates an attacker having access to their own agent's token
-        # (attacker controls Agent B, so reading its token is expected)
-        VERIFIER_DB="/var/lib/keylime/cv_data.sqlite"
-        AGENT_B_TOKEN=$(sqlite3 "$VERIFIER_DB" \
-            "SELECT token FROM sessions WHERE agent_id='${AGENT_B_ID}' AND active=1 ORDER BY token_expires_at DESC LIMIT 1;")
+        # (attacker controls Agent B, so having its token is expected)
+        # The script will:
+        # 1. Register EK/AK with registrar using persistent handles
+        # 2. Activate credential
+        # 3. Enroll with verifier using policy.json (from Agent A)
+        # 4. Authenticate via TPM proof-of-possession and get token
+        rlLog "Setting up Agent B and obtaining authentication token via TPM proof-of-possession"
+        rlRun "AGENT_B_TOKEN=\$(${CUSTOM_AGENT_DIR}/setup_test_agent.sh \"${AGENT_B_ID}\" \"${REGISTRAR_URL}\" \"${VERIFIER_URL}\" \"${TmpDir}\" --get-token)" 0 "Setup Agent B and get authentication token"
 
         rlLog "Agent B token captured (truncated): ${AGENT_B_TOKEN:0:20}..."
         rlRun "test -n \"$AGENT_B_TOKEN\"" 0 "Verify Agent B token was captured"
@@ -122,7 +132,10 @@ rlJournalStart
         # Create a valid attestation request payload that would be accepted if authorization is bypassed
         # This includes proper evidence_supported structure with TPM quote capabilities
         # Write payload to a file to avoid shell escaping issues
-        cat > attestation_payload.json << 'PAYLOAD_EOF'
+        # Use a recent boot time (1 minute ago) to simulate a fresh boot
+        RECENT_BOOT_TIME=$(date -u -d "1 minute ago" +"%Y-%m-%dT%H:%M:%SZ")
+
+        cat > attestation_payload.json << PAYLOAD_EOF
 {
     "data": {
         "type": "attestation",
@@ -154,13 +167,13 @@ rlJournalStart
                     "capabilities": {
                         "supports_partial_access": true,
                         "appendable": true,
-                        "entry_count": 0,
+                        "entry_count": 1000,
                         "formats": ["text/plain"]
                     }
                 }
             ],
             "system_info": {
-                "boot_time": "2026-01-27T00:00:00+00:00"
+                "boot_time": "${RECENT_BOOT_TIME}"
             }
         }
     }

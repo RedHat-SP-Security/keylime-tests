@@ -26,9 +26,19 @@ require:
     ref: '@.tmt/dynamic_ref.fmf'
     name: /Library/test-helpers
   - yum
+  - make
+  - gcc-c++
+  - tss2-devel
+  - util-linux
   - curl
   - jq
-  - sqlite
+  - coreutils
+  - openssl
+  - /usr/bin/xxd
+  - tpm2-tools
+  - swtpm
+  - swtpm-tools
+  - tpm2-abrmd
 recommend:
   - keylime
 duration: 10m
