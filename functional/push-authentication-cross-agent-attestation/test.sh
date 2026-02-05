@@ -47,6 +47,8 @@ rlJournalStart
         rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         rlRun "limeUpdateConf verifier extend_token_on_attestation true"
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf verifier quote_interval 60"
+        rlRun "limeUpdateConf agent attestation_interval_seconds 60"
 
         # Configure authentication rate limits
         rlRun "limeUpdateConf verifier session_create_rate_limit_per_agent 15"
@@ -57,7 +59,7 @@ rlJournalStart
         # Start TPM emulator
         rlRun "limeStartTPMEmulator"
         rlRun "limeWaitForTPMEmulator"
-        rlServiceStart tpm2-abrmd
+        rlRun "limeCondStartAbrmd"
         sleep 5
 
         # Install IMA config and emulator
@@ -98,11 +100,11 @@ rlJournalStart
     rlPhaseStartSetup "Setup Agent B (attacker) with new TPM identity"
         # Restart TPM emulator to create fresh TPM identity for Agent B
         rlRun "limeStopTPMEmulator"
-        rlServiceStop tpm2-abrmd
+        rlRun "limeCondStopAbrmd"
         sleep 3
         rlRun "limeStartTPMEmulator"
         rlRun "limeWaitForTPMEmulator"
-        rlServiceStart tpm2-abrmd
+        rlRun "limeCondStartAbrmd"
         sleep 5
 
         # Copy policy.json from Agent A to custom-agent directory
@@ -214,7 +216,7 @@ PAYLOAD_EOF
         rlRun "limeStopVerifier"
         rlRun "limeStopIMAEmulator"
         rlRun "limeStopTPMEmulator"
-        rlServiceRestore tpm2-abrmd
+        rlRun "limeCondStopAbrmd"
 
         limeSubmitCommonLogs
         limeClearData

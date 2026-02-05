@@ -22,9 +22,6 @@ component:
 test: ./test.sh
 framework: beakerlib
 require:
-  - url: https://github.com/RedHat-SP-Security/keylime-tests
-    ref: '@.tmt/dynamic_ref.fmf'
-    name: /Library/test-helpers
   - yum
   - make
   - gcc-c++
@@ -41,6 +38,7 @@ require:
   - tpm2-abrmd
 recommend:
   - keylime
+  - keylime-agent-rust-push
 duration: 10m
 enabled: true
 adjust:
