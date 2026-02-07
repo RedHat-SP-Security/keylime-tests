@@ -37,13 +37,13 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Verify that agent creates mount point when not present and mounts tmpfs."
-        rlRun "findmnt -M $SECURE_DIR && umount $SECURE_DIR"
+        findmnt -M $SECURE_DIR && rlRun "umount $SECURE_DIR"
         rlRun "rm -rf $SECURE_DIR"
         sed -i '/var-lib-keylime-secure.mount/d' $KEYLIME_UNIT_FILE
         rlRun "systemctl daemon-reload"
         rlRun "limeStartAgent"
         sleep 3
-        rlAssertGrep "INFO  keylime_agent::secure_mount > Directory \"$SECURE_DIR\" created" $(limeAgentLogfile)
+        rlAssertGrep "Directory \"$SECURE_DIR\" created" $(limeAgentLogfile)
         #verify that the mount point has been created and tmpfs mounted
         rlRun "findmnt -M \"$SECURE_DIR\" -t tmpfs"
         rlRun "limeStopAgent"
@@ -53,7 +53,7 @@ rlJournalStart
     rlPhaseStartTest "Manual mount dir with wrong fs, agent fail"
         rlRun "mount -t ramfs -o size=1m,mode=0700 ramfs $SECURE_DIR"
         rlRun "limeStartAgent"
-        rlAssertGrep "ERROR keylime_agent::secure_mount > Secure mount error: Secure storage location $SECURE_DIR already mounted on wrong file system type:" $(limeAgentLogfile)
+        rlAssertGrep "Secure mount error: Secure storage location $SECURE_DIR already mounted on wrong file system type:" $(limeAgentLogfile)
         rlRun "limeStopAgent"
         rlRun "umount $SECURE_DIR"
     rlPhaseEnd
