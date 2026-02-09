@@ -48,9 +48,12 @@ rlJournalStart
             # Set the verifier to run in PUSH mode
             rlRun "limeUpdateConf verifier mode 'push'"
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+            rlRun "limeUpdateConf verifier session_lifetime 180"
             rlRun "limeUpdateConf agent attestation_interval_seconds 10"
             rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
             rlRun "limeUpdateConf agent verifier_url '\"https://$SERVER_IP:8881\"'"
+            rlRun "limeUpdateConf agent enable_authentication true"
+            rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
         fi
 
         # start tpm emulator

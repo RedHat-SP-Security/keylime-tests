@@ -39,11 +39,14 @@ rlJournalStart
             # Set the verifier to run in PUSH mode
             rlRun "limeUpdateConf verifier mode 'push'"
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+            rlRun "limeUpdateConf verifier session_lifetime 180"
             rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
             # Right now just for push agent
             rlRun "limeUpdateConf agent exponential_backoff_initial_delay 1000"
             # Allow hostname mismatch in test environment
             rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
+            rlRun "limeUpdateConf agent enable_authentication true"
+            rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then
