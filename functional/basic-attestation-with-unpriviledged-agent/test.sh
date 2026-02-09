@@ -33,10 +33,13 @@ rlJournalStart
             # Set the verifier to run in PUSH mode
             rlRun "limeUpdateConf verifier mode 'push'"
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+            rlRun "limeUpdateConf verifier session_lifetime 180"
             rlRun "limeUpdateConf verifier quote_interval 10"
             rlRun "limeUpdateConf agent attestation_interval_seconds 10"
             #rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
             rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
+            rlRun "limeUpdateConf agent enable_authentication true"
+            rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
         fi
         # change /etc/keylime.conf permissions so that agent running as ${AGENT_USER} can access it
         rlRun "find /etc/keylime -type f -exec chmod 444 {} \;"
