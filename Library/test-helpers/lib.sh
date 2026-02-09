@@ -1497,7 +1497,7 @@ limeWaitForTPMEmulator() {
 
     # check /dev/tpm* presence if swtpm is configured as a device
     if grep -q device $__INTERNAL_limeTmpDir/swtpm_setup &> /dev/null; then
-        rlWaitForFile /dev/tpm${limeTPMDevNo} -d 1 -t ${limeTIMEOUT}
+        rlWaitForFile /dev/tpm${limeTPMDevNo} -d 1 -t ${limeTIMEOUT} && ls -l /dev/tpm*
     else
         rlWaitForSocket $PORT -d 1 -t ${limeTIMEOUT}
     fi
