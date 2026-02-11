@@ -1,0 +1,13 @@
+# Compiled binary
+tpm_certify_simple
+
+# Test output directory
+test_output/
+
+# Temporary test files
+policy.json
+*.bin
+*.ctx
+*.pub
+*.name
+*.log
