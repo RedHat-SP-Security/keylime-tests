@@ -1,0 +1,37 @@
+summary: mTLS cert cannot be used to access keylime server admin API endpoint
+description: |
+    Start and register agent and let it obtain mTLS cert.
+    Verify that TLS connection to verifier cannot be established
+    using agent's self-signed mTLS cert.
+    Verify that TLS connection to verifier cannot be established
+    without a certificate through server TLS and a client cannot
+    utilize admin API endpoint.
+    Verify that TLS connection to registrar cannot be established
+    using agent's self-signed mTLS cert.
+    Verify that TLS connection to registrar cannot be established
+    without a certificate through server TLS and a client cannot
+    utilize admin API endpoint.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - openssl
+  - curl
+  - yum
+recommend:
+  - keylime
+  - keylime-agent-rust
+duration: 5m
+enabled: true
+
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+    id: 43576172-bc15-4e48-93f1-fd1d0afef547
+
+/pull:
+    environment:
+        AGENT_SERVICE: Agent
+    id: fb20bcbc-5c29-400d-9ae7-3248e67f0b0f
