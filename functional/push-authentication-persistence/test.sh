@@ -21,8 +21,6 @@ rlJournalStart
 
         # Enable authentication
         rlRun "limeUpdateConf agent enable_authentication true"
-        rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
-        rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         rlRun "limeUpdateConf verifier extend_token_on_attestation true"
 
         # Configure authentication rate limits

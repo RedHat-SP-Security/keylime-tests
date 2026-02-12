@@ -51,9 +51,7 @@ rlJournalStart
             rlRun "limeUpdateConf verifier session_lifetime 180"
             rlRun "limeUpdateConf verifier quote_interval 10"
             rlRun "limeUpdateConf agent attestation_interval_seconds 10"
-            rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
             rlRun "limeUpdateConf agent enable_authentication true"
-            rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
         fi
 
         # start keylime_verifier
