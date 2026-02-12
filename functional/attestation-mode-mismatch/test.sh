@@ -131,15 +131,8 @@ rlJournalStart
         # Attempt to add push-agent to pull-verifier (mode mismatch)
         # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add push-model agent to pull-based verifier..."
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model" 0
-
-        rlLogInfo "Checking if attestation fails due to the agent not responding"
-
-	rlRun "limeTIMEOUT=${TIMEOUT} limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'FAIL'"
-        VERIFIER_LOG=$(limeVerifierLogfile)
-        PUSH_AGENT_LOG=$(limePushAgentLogfile)
-	rlAssertGrep "Attestation failed: Negotiation failed with status code: 404 Not Found"  "$PUSH_AGENT_LOG"
-	rlAssertGrep "Agent.*was not reachable.*setting state to FAILED"  "$VERIFIER_LOG" -E
+        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model" 1
+        rlAssertGrep "400.*mTLS certificate for agent is required" "$rlRun_LOG" -E
 
         # Cleanup scenario 2
         rlRun "limeStopPushAgent"
