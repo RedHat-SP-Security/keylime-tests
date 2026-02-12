@@ -3472,6 +3472,30 @@ limePushAuthGetToken() {
     grep "authorization: \"Bearer" "$log_file" | tail -1 | sed -n 's/.*Bearer \([^"]*\).*/\1/p'
 }
 
+true <<'=cut'
+=pod
+
+=head2 limeClearCertificates
+
+Removes existing certificates and keys from /var/lib/keylime
+
+    limeClearCertificates
+
+=over
+
+=back
+
+Returns 0.
+
+=cut
+
+limeClearCertificates() {
+
+    rm -vf /var/lib/keylime/{*.pem,*.crt} /var/lib/keylime/cv_ca/{*.pem,*.crt} /var/lib/keylime/reg_ca/{*.pem,*.crt}
+
+}
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Verification
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
