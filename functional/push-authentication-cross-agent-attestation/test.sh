@@ -43,8 +43,6 @@ rlJournalStart
         rlRun "limeUpdateConf verifier challenge_lifetime 1800"
         rlRun "limeUpdateConf verifier session_lifetime 600"
         rlRun "limeUpdateConf agent enable_authentication true"
-        rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
-        rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         rlRun "limeUpdateConf verifier extend_token_on_attestation true"
         rlRun "limeUpdateConf tenant require_ek_cert False"
         rlRun "limeUpdateConf verifier quote_interval 60"

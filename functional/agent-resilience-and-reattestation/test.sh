@@ -35,10 +35,7 @@ rlJournalStart
             rlRun "limeUpdateConf verifier session_lifetime 180"
             rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
             rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
-            #rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
-            rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
             rlRun "limeUpdateConf agent enable_authentication true"
-            rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then

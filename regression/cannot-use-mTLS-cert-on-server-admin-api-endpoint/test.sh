@@ -38,7 +38,6 @@ rlJournalStart
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
             rlRun "limeUpdateConf verifier quote_interval 10"
             rlRun "limeUpdateConf agent attestation_interval_seconds 10"
-            rlRun "limeUpdateConf agent tls_accept_invalid_hostnames true"
         fi
         # if TPM emulator is present
         if limeTPMEmulated; then
