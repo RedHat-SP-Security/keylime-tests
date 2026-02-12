@@ -69,6 +69,9 @@ rlJournalStart
  
         sleep 5
 
+        # remove old certificates to make sure they are regenerated
+        rlRun "limeClearCertificates"
+
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
@@ -193,6 +196,7 @@ rlJournalStart
         rlRun "rm -f $TESTDIR_SECOND/*" 
         limeSubmitCommonLogs
         limeClearData
+        rlRun "limeClearCertificates"
         limeRestoreConfig
     rlPhaseEnd
 
