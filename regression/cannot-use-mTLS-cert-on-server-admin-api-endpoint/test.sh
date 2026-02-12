@@ -71,6 +71,12 @@ rlJournalStart
         # Add keylime agent"
         rlRun "keylime_tenant -u $AGENT_ID --runtime-policy policy.json -c add --file /etc/hostname ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID PASS" 0,1
+        # push agent won't generate the cert so we need to do it on our own
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlAssertNotExists /var/lib/keylime/server-cert.crt
+            rlAssertNotExists /var/lib/keylime/server-private.pem
+            rlRun 'openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes -keyout /var/lib/keylime/server-private.pem -out /var/lib/keylime/server-cert.crt -subj "/CN=127.0.0.1" -addext "subjectAltName=IP:127.0.0.1"'
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Try to open TLS connection to the verifier on port ${VERIFIER_PORT} using agent's self-signed mTLS cert"
