@@ -9,8 +9,8 @@ environment:
   KEYLIME_UPSTREAM_BRANCH: "master"
   # variables below impact only plans that use /setup/install_upstream_rust_keylime
   # task, not plans using /setup/install_rust_keylime_from_copr
-  RUST_KEYLIME_UPSTREAM_URL: "https://github.com/ansasaki/rust-keylime.git"
-  RUST_KEYLIME_UPSTREAM_BRANCH: "authorization"
+  RUST_KEYLIME_UPSTREAM_URL: "https://github.com/keylime/rust-keylime.git"
+  RUST_KEYLIME_UPSTREAM_BRANCH: "master"
 
 prepare:
   - how: shell
