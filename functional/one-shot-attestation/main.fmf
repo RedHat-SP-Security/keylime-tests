@@ -20,6 +20,8 @@ test: ./test.sh
 framework: beakerlib
 tag:
   - functional
+  - CI-Tier-1
+  - not-agent-upstream-CI
 require:
   - yum
   - vim-common

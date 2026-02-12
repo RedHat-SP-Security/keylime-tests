@@ -14,7 +14,7 @@ component:
 test: ./test.sh
 framework: beakerlib
 tag:
-  - CI-Tier-1-IMA
+  - CI-Tier-1
 require:
   - yum
   - attr
