@@ -1602,13 +1602,19 @@ Returns 0 when the start was successful, 1 otherwise.
 limeWaitForAgentRegistration() {
     local TIMEOUT=${limeTIMEOUT}
     local EK_CERT=""
+    local COMBINED_DER=$( mktemp )
     if [ "$1" == "--local-ek-check" ]; then
-        # on s390x workaround issue RHEL-113400
+        # Note: tpm2_getekcertificate may return multiple certs (RSA+ECC) concatenated,
+        # but the registrar typically stores only the first (RSA) cert.
+        # properly extract the first cert using openssl
         if [ "$(rlGetPrimaryArch)" == "s390x" ]; then
-            EK_CERT=$( tpm2_nvread 0x01c00002 -C o | base64 -w 0 )
+            # on s390x workaround issue RHEL-113400
+            tpm2_nvread 0x01c00002 -C o > "${COMBINED_DER}"
         else
-            EK_CERT=$( tpm2_getekcertificate | base64 -w 0 )
+            tpm2_getekcertificate > "${COMBINED_DER}"
         fi
+        EK_CERT=$( openssl x509 -in "${COMBINED_DER}" -inform der -outform der | base64 -w 0 )
+        rm -f "${COMBINED_DER}"
         if [ -z "${EK_CERT}" ]; then
             echo "Failed to read local TPM EK CERT"
             return 99
@@ -1629,12 +1635,7 @@ limeWaitForAgentRegistration() {
             # do also EK_CERT check if required
             QUOTE_EK=$(grep "^{" "$OUTPUT" | jq -r ".[].ekcert")
             # When --local-ek-check is used, verify the registrar's EK cert matches the local TPM
-            # Note: tpm2_getekcertificate may return multiple certs (RSA+ECC) concatenated,
-            # but the registrar typically stores only the first (RSA) cert.
-            # Base64 concatenation may strip padding (=) from the first cert, so we need to
-            # check if the local cert starts with the registrar cert (ignoring trailing =).
-            local QUOTE_EK_STRIPPED="${QUOTE_EK%=*}"
-            if [ -z "${EK_CERT}" ] || [[ "${EK_CERT}" == "${QUOTE_EK}"* ]] || [[ "${EK_CERT}" == "${QUOTE_EK_STRIPPED}"* ]] || [ "${QUOTE_EK}" == "${EK_CERT}" ]; then
+            if [ -z "${EK_CERT}" ] || [[ "${EK_CERT}" == "${QUOTE_EK}" ]]; then
                 cat "$OUTPUT"
                 rm "$OUTPUT"
                 return 0
