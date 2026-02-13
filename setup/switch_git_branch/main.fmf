@@ -10,6 +10,6 @@ framework: beakerlib
 duration: 3m
 enabled: true
 adjust:
-  - when: distro != rhel-9
+  - when: distro != rhel
     enabled: false
 id: 6c3e0c21-3912-4759-a627-3de475330e3c
