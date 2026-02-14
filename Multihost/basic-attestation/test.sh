@@ -334,7 +334,7 @@ if [ -n "${AGENT2}" ]; then
         # register
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} ${POLICYPARAMS} --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant --agent-api-version 2.3 -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} ${POLICYPARAMS} --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
@@ -354,7 +354,7 @@ fi
         rlRun "cat policy.json"
         rlRun "cat > script.expect <<_EOF
 set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
+spawn keylime_tenant --agent-api-version 2.3 -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
 expect \"Please enter the password to decrypt your keystore:\"
 send \"keylime\n\"
 expect eof
