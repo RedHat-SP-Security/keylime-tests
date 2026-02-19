@@ -2,10 +2,6 @@ adjust:
  - when: enforce_keylime_tests_branch is defined
    ref: $@enforce_keylime_tests_branch
    continue: false
- # temporary redirection due to planned 10.2 rebase
- - when: distro == rhel-10.2 and initiator == rhel-ci
-   ref: main
-   continue: false
  - when: distro == rhel-10.0 or distro == rhel-10.1
    ref: rhel-10.1
    continue: false
