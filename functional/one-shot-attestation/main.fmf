@@ -32,3 +32,8 @@ recommend:
 duration: 5m
 enabled: true
 tier: 1
+
+adjust:
+  - when: swtpm is not defined or swtpm != yes
+    enabled: false
+    because: This tests works only with SWTPM emulator
