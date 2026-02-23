@@ -20,6 +20,7 @@ require:
   - curl
 recommend:
   - keylime
+  - keylime-agent-rust
   - keylime-agent-rust-push
 duration: 3m
 enabled: true

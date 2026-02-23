@@ -19,6 +19,7 @@ require:
   - yum
 recommend:
   - keylime
+  - keylime-agent-rust
   - keylime-agent-rust-push
 duration: 10m
 enabled: true
