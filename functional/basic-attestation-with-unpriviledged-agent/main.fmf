@@ -15,6 +15,7 @@ require:
   - expect
 recommend:
   - keylime
+  - keylime-agent-rust
   - keylime-agent-rust-push
   - python3-tomli
 duration: 10m
