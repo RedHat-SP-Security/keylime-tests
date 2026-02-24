@@ -15,6 +15,7 @@ elif [ -x "/usr/share/keylime/scripts/keylime_oneshot_attestation" ]; then
 else
     ONESHOT_SCRIPT="keylime_oneshot_attestation"
 fi
+MB_TENANT_ARG=""
 
 rlJournalStart
 
@@ -45,14 +46,16 @@ rlJournalStart
         rlRun "test -x ${ONESHOT_SCRIPT}" 0 "Verify script is executable"
         # Backup script before modifications
         rlFileBackup "${ONESHOT_SCRIPT}"
-        # Modify the oneshot script to point to our test bios measurements file instead of the default one.
-        rlRun "sed -i 's%^MEASUREDBOOT_ML =.*%MEASUREDBOOT_ML = \"/var/tmp/binary_bios_measurements\"%' ${ONESHOT_SCRIPT}"
-        rlRun "cp binary_bios_measurements /var/tmp"
-        # Extend emulated TPM PCRs to match the boot event log
-        if limeTPMEmulated; then
+        # include measured boot scenario only for emulated TPM and not s390x
+        if limeTPMEmulated && [ "$( rlGetPrimaryArch )" != "s390x" ]; then
+            rlRun "cp binary_bios_measurements /var/tmp"
+            # Modify the oneshot script to point to our test bios measurements file instead of the default one.
+            rlRun "sed -i 's%^MEASUREDBOOT_ML =.*%MEASUREDBOOT_ML = \"/var/tmp/binary_bios_measurements\"%' ${ONESHOT_SCRIPT}"
+            # Extend emulated TPM PCRs to match the boot event log
             rlRun "TPM_INTERFACE_TYPE=socsim tsseventextend -tpm -if /var/tmp/binary_bios_measurements"
+            rlRun "keylime-policy create measured-boot -e /var/tmp/binary_bios_measurements -o mb_refstate.txt"
+            MB_TENANT_ARG="--mb-policy mb_refstate.txt"
         fi
-        rlRun "keylime-policy create measured-boot -e /var/tmp/binary_bios_measurements -o mb_refstate.txt"
 
         # Create TPM policy with current PCR values (after extend so values are correct)
         rlRun "tpm2_pcrread sha256:0 -o pcr0.bin"
@@ -97,11 +100,11 @@ EOF"
         # execute the allowed script to get it into IMA log
         rlRun "${TESTDIR}/allowed-script.sh"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep allowed-script.sh"
-        # Test with both runtime policy (IMA allowlist), TPM policy (PCR values) and measured boot policy
+        # Test with both runtime policy (IMA allowlist), TPM policy (PCR values) and (optionally) measured boot policy
         rlRun -st "${ONESHOT_SCRIPT} \
             --runtime-policy policy.json \
             --tpm-policy tpm_policy.json \
-            --mb-policy mb_refstate.txt \
+            ${MB_TENANT_ARG} \
             --verifier-host ${VERIFIER_HOST} \
             --verifier-port ${VERIFIER_PORT} \
             --verifier-cacert ${VERIFIER_CACERT}" 0 "Run one-shot attestation with runtime and TPM policy"
