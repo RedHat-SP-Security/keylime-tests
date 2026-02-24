@@ -114,12 +114,12 @@ jobs:
         type: tmt-multihost
 - job: tests
   trigger: pull_request
-  branch: fedora-rawhide
+  branch: fedora-main
   targets:
-    - fedora-rawhide-x86_64
+    - fedora-all
   skip_build: true
   tf_extra_params:
     environments:
       - tmt:
           context:
-            target_PR_branch: "fedora-rawhide"
+            target_PR_branch: "fedora-main"
