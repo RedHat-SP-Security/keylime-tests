@@ -104,7 +104,7 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho This is good-script2' > $TESTDIR/good-script2.sh && chmod a+x $TESTDIR/good-script2.sh"
         # create allowlist and excludelist and generate policy.json using tenant container
         rlRun "limeCreateTestPolicy --lists-only ${TESTDIR}/*"
-        rlRun "podman run --rm --attach stdout -v $PWD:/root:z tenant_image /bin/bash -c 'cd /root && keylime_create_policy -a allowlist.txt -e excludelist.txt 2> /dev/null' > policy.json"
+        rlRun "podman run --rm --attach stdout -v $PWD:/root:z tenant_image /bin/bash -c 'cd /root && keylime-policy create runtime --allowlist allowlist.txt --excludelist excludelist.txt 2> /dev/null' > policy.json"
 
         rlRun "limeconRunAgent $CONT_AGENT $TAG_AGENT $IP_AGENT $CONT_NETWORK_NAME $TESTDIR keylime_agent $PWD/confdir_$CONT_AGENT $(realpath ./cv_ca)"
         rlRun -s "limeWaitForAgentRegistration $AGENT_ID"
