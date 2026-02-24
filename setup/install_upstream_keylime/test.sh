@@ -16,7 +16,7 @@ rlJournalStart
         rlRun -s "rpmbuild -bb keylime.spec"
         RPMPKG=$( awk '/Wrote:/ { print $2 }' $rlRun_LOG )
         # replace installed keylime with our newly built dummy package
-        rlRun "rpm -Uvh $RPMPKG"
+        rlRun "rpm -Uvh --nosignature $RPMPKG"
         EXTRA_PKGS="python3-lark-parser python3-packaging"
         # for RHEL8 and CentOS Stream8 configure Sergio's copr repo providing necessary dependencies
         if rlIsRHEL 8 || rlIsCentOS 8; then
