@@ -242,6 +242,7 @@ Agent() {
             rlRun "limeUpdateConf agent contact_ip '\"${AGENT_IP}\"'"
             rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
             rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
+	    rlRun "limeUpdateConf agent registrar_tls_enabled true"
             rlRun "limeUpdateConf agent server_key '\"${CERTDIR}/agent-key.pem\"'"
             rlRun "limeUpdateConf agent server_cert '\"${CERTDIR}/agent-cert.pem\"'"
             rlRun "limeUpdateConf agent revocation_notification_ip '\"${VERIFIER_IP}\"'"
