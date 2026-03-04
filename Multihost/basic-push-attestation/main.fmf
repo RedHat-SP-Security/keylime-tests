@@ -1,0 +1,27 @@
+summary: Tests basic keylime push model attestation scenario on multiple hosts
+description: |
+    Running services on different systems - verifier, registrar, agent1+tenant, agent2.
+    Uses custom build certificates.
+    Starts verifier, registrar, agent, agent2.
+    Registers both agents.
+    Verifies that systems passed attestation.
+    Does changes on a system with agent1 and verifies that system has failed attestation.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - multihost
+  - CI-Tier-1-Multi
+require:
+  - library(openssl/certgen)
+  - yum
+  - bind-utils
+  - wget
+recommend:
+  - keylime
+  - keylime-agent-rust-push
+duration: 30m
+enabled: true
+id: 7e303923-9e34-405a-b78a-eb53c07af4bd
