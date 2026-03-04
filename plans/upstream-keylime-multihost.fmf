@@ -11,6 +11,8 @@ provision:
     role: registrar
   - name: agent
     role: agent
+  - name: agent2
+    role: agent2
 
 discover:
   - name: keylime_install
@@ -21,6 +23,7 @@ discover:
     how: fmf
     where:
       - agent
+      - agent2
     test:
       - /setup/configure_tpm_emulator
       - /setup/install_rust_keylime_from_copr
@@ -30,6 +33,7 @@ discover:
     test:
       #- /setup/enable_keylime_debug_messages
       - /Multihost/basic-attestation
+      - /Multihost/basic-push-attestation
 
 execute:
   how: tmt
