@@ -28,6 +28,7 @@ require:
   - make
   - gcc-c++
   - tss2-devel
+  - tpm2-tss-devel
   - util-linux
   - curl
   - jq
