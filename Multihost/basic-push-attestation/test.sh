@@ -2,13 +2,11 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   runtest.sh of /CoreOS/keylime/Multihost/basic-attestation
-#   Description: tests basic keylime attestation scenario using multiple hosts
 #   Author: Karel Srot <ksrot@redhat.com>
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Copyright (c) 2021 Red Hat, Inc.
+#   Copyright (c) 2026 Red Hat, Inc.
 #
 #   This program is free software: you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -25,8 +23,6 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Include Beaker environment
-#. /usr/bin/rhts-environment.sh || exit 1
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 # when manually troubleshooting multihost test in Restraint environment
@@ -34,18 +30,10 @@
 # to make user that sync events have unique names and there are not
 # collisions with former test runs
 
-# set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
-[ -n "$REVOCATION_NOTIFIER" ] || REVOCATION_NOTIFIER=agent
-if [ "${USE_ALLOWLIST_FOR_AGENT2}" == "true" -o "${USE_ALLOWLIST_FOR_AGENT2}" == "yes" ]; then
-    USE_ALLOWLIST_FOR_AGENT2=true
-else
-    USE_ALLOWLIST_FOR_AGENT2=false
-fi
-
-
 # load helper functions
-. ../multihost-roles-functions.sh
+source ../multihost-roles-functions.sh
 
+ATTESTATION_INTERVAL=20
 
 Verifier() {
     rlPhaseStartSetup "Verifier setup"
@@ -60,16 +48,12 @@ Verifier() {
         rlRun "x509KeyGen verifier-client" 0 "Preparing RSA verifier-client certificate"
         rlRun "x509KeyGen registrar" 0 "Preparing RSA registrar certificate"
         rlRun "x509KeyGen tenant" 0 "Preparing RSA tenant certificate"
-        rlRun "x509KeyGen agent" 0 "Preparing RSA tenant certificate"
-        [ -n "${AGENT2}" ] && rlRun "x509KeyGen agent2" 0 "Preparing RSA tenant certificate"
         rlRun "x509SelfSign ca" 0 "Selfsigning CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webserver --subjectAltName 'IP = ${VERIFIER_IP}' verifier" 0 "Signing verifier certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $VERIFIER_IP' -t webclient --subjectAltName 'IP = ${VERIFIER_IP}' verifier-client" 0 "Signing verifier-client certificate with our CA certificate"
         rlRun "x509CertSign --CA ca --DN 'CN = $REGISTRAR' -t webserver --subjectAltName 'IP = ${REGISTRAR_IP}' registrar" 0 "Signing registrar certificate with our CA certificate"
         # remember, we are running tenant on agent server
         rlRun "x509CertSign --CA ca --DN 'CN = ${AGENT}' -t webclient --subjectAltName 'IP = ${AGENT_IP}' tenant" 0 "Signing tenant certificate with our CA"
-        rlRun "x509SelfSign --DN 'CN = ${AGENT}' -t webserver agent" 0 "Self-signing agent certificate"
-        [ -n "${AGENT2}" ] && rlRun "x509SelfSign --DN 'CN = ${AGENT2}' -t webserver agent2" 0 "Self-signing agent2 certificate"
 
         # copy verifier certificates to proper location
         CERTDIR=/var/lib/keylime/certs
@@ -88,10 +72,6 @@ Verifier() {
         rlRun "cp $(x509Key registrar) http/registrar-key.pem"
         rlRun "cp $(x509Cert tenant) http/tenant-cert.pem"
         rlRun "cp $(x509Key tenant) http/tenant-key.pem"
-        rlRun "cp $(x509Cert agent) http/agent-cert.pem"
-        rlRun "cp $(x509Key agent) http/agent-key.pem"
-        [ -n "${AGENT2}" ] && rlRun "cp $(x509Cert agent2) http/agent2-cert.pem"
-        [ -n "${AGENT2}" ] && rlRun "cp $(x509Key agent2) http/agent2-key.pem"
         rlRun "pushd http"
         rlRun "python3 -m http.server 8000 &"
         HTTP_PID=$!
@@ -109,15 +89,12 @@ Verifier() {
         rlRun "limeUpdateConf verifier client_key verifier-client-key.pem"
         rlRun "limeUpdateConf revocations zmq_ip ${VERIFIER_IP}"
         rlRun "limeUpdateConf verifier client_key ${CERTDIR}/verifier-client-key.pem"
-        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[\"${REVOCATION_NOTIFIER}\"]'"
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
-        fi
-
-	# FIXME: expose verifier.conf so that tenant can download it
-	# this is a keylime issue which we need to workaroun ATM
-	# https://github.com/keylime/keylime/issues/1541#issuecomment-2221267087
-	rlIsRHELLike 9 || rlRun "cp /etc/keylime/verifier.conf http"
+        rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
+        # Set the verifier to run in PUSH mode
+        rlRun "limeUpdateConf verifier mode 'push'"
+        rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+	rlRun "limeUpdateConf verifier session_lifetime 180"
+        rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
 
         # Delete other components configuration files
         for comp in agent registrar tenant; do
@@ -129,13 +106,6 @@ Verifier() {
         rlRun "limeWaitForVerifier"
         rlRun "sync-set VERIFIER_SETUP_DONE"
         rlRun "sync-block AGENT_ALL_TESTS_DONE ${AGENT_IP}" 0 "Waiting for the Agent to finish the test"
-    rlPhaseEnd
-
-    rlPhaseStartTest "Verifier test"
-        # check that the AGENT failed verification
-        rlAssertGrep "WARNING - File not found in allowlist: .*/keylime-bad-script.sh" $(limeVerifierLogfile) -E
-        AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
-        rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
     rlPhaseEnd
 
     rlPhaseStartCleanup "Verifier cleanup"
@@ -199,17 +169,11 @@ Agent() {
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
-        SECUREDIR=/var/lib/keylime/secure
         rlRun "mkdir -p ${CERTDIR}"
-        rlRun "mkdir -p $SECUREDIR"
-        for F in cacert.pem tenant-cert.pem tenant-key.pem agent-key.pem agent-cert.pem; do
+        for F in cacert.pem tenant-cert.pem tenant-key.pem; do
             rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
         id keylime && rlRun "chown -R keylime:keylime ${CERTDIR}"
-        # agent mTLS certs are supposed to be in the SECUREDIR
-        rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
-        rlRun "cp ${CERTDIR}/{agent-key.pem,agent-cert.pem} ${SECUREDIR}"
-        id keylime && rlRun "chown -R keylime:keylime ${SECUREDIR}"
 
         # configure tenant
         rlRun "limeUpdateConf tenant registrar_ip ${REGISTRAR_IP}"
@@ -225,43 +189,24 @@ Agent() {
         rlRun "limeUpdateConf tenant client_key tenant-key.pem"
         rlRun "limeUpdateConf tenant client_key ${CERTDIR}/tenant-key.pem"
 
-        # configure agent
-        if limeIsPythonAgent; then
-            rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
-            rlRun "limeUpdateConf agent ip ${AGENT_IP}"
-            rlRun "limeUpdateConf agent contact_ip ${AGENT_IP}"
-            rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
-            rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
-            rlRun "limeUpdateConf agent server_key agent-key.pem"
-            rlRun "limeUpdateConf agent server_cert agent-cert.pem"
-            rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
-        else
-            # tls_dir not supported by the Rust agent, using /var/lib/keylime by default
-            #rlRun "limeUpdateConf agent tls_dir '\"${CERTDIR}\"'"
-            rlRun "limeUpdateConf agent ip '\"${AGENT_IP}\"'"
-            rlRun "limeUpdateConf agent contact_ip '\"${AGENT_IP}\"'"
-            rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
-            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
-	    rlRun "limeUpdateConf agent registrar_tls_enabled true"
-            rlRun "limeUpdateConf agent server_key '\"${CERTDIR}/agent-key.pem\"'"
-            rlRun "limeUpdateConf agent server_cert '\"${CERTDIR}/agent-cert.pem\"'"
-            rlRun "limeUpdateConf agent revocation_notification_ip '\"${VERIFIER_IP}\"'"
-        fi
-
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf agent enable_revocation_notifications False"
-        fi
+        # tls_dir not supported by the Rust agent, using /var/lib/keylime by default
+        #rlRun "limeUpdateConf agent ip '\"${AGENT_IP}\"'"
+        #rlRun "limeUpdateConf agent contact_ip '\"${AGENT_IP}\"'"
+        rlRun "limeUpdateConf agent verifier_url '\"https://${VERIFIER_IP}:8881\"'"
+        rlRun "limeUpdateConf agent verifier_tls_ca_cert '\"${CERTDIR}/cacert.pem\"'"
+        rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
+        #rlRun "limeUpdateConf agent registrar_tls_enabled true"
+        rlRun "limeUpdateConf agent registrar_tls_enabled false"
+        rlRun "limeUpdateConf agent registrar_tls_ca_cert '\"${CERTDIR}/cacert.pem\"'"
+        rlRun "limeUpdateConf agent enable_revocation_notifications false"
+        rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
+        rlRun "limeUpdateConf agent enable_authentication true"
+        #rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
 
         # Delete other components configuration files
         for comp in verifier registrar; do
             rlRun "rm -rf /etc/keylime/$comp.conf*"
         done
-
-
-	# FIXME: expose verifier.conf so that tenant can download it
-	# this is a keylime issue which we need to workaroun ATM
-	# https://github.com/keylime/keylime/issues/1541#issuecomment-2221267087
-        rlIsRHELLike 9 || rlRun "wget -O /etc/keylime/verifier.conf 'http://$VERIFIER:8000/verifier.conf'"
 
         # if TPM emulator is present
         if limeTPMEmulated; then
@@ -275,7 +220,7 @@ Agent() {
         fi
         sleep 5
 
-        rlRun "limeStartAgent"
+        rlRun "limeStartPushAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
@@ -286,53 +231,29 @@ if [ -n "${AGENT2}" ]; then
         # wait for Agent2 setup is done
         rlRun "sync-block AGENT2_SETUP_DONE ${AGENT2}" 0 "Waiting for the Agent2 setup to finish"
 
-        # first register AGENT2 and confirm it has passed validation
+        # first activate AGENT2 and confirm it has passed validation
         AGENT2_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c33333"
-        # download Agent2 list
-        if ${USE_ALLOWLIST_FOR_AGENT2}; then
-            rlRun "wget -O allowlist2.txt 'http://${AGENT2_IP}:8000/allowlist.txt'"
-            rlRun "wget -O excludelist2.txt 'http://${AGENT2_IP}:8000/excludelist.txt'"
-            POLICYPARAMS="--allowlist allowlist2.txt --exclude excludelist2.txt"
-        else
-            rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
-            rlRun "cat policy2.json"
-            POLICYPARAMS="--runtime-policy policy2.json"
-        fi
-        # register
-        rlRun "cat > script.expect <<_EOF
-set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} ${POLICYPARAMS} --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
-expect \"Please enter the password to decrypt your keystore:\"
-send \"keylime\n\"
-expect eof
-_EOF"
-        rlRun -s "expect script.expect"
+        # download Agent2 policy
+        rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
+        rlRun "cat policy2.json"
+        # activate
+        rlRun -s "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --runtime-policy policy2.json -c add --push-model"
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
-        rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
+	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT2_ID}' 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
-        rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
     rlPhaseEnd
 fi
 
     rlPhaseStartTest "keylime attestation test: Add Agent"
-        # register AGENT and confirm it has passed validation
+        # activate AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat policy.json"
-        rlRun "cat > script.expect <<_EOF
-set timeout 20
-spawn keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --include payload-${REVOCATION_SCRIPT_TYPE} --cert default -c add
-expect \"Please enter the password to decrypt your keystore:\"
-send \"keylime\n\"
-expect eof
-_EOF"
-        rlRun -s "expect script.expect"
+        rlRun -s "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --push-model -c add"
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT_ID}' 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
-        rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
-        rlAssertExists /var/tmp/test_payload_file
     rlPhaseEnd
 
     rlPhaseStartTest "Agent attestation test: Fail keylime agent"
@@ -341,26 +262,18 @@ _EOF"
         limeExtendNextExcludelist $TESTDIR
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            # give the revocation notifier a bit more time to contact the agent
-            rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: ${AGENT_IP}\"' -m 20 -d 1 -t 20"
-            rlRun "tail $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-            rlRun "tail $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
-            rlAssertNotExists /var/tmp/test_payload_file
-        fi
+	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT_ID}' 'FAIL'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent cleanup"
         rlRun "sync-set AGENT_ALL_TESTS_DONE"
-        rlRun "limeStopAgent"
+        rlRun "limeStopPushAgent"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
-        rlRun "rm -f /var/tmp/test_payload_file"
     rlPhaseEnd
 }
 
@@ -374,46 +287,25 @@ Agent2() {
 
         # download certificates from the verifier
         CERTDIR=/var/lib/keylime/certs
-        SECUREDIR=/var/lib/keylime/secure
         rlRun "mkdir -p ${CERTDIR}"
-        rlRun "mkdir -p $SECUREDIR"
-        for F in cacert.pem agent2-key.pem agent2-cert.pem; do
+        for F in cacert.pem; do
             rlRun "wget -O ${CERTDIR}/$F 'http://$VERIFIER:8000/$F'"
         done
         id keylime && rlRun "chown -R keylime:keylime ${CERTDIR}"
-        # agent mTLS certs are supposed to be in the SECUREDIR
-        rlRun "mount -t tmpfs -o size=2m,mode=0700 tmpfs ${SECUREDIR}"
-        rlRun "cp ${CERTDIR}/{agent2-key.pem,agent2-cert.pem} ${SECUREDIR}"
-        id keylime && rlRun "chown -R keylime:keylime ${SECUREDIR}"
 
-        # configure agent
-        if limeIsPythonAgent; then
-            rlRun "limeUpdateConf agent uuid ${AGENT2_ID}"
-            rlRun "limeUpdateConf agent tls_dir ${CERTDIR}"
-            rlRun "limeUpdateConf agent ip ${AGENT2_IP}"
-            rlRun "limeUpdateConf agent contact_ip ${AGENT2_IP}"
-            rlRun "limeUpdateConf agent registrar_ip ${REGISTRAR_IP}"
-            rlRun "limeUpdateConf agent trusted_client_ca '[\"cacert.pem\"]'"
-            rlRun "limeUpdateConf agent server_key agent2-key.pem"
-            rlRun "limeUpdateConf agent server_cert agent2-cert.pem"
-            rlRun "limeUpdateConf agent revocation_notification_ip ${VERIFIER_IP}"
-
-        else
-            rlRun "limeUpdateConf agent uuid '\"${AGENT2_ID}\"'"
-            # tls_dir is not supported in the rust agent
-            #rlRun "limeUpdateConf agent tls_dir '\"${CERTDIR}\"'"
-            rlRun "limeUpdateConf agent ip '\"${AGENT2_IP}\"'"
-            rlRun "limeUpdateConf agent contact_ip '\"${AGENT2_IP}\"'"
-            rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
-            rlRun "limeUpdateConf agent trusted_client_ca '\"${CERTDIR}/cacert.pem\"'"
-            rlRun "limeUpdateConf agent server_key '\"${CERTDIR}/agent2-key.pem\"'"
-            rlRun "limeUpdateConf agent server_cert '\"${CERTDIR}/agent2-cert.pem\"'"
-            rlRun "limeUpdateConf agent revocation_notification_ip '\"${VERIFIER_IP}\"'"
-        fi
-
-        if [ -n "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            rlRun "limeUpdateConf agent enable_revocation_notifications False"
-        fi
+        rlRun "limeUpdateConf agent uuid '\"${AGENT2_ID}\"'"
+        #rlRun "limeUpdateConf agent ip '\"${AGENT2_IP}\"'"
+        #rlRun "limeUpdateConf agent contact_ip '\"${AGENT2_IP}\"'"
+        rlRun "limeUpdateConf agent verifier_url '\"https://${VERIFIER_IP}:8881\"'"
+        rlRun "limeUpdateConf agent verifier_tls_ca_cert '\"${CERTDIR}/cacert.pem\"'"
+        rlRun "limeUpdateConf agent registrar_ip '\"${REGISTRAR_IP}\"'"
+        #rlRun "limeUpdateConf agent registrar_tls_enabled true"
+        rlRun "limeUpdateConf agent registrar_tls_enabled false"
+        rlRun "limeUpdateConf agent registrar_tls_ca_cert '\"${CERTDIR}/cacert.pem\"'"
+        rlRun "limeUpdateConf agent enable_revocation_notifications false"
+        rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
+        rlRun "limeUpdateConf agent enable_authentication true"
+        #rlRun "limeUpdateConf agent tls_accept_invalid_certs true"
 
         # Delete other components configuration files
         for comp in verifier tenant registrar; do
@@ -432,7 +324,7 @@ Agent2() {
         fi
         sleep 5
 
-        rlRun "limeStartAgent"
+        rlRun "limeStartPushAgent"
         # cannot use limeWaitForAgentRegistration as we do not have tenant configured
         # so let's just wait for 20 seconds
         rlRun "sleep 20"
@@ -447,36 +339,22 @@ Agent2() {
         HTTP_PID=$!
         rlRun "popd"
 
-        # find the end of my log
-        LOG_END=$( cat $(limeAgentLogfile) | wc -l )
         rlRun "sync-set AGENT2_SETUP_DONE"
-    rlPhaseEnd
-
-    rlPhaseStartTest "Agent2 test: Verify Agent failed validation + revocation"
         # waif for Agent to finish his tests (including failed validation)
         rlRun "sync-block AGENT_ALL_TESTS_DONE ${AGENT_IP}"
-
-        if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
-            # installed payload should not have been deleted for Agent2
-            rlAssertExists /var/tmp/test_payload_file
-            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"
-            rlRun "sed -n '${LOG_END},\$ p' $(limeAgentLogfile) | grep 'A node in the network has been compromised: ${AGENT_IP}'"
-        fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Agent2 cleanup"
         rlRun "kill $HTTP_PID"
-        rlRun "rm -f /var/tmp/test_payload_file"
-        limeStopAgent
+        rlRun "limeStopPushAgent"
         if limeTPMEmulated; then
-            limeStopIMAEmulator
-            limeStopTPMEmulator
+            rlRun "limeStopIMAEmulator"
+            rlRun "limeStopTPMEmulator"
             rlRun "limeCondStopAbrmd"
         fi
         limeSubmitCommonLogs
     rlPhaseEnd
 }
-
 
 
 ####################
@@ -489,6 +367,7 @@ rlJournalStart
     rlPhaseStartSetup
         # import keylime library
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
+        rlRun "export limeTIMEOUT=60"
         rlRun 'rlImport "./sync"' || rlDie "cannot import keylime-tests/sync library"
         rlRun 'rlImport "openssl/certgen"' || rlDie "cannot import openssl/certgen library"
 
@@ -508,10 +387,6 @@ rlJournalStart
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         # backup files
         limeBackupConfig
-        # load REVOCATION_SCRIPT_TYPE
-        REVOCATION_SCRIPT_TYPE=$( limeGetRevocationScriptType )
-        rlRun "cp -rf payload-${REVOCATION_SCRIPT_TYPE} $TmpDir"
-
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
@@ -532,7 +407,7 @@ rlJournalStart
     rlPhaseStartCleanup
         rlRun "popd"
         rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
-	rlRun "rm -r $CERTDIR" 0 "Removing $CERTDIR"
+        rlRun "rm -r $CERTDIR" 0 "Removing $CERTDIR"
 
         #################
         # common cleanup
