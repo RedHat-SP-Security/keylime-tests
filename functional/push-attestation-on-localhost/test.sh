@@ -18,7 +18,7 @@ rlJournalStart
 	rlRun "limeUpdateConf verifier session_lifetime 180"
         rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
         rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
-
+        rlRun "limeUpdateConf agent registrar_tls_enabled true"
         rlRun "limeUpdateConf agent enable_authentication true"
 
         # Disable EK certificate verification on the tenant
