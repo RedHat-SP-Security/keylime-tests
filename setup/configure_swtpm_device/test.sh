@@ -14,7 +14,18 @@ TPM_EMULATOR=swtpm
 TPM_EMULATOR_BAD_EK=swtpm-malformed-ek
 TPM_RUNTIME_TOPDIR="/var/lib/swtpm"
 
-SETUP_MALFORMED_EK=false
+# SETUP_MALFORMED_EK can be set from environment to skip malformed EK setup
+# Valid values: true, false
+[ -n "$SETUP_MALFORMED_EK" ] || SETUP_MALFORMED_EK=false
+
+# Number of swtpm devices to configure (default: 1)
+[ -n "$SETUP_SWTPM_DEVICE_COUNT" ] || SETUP_SWTPM_DEVICE_COUNT=1
+
+# Validate SETUP_SWTPM_DEVICE_COUNT
+if [ "$SETUP_SWTPM_DEVICE_COUNT" -lt 1 ] || [ "$SETUP_SWTPM_DEVICE_COUNT" -gt 250 ]; then
+    echo "ERROR: SETUP_SWTPM_DEVICE_COUNT must be between 1 and 250 (got: $SETUP_SWTPM_DEVICE_COUNT)"
+    exit 1
+fi
 
 rlJournalStart
 
@@ -53,66 +64,6 @@ _EOF"
             fi
         done
 
-        # find suffix for a new unit file (just in case it already exists)
-        if ls /etc/systemd/system/swtpm*.service 2> /dev/null; then
-            SUFFIX=$(( $( find /etc/systemd/system -name "swtpm*.service" | grep -v malformed | wc -l ) ))
-        else
-            SUFFIX=""
-        fi
-        # create swtpm unit file as it doesn't exist
-        rlRun "mkdir -p ${TPM_RUNTIME_TOPDIR}"
-        rlRun "SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
-        rlLogInfo "Creating unit file /etc/systemd/system/swtpm${SUFFIX}.service"
-        rlRun "cat > /etc/systemd/system/swtpm${SUFFIX}.service <<_EOF
-[Unit]
-Description=swtpm TPM Software emulator
-
-[Service]
-Type=simple
-ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${SWTPM_DIR} --createek --decryption --create-ek-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
-ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${SWTPM_DIR} --tpm2
-
-[Install]
-WantedBy=multi-user.target
-_EOF"
-
-        # we won't be doing TPM setup with malformed EK in some cases
-        if [ -e /run/ostree-booted ]; then
-            rlLogInfo "We are in RHEL Image mode, not doing setup of TPM with malformed EK"
-        elif [ "$(rlGetPrimaryArch)" == "ppc64le" ]; then
-            # we don't have all the tools available for ppc64le
-            rlLogInfo "We are on ppc64le, not doing setup of TPM with malformed EK"
-        elif [ "$(rlGetPrimaryArch)" == "s390x" ]; then
-            # EK extraction fails on s390x
-            rlLogInfo "We are on s390x, not doing setup of TPM with malformed EK"
-        else
-            SETUP_MALFORMED_EK=true
-        fi
-
-        # Now let's create also a unit that configures swtpm with
-        # a malformed EK certificate as per recent versions of
-        # python-cryptography, but that openssl is able to parse.
-        if ${SETUP_MALFORMED_EK}; then
-            rlRun "dnf copr enable scorreia/keylime -y"
-            rlRun "dnf install -y swtpm-cert-manager"
-            rlRun "BAD_EK_SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
-            rlLogInfo "Creating unit file /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service"
-            rlRun "cat > /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service <<_EOF
-[Unit]
-Description=swtpm TPM Software emulator with a malformed EK certificate
-
-[Service]
-Type=simple
-ExecStartPre=/usr/bin/swtpm_setup --config /usr/share/swtpm-cert-manager/swtpm_setup_malformed.conf --tpm-state ${BAD_EK_SWTPM_DIR} --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
-ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${BAD_EK_SWTPM_DIR} --tpm2
-
-[Install]
-WantedBy=multi-user.target
-_EOF"
-        fi
-
-        rlRun "systemctl daemon-reload"
-
         # now we need to build custom selinux module making swtpm_t a permissive domain
         # since the policy module shipped with swtpm package doesn't seem to work
         # see https://github.com/stefanberger/swtpm/issues/632 for more details
@@ -138,67 +89,157 @@ _EOF"
 	journalctl -u "$1"
     }
 
-    rlPhaseStartSetup "Start TPM emulator"
-        ls -l /dev/tpm*
-        rlServiceStart ${TPM_EMULATOR}${SUFFIX}
-        rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
-        [ $? -eq 0 ] || print_swtpm_service_debug_logs ${TPM_EMULATOR}${SUFFIX}
-    rlPhaseEnd
+    # Function to setup, test, and optionally cleanup a single swtpm device
+    # $1 = iteration number
+    # Uses global variables: TPM_RUNTIME_TOPDIR, SETUP_MALFORMED_EK, TmpDir, RUNNING, NEW_TPM_DEV_NO
+    # Modifies: NEW_TPM_DEV_NO (increments if service is left running)
+    setup_swtpm_device() {
+        local ITERATION=$1
 
-    rlPhaseStartTest "Test TPM emulator"
-        rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
-        rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-        if ${SETUP_MALFORMED_EK}; then
-            ek="${TmpDir}/swtpm${SUFFIX}-ek.der"
-            rlRun "tpm2_getekcertificate -o ${ek}"
-            rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
-            rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
-        fi
-        if [ "$RUNNING" == "0" ]; then
-             rlServiceStop $TPM_EMULATOR${SUFFIX}
-	     # wait a bit so kernel removes the device
-             sleep 5
-        else
-             # if we let swtpm running, we should increase NEW_TPM_DEV_NO
-             NEW_TPM_DEV_NO=$(( $NEW_TPM_DEV_NO+1 ))
-	fi
-    rlPhaseEnd
+        rlPhaseStartSetup "swtpm service setup, iteration $ITERATION"
+            # find suffix for a new unit file (just in case it already exists)
+            if ls /etc/systemd/system/swtpm*.service 2> /dev/null; then
+                SUFFIX=$(( $( find /etc/systemd/system -name "swtpm*.service" | grep -v malformed | wc -l ) ))
+            else
+                SUFFIX=""
+            fi
 
-    # do not test TPM with malformed EK on Image mode system
-    if ${SETUP_MALFORMED_EK}; then
-        rlPhaseStartSetup "Start TPM emulator with malformed EK"
-            ls -l /dev/tpm*
-            rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
-            rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
-            [ $? -eq 0 ] || print_swtpm_service_debug_logs ${TPM_EMULATOR_BAD_EK}${SUFFIX}
+            # create swtpm unit file as it doesn't exist
+            rlRun "mkdir -p ${TPM_RUNTIME_TOPDIR}"
+            rlRun "SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
+            rlLogInfo "Creating unit file /etc/systemd/system/swtpm${SUFFIX}.service"
+            rlRun "cat > /etc/systemd/system/swtpm${SUFFIX}.service <<_EOF
+[Unit]
+Description=swtpm TPM Software emulator
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/swtpm_setup --tpm-state ${SWTPM_DIR} --createek --decryption --create-ek-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${SWTPM_DIR} --tpm2
+
+[Install]
+WantedBy=multi-user.target
+_EOF"
+
+            # we won't be doing TPM setup with malformed EK in some cases
+            # If SETUP_MALFORMED_EK is already set to false from environment, skip setup
+            local SETUP_MALFORMED_EK_LOCAL=$SETUP_MALFORMED_EK
+            if [ "$SETUP_MALFORMED_EK_LOCAL" == "false" ]; then
+                rlLogInfo "SETUP_MALFORMED_EK is set to false, skipping malformed EK setup"
+            elif [ -e /run/ostree-booted ]; then
+                rlLogInfo "We are in RHEL Image mode, not doing setup of TPM with malformed EK"
+                SETUP_MALFORMED_EK_LOCAL=false
+            elif [ "$(rlGetPrimaryArch)" == "ppc64le" ]; then
+                # we don't have all the tools available for ppc64le
+                rlLogInfo "We are on ppc64le, not doing setup of TPM with malformed EK"
+                SETUP_MALFORMED_EK_LOCAL=false
+            elif [ "$(rlGetPrimaryArch)" == "s390x" ]; then
+                # EK extraction fails on s390x
+                rlLogInfo "We are on s390x, not doing setup of TPM with malformed EK"
+                SETUP_MALFORMED_EK_LOCAL=false
+            else
+                # If SETUP_MALFORMED_EK was explicitly set to true or not restricted by platform, enable it
+                SETUP_MALFORMED_EK_LOCAL=true
+            fi
+
+            # Now let's create also a unit that configures swtpm with
+            # a malformed EK certificate as per recent versions of
+            # python-cryptography, but that openssl is able to parse.
+            if ${SETUP_MALFORMED_EK_LOCAL}; then
+                # Only install copr and swtpm-cert-manager on first iteration
+                if [ $ITERATION -eq 0 ]; then
+                    rlRun "dnf copr enable scorreia/keylime -y"
+                    rlRun "dnf install -y swtpm-cert-manager"
+                fi
+                rlRun "BAD_EK_SWTPM_DIR=\$( mktemp -d -p ${TPM_RUNTIME_TOPDIR} XXX )"
+                rlLogInfo "Creating unit file /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service"
+                rlRun "cat > /etc/systemd/system/swtpm-malformed-ek${SUFFIX}.service <<_EOF
+[Unit]
+Description=swtpm TPM Software emulator with a malformed EK certificate
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/swtpm_setup --config /usr/share/swtpm-cert-manager/swtpm_setup_malformed.conf --tpm-state ${BAD_EK_SWTPM_DIR} --createek --decryption --create-ek-cert --create-platform-cert --lock-nvram --overwrite --display --tpm2 --pcr-banks sha256
+ExecStart=/usr/bin/swtpm chardev --vtpm-proxy --tpmstate dir=${BAD_EK_SWTPM_DIR} --tpm2
+
+[Install]
+WantedBy=multi-user.target
+_EOF"
+            fi
+
+            rlRun "systemctl daemon-reload"
         rlPhaseEnd
 
-        rlPhaseStartTest "Test TPM emulator with malformed EK"
+        rlPhaseStartSetup "Start TPM emulator ${SUFFIX}"
+            ls -l /dev/tpm*
+            rlServiceStart ${TPM_EMULATOR}${SUFFIX}
+            rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
+            [ $? -eq 0 ] || print_swtpm_service_debug_logs ${TPM_EMULATOR}${SUFFIX}
+        rlPhaseEnd
+
+        rlPhaseStartTest "Test TPM emulator ${SUFFIX}"
             rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
             rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
-            ek="${TmpDir}/swtpm-malformed${SUFFIX}"-ek.der
-            rlRun "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_getekcertificate -o ${ek}"
-
-            # python-cryptography 35 changed its parsing of x509 certificates
-            # and it became more strict, failing validation for some certificates
-            # openssl would consider OK.
-            # Let's adjust our expectation for the test based on the version
-            # of python-cryptography we have available.
-            _pyc_expected=0
-            rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
-            rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
-
-            rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
-            # Recent versions of python-crypgraphy will consider this certificate invalid.
-            rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
+            if ${SETUP_MALFORMED_EK_LOCAL}; then
+                ek="${TmpDir}/swtpm${SUFFIX}-ek.der"
+                rlRun "tpm2_getekcertificate -o ${ek}"
+                rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+                rlRun "limeValidateDERCertificatePyCrypto ${ek}" 0 "Validating EK certificate (${ek}) with python-cryptography"
+            fi
+            if [ "$RUNNING" == "0" ]; then
+                 rlServiceStop $TPM_EMULATOR${SUFFIX}
+	         # wait a bit so kernel removes the device
+                 sleep 5
+            else
+                 # if we let swtpm running, we should increase NEW_TPM_DEV_NO
+                 NEW_TPM_DEV_NO=$(( $NEW_TPM_DEV_NO+1 ))
+	    fi
         rlPhaseEnd
-    fi
+
+        # do not test TPM with malformed EK on Image mode system
+        if ${SETUP_MALFORMED_EK_LOCAL}; then
+            rlPhaseStartSetup "Start TPM emulator with malformed EK ${SUFFIX}"
+                ls -l /dev/tpm*
+                rlServiceStart ${TPM_EMULATOR_BAD_EK}${SUFFIX}
+                rlRun "limeTPMDevNo=${NEW_TPM_DEV_NO} limeWaitForTPMEmulator"
+                [ $? -eq 0 ] || print_swtpm_service_debug_logs ${TPM_EMULATOR_BAD_EK}${SUFFIX}
+            rlPhaseEnd
+
+            rlPhaseStartTest "Test TPM emulator with malformed EK ${SUFFIX}"
+                rlRun -s "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_pcrread"
+                rlAssertGrep "0 : 0x0000000000000000000000000000000000000000" $rlRun_LOG
+                ek="${TmpDir}/swtpm-malformed${SUFFIX}"-ek.der
+                rlRun "TPM2TOOLS_TCTI=device:/dev/tpmrm${NEW_TPM_DEV_NO} tpm2_getekcertificate -o ${ek}"
+
+                # python-cryptography 35 changed its parsing of x509 certificates
+                # and it became more strict, failing validation for some certificates
+                # openssl would consider OK.
+                # Let's adjust our expectation for the test based on the version
+                # of python-cryptography we have available.
+                _pyc_expected=0
+                rlRun "pycrypto_version=\$(rpm -q python3-cryptography --qf '%{version}\n')"
+                rlTestVersion "${pycrypto_version}" ">=" 35 && _pyc_expected=1
+
+                rlRun "limeValidateDERCertificateOpenSSL ${ek}" 0 "Validating EK certificate (${ek}) with OpenSSL"
+                # Recent versions of python-crypgraphy will consider this certificate invalid.
+                rlRun "limeValidateDERCertificatePyCrypto ${ek}" "${_pyc_expected}" "Validating EK certificate (${ek}) with python-cryptography"
+
+                if [ "$RUNNING" == "0" ]; then
+                    rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
+                    sleep 5
+                else
+                    NEW_TPM_DEV_NO=$(( $NEW_TPM_DEV_NO+1 ))
+                fi
+            rlPhaseEnd
+        fi
+    }
+
+    # Setup all swtpm devices
+    for i in $(seq 0 $((SETUP_SWTPM_DEVICE_COUNT - 1))); do
+        setup_swtpm_device $i
+    done
 
     rlPhaseStartCleanup
-        if [ "$RUNNING" == "0" ]; then
-            rlServiceStop $TPM_EMULATOR${SUFFIX}
-            ${SETUP_MALFORMED_EK} && rlServiceStop $TPM_EMULATOR_BAD_EK${SUFFIX}
-        fi
         rlRun "rm -r ${TmpDir}" 0 "Removing tmp directory"
     rlPhaseEnd
 
