@@ -16,6 +16,6 @@ require:
 recommend:
   - swtpm
   - swtpm-tools
-duration: 5m
+duration: 120m
 enabled: true
 id: bfadf8e3-6f60-4cd2-ab78-46f6b207066f
