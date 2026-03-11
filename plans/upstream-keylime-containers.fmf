@@ -7,15 +7,16 @@ environment+:
   VERIFIER_IMAGE: keylime/keylime_verifier:master
   REGISTRAR_IMAGE: keylime/keylime_registrar:master
   AGENT_IMAGE: keylime/keylime_agent:master
-  COMP_TEST_KEYLIME_VERSIONS: "v7.3.0 v7.8.0 v7.9.0 v7.10.0 v7.11.0 v7.12.0"
-  COMP_TEST_AGENT_VERSION: "v0.2.4"
+  SETUP_SWTPM_DEVICE_COUNT: 9
+  AGENT_CONT_TEST_NUM_AGENTS: 9
+  AGENT_CONT_TEST_ATTEST_DURATION: 300
 
 discover:
   how: fmf
   test:
    # we do setup two emulated TPM devices
    - /setup/apply_workarounds
-   - /setup/configure_swtpm_device
+   # TPM will be configured multiple times, based on SETUP_SWTPM_DEVICE_COUNT variable
    - /setup/configure_swtpm_device
    - /setup/install_upstream_keylime
    - /setup/install_rust_keylime_from_copr
