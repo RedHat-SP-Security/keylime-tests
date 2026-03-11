@@ -2462,7 +2462,11 @@ limeSubmitCommonLogs() {
     [ -f $(limeAgentLogfile) ] && limeLogfileSubmit $(limeAgentLogfile)
     [ -f $(limePushAgentLogfile) ] && limeLogfileSubmit $(limePushAgentLogfile)
     if limeTPMEmulated && [ -f $(limeIMAEmulatorLogfile) ]; then
-            limeLogfileSubmit $(limeIMAEmulatorLogfile)
+            # do not submit just one log but also logs related to other TPM devices
+            local LOGFILE
+            for LOGFILE in $(limeIMAEmulatorLogfile)*; do
+                limeLogfileSubmit $LOGFILE
+            done
     fi
     cat /sys/kernel/security/ima/ascii_runtime_measurements > $__INTERNAL_limeTmpDir/ascii_runtime_measurements
     gzip -f $__INTERNAL_limeTmpDir/ascii_runtime_measurements
