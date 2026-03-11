@@ -21,7 +21,7 @@ require:
   - podman
 recommend:
   - keylime
-duration: 15m
+duration: 120m
 enabled: true
 adjust:
   - when: swtpm != yes
