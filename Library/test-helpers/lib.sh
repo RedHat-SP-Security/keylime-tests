@@ -2423,9 +2423,9 @@ limeLogfileSubmit() {
         shift
     fi
 
-    if [ ${STATE} -gt 0 ] && [ -n "$1" ] && [ -z "${SILENT}" ]; then
-        cat $1
-    fi
+    #if [ ${STATE} -gt 0 ] && [ -n "$1" ] && [ -z "${SILENT}" ]; then
+    #    cat $1
+    #fi
     rlFileSubmit $1
 
 }
