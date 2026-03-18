@@ -41,7 +41,7 @@ rlJournalStart
         rlRun "systemctl daemon-reload"
     rlPhaseEnd
 
-    rhts-reboot
+    tmt-reboot
 
   else
     rlPhaseStartTest "post-reboot IMA test"
