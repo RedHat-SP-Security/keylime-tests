@@ -65,7 +65,7 @@ rlJournalStart
         rlRun "sleep 10"
     rlPhaseEnd
 
-    rhts-reboot
+    tmt-reboot
 
   else
     rlPhaseStartTest "post-reboot IMA test"
