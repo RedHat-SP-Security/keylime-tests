@@ -16,13 +16,15 @@ environment:
   VERIFIER_DOCKERFILE: Dockerfile.verifier
   REGISTRAR_DOCKERFILE: Dockerfile.registrar
   TENANT_DOCKERFILE: Dockerfile.tenant
+  SETUP_SWTPM_DEVICE_COUNT: 5
+  AGENT_CONT_TEST_NUM_AGENTS: 5
+  AGENT_CONT_TEST_ATTEST_DURATION: 300
 
 discover:
   how: fmf
   test: 
    - /setup/apply_workarounds
    # need two TPM devices
-   - /setup/configure_swtpm_device
    - /setup/configure_swtpm_device
    # change IMA policy to simple and run one attestation scenario
    # this is to utilize also a different parser
