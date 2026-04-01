@@ -46,8 +46,8 @@ rlJournalStart
         rlRun "test -x ${ONESHOT_SCRIPT}" 0 "Verify script is executable"
         # Backup script before modifications
         rlFileBackup "${ONESHOT_SCRIPT}"
-        # include measured boot scenario only for emulated TPM and not s390x
-        if limeTPMEmulated && [ "$( rlGetPrimaryArch )" != "s390x" ]; then
+        # include measured boot scenario only for emulated TPM and not s390x nor ppc64le
+        if limeTPMEmulated && [ "$( rlGetPrimaryArch )" != "s390x" ] && [ "$( rlGetPrimaryArch )" != "ppc64le" ] ; then
             rlRun "cp binary_bios_measurements /var/tmp"
             # Modify the oneshot script to point to our test bios measurements file instead of the default one.
             rlRun "sed -i 's%^MEASUREDBOOT_ML =.*%MEASUREDBOOT_ML = \"/var/tmp/binary_bios_measurements\"%' ${ONESHOT_SCRIPT}"
