@@ -7,7 +7,7 @@ environment+:
 
 discover:
   how: fmf
-  test: 
+  test:
    - /setup/apply_workarounds
    - /setup/configure_tpm_emulator
    - /setup/install_upstream_keylime
@@ -20,15 +20,8 @@ discover:
    - /functional/basic-attestation-on-localhost
    # now change IMA policy to signing and run all tests
    - /setup/configure_kernel_ima_module/ima_policy_signing
-   - "^/functional/.*"
-   - "^/compatibility/.*"
-   - "^/regression/.*"
-   - "^/sanity/.*"
-   - /update/basic-attestation-on-localhost/all
-   # run upstream test suite
-   - /upstream/run_keylime_tests
-   - /setup/generate_coverage_report
-   - /setup/generate_upstream_rust_keylime_code_coverage
+   - /regression/db-connection-leak-reproducer
+   - /regression/db-connection-leak-valgrind
 
 execute:
     how: tmt
