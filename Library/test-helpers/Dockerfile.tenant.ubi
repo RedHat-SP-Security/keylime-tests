@@ -1,0 +1,7 @@
+FROM docker.io/redhat/ubi9
+COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
+RUN \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh && \
+  cat /etc/yum.repos.d/* && \
+  dnf install -y keylime-tenant which && \
+  dnf clean all
