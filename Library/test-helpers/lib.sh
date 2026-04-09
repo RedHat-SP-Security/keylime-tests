@@ -2588,6 +2588,7 @@ limeconPrepareImage() {
 
     local DOCKER_FILE=$1
     local TAG=$2
+    local SCRIPT
 
     if [ -z "${DOCKER_FILE}" ] || [ -z "${TAG}" ]; then
         echo "Docker file or build tag was not specified!"
@@ -2611,10 +2612,10 @@ limeconPrepareImage() {
         ARGS="--volume /var/tmp/keylime_sources:/mnt/keylime_sources:z"
     fi
 
-    # copy lime_con_install_upstream.sh to the current dir just in case it would be needed
-    if grep -q 'lime_con_install_upstream.sh' ${DOCKER_FILE}; then
-        cp -n ${limeLibraryDir}/lime_con_install_upstream.sh .
-    fi
+    # copy various helper scripts to the current dir just in case it would be needed
+    for SCRIPT in lime_con_install_upstream.sh yumrepogen_setup.sh; do
+        [ -f "${limeLibraryDir}/$SCRIPT" ] && cp -n ${limeLibraryDir}/$SCRIPT .
+    done
 
     CMDLINE="podman build $ARGS -t=$TAG --file=$DOCKER_FILE ."
     echo -e "\nRunning podman:\n$CMDLINE"

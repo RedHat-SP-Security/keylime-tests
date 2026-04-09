@@ -1,0 +1,12 @@
+FROM docker.io/redhat/ubi10
+COPY yumrepogen_setup.sh /root/yumrepogen_setup.sh
+RUN \
+  chmod a+x /root/yumrepogen_setup.sh && /root/yumrepogen_setup.sh && \
+  cat /etc/yum.repos.d/* && \
+  dnf install -y --skip-broken keylime-agent-rust keylime-agent-rust-push util-linux-core which && \
+  dnf clean all
+
+EXPOSE 9002
+EXPOSE 8892
+
+CMD ["keylime_agent"]
