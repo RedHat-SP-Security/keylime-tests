@@ -27,6 +27,7 @@ discover:
    - /update/basic-attestation-on-localhost/all
    # run upstream test suite
    - /upstream/run_keylime_tests
+   - /upstream/run_tests_for_installed_keylime
    - /setup/generate_coverage_report
    - /setup/generate_upstream_rust_keylime_code_coverage
 
