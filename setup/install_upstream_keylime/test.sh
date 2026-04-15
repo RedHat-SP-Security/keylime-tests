@@ -81,7 +81,9 @@ _EOF'
 
         # install scripts to /usr/share/keylime
         rlRun "mkdir -p /usr/share/keylime"
-        rlRun "cp -r scripts /usr/share/keylime/"
+        for RES in scripts templates tpm_cert_store; do
+            rlRun "cp -r $RES /usr/share/keylime/"
+        done
 
         # install manpages - convert from .rst to man format
         rlRun "yum install -y python3-docutils python3-pip" 0 "Install rst2man tool and pip"
