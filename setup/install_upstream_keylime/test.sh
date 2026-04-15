@@ -81,7 +81,7 @@ _EOF'
 
         # install scripts, templates and tpm_cert_store to /usr/share/keylime
         rlRun "mkdir -p /usr/share/keylime"
-	for RES in scripts, templates, tpm_cert_store; do
+        for RES in scripts templates tpm_cert_store; do
             rlRun "cp -r $RES /usr/share/keylime/"
         done
 

@@ -1,0 +1,25 @@
+summary: Run unit tests for installed keylime
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - upstream
+require:
+  - yum
+  - openssl
+  - python3-pip
+  - rpm-build
+  - rpm-sign
+  - createrepo_c
+  - python-devel
+  - selinux-policy-devel
+recommend:
+  - keylime
+duration: 15m
+enabled: true
+
+adjust:
+ - when: distro == rhel-8 or distro == rhel-9
+   enabled: false
