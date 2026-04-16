@@ -29,6 +29,7 @@ discover:
    - "^/sanity/.*"
    - "^/regression/.*"
    - "^/compatibility/.*"
+   - "^/upstream/run_tests_for_installed_keylime"
    - /update/basic-attestation-on-localhost/all
 
 execute:

@@ -15,7 +15,6 @@ rlJournalStart
 	# prepare variables
 	if [ -d /var/tmp/keylime_sources ]; then
             # keylime installed from sources in /var/tmp/keylime_sources
-            KEYLIME_SRC=$( ls -d /usr/local/lib/python3.14/site-packages/keylime )
 	    KEYLIME_DIR=/var/tmp/keylime_sources
 	else
             # keylime installed from RPM
@@ -23,9 +22,9 @@ rlJournalStart
             rlRun "rpm -i keylime*.src.rpm"
 	    rlRun "rpmbuild -bp --nodeps ~/rpmbuild/SPECS/keylime.spec"
 	    rlRun "rm -rf ~/rpmbuild/BUILD/keylime-*-SPECPARTS"
-            KEYLIME_SRC=$( ls -d /usr/lib/*/site-packages/keylime )
 	    KEYLIME_DIR="~/rpmbuild/BUILD/keylime*"
 	fi
+        KEYLIME_SRC=$( dirname $( find /usr -name keylime_logging.py ) )
 	[ -n "$KEYLIME_SRC" ] && [ -d "$KEYLIME_SRC" ] || rlDie "Cannot locate installed keylime files"
 	KEYLIME_TEST_MODE=installed
 	KEYLIME_TEST_SRC=$TmpDir/test
