@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Description: provides basic function for token manipulation
@@ -60,6 +59,9 @@ export __INTERNAL_limeLogRegistrar
 
 export __INTERNAL_limeLogAgent
 [ -n "$__INTERNAL_limeLogAgent" ] || __INTERNAL_limeLogAgent="$__INTERNAL_limeTmpDir/agent.log"
+
+export __INTERNAL_limeLogPushAgent
+[ -n "$__INTERNAL_limeLogPushAgent" ] || __INTERNAL_limeLogPushAgent="$__INTERNAL_limeTmpDir/pushAgent.log"
 
 export __INTERNAL_limeLogIMAEmulator
 [ -n "$__INTERNAL_limeLogIMAEmulator" ] || __INTERNAL_limeLogIMAEmulator="$__INTERNAL_limeTmpDir/ima-emulator.log"
@@ -547,7 +549,7 @@ __limeGetLogName() {
     local TPMSUFFIX
 
     if [[ "$NAME" == "push_model_agent" ]]; then
-        NAME="agent"
+        NAME="pushAgent"
     fi
 
     [ -n "$2" ] && LOGSUFFIX="$2" || LOGSUFFIX=$( echo "$NAME" | sed 's/.*/\u&/' )  # just uppercase first letter
@@ -2440,6 +2442,7 @@ Uses rlFileSubmit to submit common logs. Currently these are:
   $limeVerifierLogfile
   $limeRegistrarLogfile
   $limeAgentLogfile
+  $limePushAgentLogfile
   $limeIMAEmulatorLogfile (if limeTPMEmulated)
   /sys/kernel/security/ima/ascii_runtime_measurements
   $__INTERNAL_limeTPMDetails
@@ -3330,6 +3333,7 @@ if ! grep -q "^$PWD\$" "$__INTERNAL_limeLogCurrentTest"; then
     [ -f "$__INTERNAL_limeLogVerifier" ] && true > "$__INTERNAL_limeLogVerifier"
     [ -f "$__INTERNAL_limeLogRegistrar" ] && true > "$__INTERNAL_limeLogRegistrar"
     [ -f "$__INTERNAL_limeLogAgent" ] && true > "$__INTERNAL_limeLogAgent"
+    [ -f "$__INTERNAL_limeLogPushAgent" ] && true > "$__INTERNAL_limeLogPushAgent"
     [ -f "$__INTERNAL_limeLogIMAEmulator" ] && true > "$__INTERNAL_limeLogIMAEmulator" && rm -f "${__INTERNAL_limeLogIMAEmulator}.tpm"*
 fi
 
