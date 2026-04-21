@@ -25,6 +25,7 @@ discover:
     test:
       #- /setup/enable_keylime_debug_messages
       - /Multihost/basic-attestation
+      - /Multihost/basic-push-attestation
 
 execute:
   how: tmt
