@@ -23,6 +23,7 @@ require:
   - wget
 recommend:
   - keylime
+  - keylime-agent-rust
   - python3-tomli
   - python3-toml
 duration: 30m
