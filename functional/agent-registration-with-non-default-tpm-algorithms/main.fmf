@@ -24,6 +24,10 @@ adjust+:
   - when: swtpm == no
     enabled: false
 
+  - when: distro < rhel-9.8
+    enabled: false
+    because: Support has been addeed in RHEL-9.8 through RHEL-118148
+
 # As of now (Keylime tip of tree being e558fe3b425c6e79419ede5ecd8427ce06ef4dd6):
 # For attestation:
 # - ECC is supported with ECDSA
