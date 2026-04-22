@@ -21,6 +21,7 @@ require:
   - nmap-ncat
 recommend:
   - keylime
+  - keylime-agent-rust
   - python3-tomli
 duration: 5m
 enabled: true
