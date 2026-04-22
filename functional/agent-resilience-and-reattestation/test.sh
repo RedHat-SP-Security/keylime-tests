@@ -175,14 +175,22 @@ function check_time_diffs() {
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
 
-    rlPhaseStartTest "Stop agent so it stops sending quotes - should fail attestation"
+    if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+        EXPECTED_STATUS="TIMEOUT"
+        EXPECTED_LABEL="timeout"
+    else
+        EXPECTED_STATUS="(Failed|Invalid Quote)"
+        EXPECTED_LABEL="fail"
+    fi
+
+    rlPhaseStartTest "Stop agent so it stops sending quotes - should ${EXPECTED_LABEL} attestation"
         rlLogInfo "Stopping agent"
         rlRun "limeStop${AGENT_SERVICE}"
         # verify the agent is not attested
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeTIMEOUT=$(( ${ATTESTATION_INTERVAL}*6 )) limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'FAIL'" 0 "Agent should fail attestation"
+            rlRun "limeTIMEOUT=$(( ATTESTATION_INTERVAL*6 )) limeWaitForAgentStatus --field attestation_status '$AGENT_ID' '${EXPECTED_STATUS}'" 0 "Agent should ${EXPECTED_LABEL} attestation"
         else
-            rlRun "limeTIMEOUT=$(( ${ATTESTATION_INTERVAL}*6 )) limeWaitForAgentStatus '$AGENT_ID' '(Failed|Invalid Quote)'" 0 "Agent should fail attestation"
+            rlRun "limeTIMEOUT=$(( ATTESTATION_INTERVAL*6 )) limeWaitForAgentStatus '$AGENT_ID' '${EXPECTED_STATUS}'" 0 "Agent should ${EXPECTED_LABEL} attestation"
         fi
         rlRun -s "keylime_tenant -c cvlist"
     rlPhaseEnd
