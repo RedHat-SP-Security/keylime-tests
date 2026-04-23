@@ -11,6 +11,9 @@ adjust:
  - when: distro == centos-stream-9
    ref: rhel-9-main
    continue: false
+ - when: distro == rhel-9.7 or snapshot_name ~= rhel-9-7
+   ref: rhel-9.7.0
+   continue: false
  - when: distro == rhel-9.6 or snapshot_name ~= rhel-9-6
    ref: rhel-9.6.0
    continue: false
