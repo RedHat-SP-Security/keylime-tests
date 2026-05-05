@@ -38,14 +38,15 @@ adjust:
           - dnf config-manager --set-disabled epel || true
   - when: distro == rhel-10 or distro == centos-stream-10
     prepare+:
-      # Workaround: testing-farm-tag-repository may ship a stale openssl-devel
-      # that conflicts with a newer openssl-libs from baseos. Sync all openssl
-      # packages to the latest available version before any other dnf operation.
+      # Workaround: testing-farm-tag-repository may ship stale packages
+      # (e.g. openssl-devel, python3-devel) that conflict with newer
+      # versions from baseos. Lowering the repo priority ensures DNF
+      # prefers baseos/appstream/CRB versions during TMT package install.
       # Remove this block once the tag repo is fixed upstream.
       - how: shell
         order: 5
         script:
-          - dnf -y update --allowerasing openssl openssl-libs openssl-devel || true
+          - dnf config-manager --save --setopt=testing-farm-tag-repository.priority=999 2>/dev/null || true
       - how: shell
         order: 10
         script:
