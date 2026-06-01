@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -130,6 +129,9 @@ rlJournalStart
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
         rlRun "limeStartAgent"
+        # give agent more time to start as it is generating multiple RSA keys
+        # still we expect it to fail
+        rlRun "limeTIMEOUT=120 limeWaitForAgent" 1
         # Agent attempts to register and sends all the required information but the CA is not trusted
         # so registration fails at IDevID verification
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}" 1
@@ -142,6 +144,8 @@ rlJournalStart
         rlRun "mkdir -p $TPM_CERTS"
         rlRun "cp ./ca/certs/klca-chain.cert.pem $TPM_CERTS/"
         rlRun "limeStartAgent"
+        # give agent more time to start as it is generating multiple RSA keys
+        rlRun "limeTIMEOUT=120 limeWaitForAgent"
         # Agent can now register with IDevID and IAK getting verified
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlAssertGrep "(IDevID created|Recreating IDevID)" "$(limeAgentLogfile)" -E
