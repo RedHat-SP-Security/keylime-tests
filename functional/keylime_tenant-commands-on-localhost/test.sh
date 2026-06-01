@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -84,7 +83,7 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
+        rlRun "rlWaitForCmd 'tail -n 30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/keylime-bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
 	limeExtendNextExcludelist $TESTDIR
