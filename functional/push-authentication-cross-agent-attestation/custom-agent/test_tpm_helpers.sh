@@ -24,7 +24,9 @@ SWTPM_PID=""
 tpm_check_persistent_handle() {
     local persistent_handle="${1}"
 
-    if tpm2_getcap handles-persistent 2>&1 | grep -q "${persistent_handle}"; then
+    # On some architectures (s390x), grep -q exits early after finding a match,
+    # therefore we rather redirect the output to /dev/null
+    if tpm2_getcap handles-persistent 2>&1 | grep "${persistent_handle}" > /dev/null; then
         return 0
     else
         return 1
