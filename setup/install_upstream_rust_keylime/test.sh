@@ -29,10 +29,13 @@ rlJournalStart
         [ -f /usr/bin/keylime_agent ] && rlRun "mv /usr/bin/keylime_agent /usr/bin/keylime_agent.backup"
         [ -f /etc/keylime/agent.conf ] && rlRun "mv /etc/keylime/agent.conf /etc/keylime/agent.conf.backup$$"
 
+        # Enable non-default features explicitly, excluding deprecated ones
+        # (with-zmq and legacy-python-actions are deprecated and not tested)
+        CARGO_FLAGS="--features=keylimectl/rpm-repo,keylimectl/tpm-local,keylimectl/tpm-quote-validation"
         # when TPM_BINARY_MEASUREMENTS is defined, compile with testing feature
         # to allow setting the binary measurements file location
         if [ -n "${TPM_BINARY_MEASUREMENTS}" ]; then
-            CARGO_FLAGS="--features=testing"
+            CARGO_FLAGS="${CARGO_FLAGS},keylime_agent/testing"
         fi
 
         if [ "${KEYLIME_RUST_CODE_COVERAGE}" == "1" -o "${KEYLIME_RUST_CODE_COVERAGE}" == "true" ]; then
