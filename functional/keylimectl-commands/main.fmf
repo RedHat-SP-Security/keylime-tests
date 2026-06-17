@@ -1,0 +1,35 @@
+summary: Tests keylimectl CLI commands
+description: |
+    Comprehensive test of the keylimectl CLI tool which replaces
+    keylime_tenant and keylime-policy. Tests agent lifecycle commands,
+    runtime policy CRUD, measured boot policy CRUD, policy generation,
+    and policy signing.
+contact: Anderson Sasaki <ansasaki@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-1
+require:
+  - library(openssl/certgen)
+  - yum
+  - openssl
+  - jq
+  - gnupg2
+  - rpm-build
+  - rpm-sign
+  - createrepo_c
+recommend:
+  - keylime
+  - keylime-agent-rust-push
+duration: 20m
+enabled: true
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+    id: 5bf26507-7fab-443b-aaaa-39a6e3433abe
+/pull:
+    environment:
+        AGENT_SERVICE: Agent
+    id: ca46c45e-6011-43df-a0bc-292fdebe9cde
