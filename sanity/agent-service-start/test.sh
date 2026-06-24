@@ -19,13 +19,12 @@ rlJournalStart
             rlRun "limeStartIMAEmulator"
         fi
         sleep 5
-        # start keylime_verifier
+        # start keylime_agent
 	# we expect it to fail because the registrar is missing
 	# but at least we check that it got to the point of
 	# contacting the registrar
         rlRun "limeStartAgent"
-	sleep 5
-	rlAssertGrep "Requesting registrar API version" "$(limeAgentLogfile)"
+	rlRun "rlWaitForCmd 'grep -q \"Requesting registrar API version\" \$(limeAgentLogfile)' -m 30 -d 1 -t 5"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
