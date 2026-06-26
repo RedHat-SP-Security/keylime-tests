@@ -22,6 +22,14 @@ require:
   - createrepo_c
 recommend:
   - keylime
+  - keylime-agent-rust-push
 duration: 20m
 enabled: true
-id: 5a623fb1-2a55-49fa-a90c-7ef643b125f3
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+    id: 5bf26507-7fab-443b-aaaa-39a6e3433abe
+/pull:
+    environment:
+        AGENT_SERVICE: Agent
+    id: ca46c45e-6011-43df-a0bc-292fdebe9cde

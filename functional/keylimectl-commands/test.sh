@@ -13,11 +13,15 @@ MB_LOG_SECUREBOOT="mb_log_secureboot.bin"
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
 
+[ -n "${AGENT_SERVICE}" ] || AGENT_SERVICE="Agent"
+[ "${AGENT_SERVICE}" == "PushAgent" ] && PUSH_MODEL_FLAG="--push-model" || PUSH_MODEL_FLAG=""
+
 rlJournalStart
 
     rlPhaseStartSetup "Environment setup"
         rlRun 'rlImport "./test-helpers"' || rlDie "cannot import keylime-tests/test-helpers library"
         rlRun 'rlImport "certgen/certgen"' || rlDie "cannot import openssl/certgen library"
+        [ "${AGENT_SERVICE}" != "Agent" ] && [ "${AGENT_SERVICE}" != "PushAgent" ] && rlDie "Error: AGENT_SERVICE must be 'Agent' or 'PushAgent', got '${AGENT_SERVICE}'"
         rlAssertRpm keylime
         rlAssertRpm openssl
         rlRun "which keylimectl" 0 "keylimectl must be installed" || rlDie "keylimectl not found"
@@ -402,12 +406,17 @@ rlJournalStart
             rlRun "limeInstallIMAConfig"
             rlRun "limeStartIMAEmulator"
         fi
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeUpdateConf verifier mode 'push'"
+            rlRun "limeUpdateConf verifier challenge_lifetime 1800"
+            rlRun "limeUpdateConf verifier session_lifetime 180"
+        fi
         sleep 5
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"
         rlRun "limeStartRegistrar"
         rlRun "limeWaitForRegistrar"
-        rlRun "limeStartAgent"
+        rlRun "limeStart${AGENT_SERVICE}"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 
         # Configure keylimectl to use the auto-generated TLS certificates
@@ -497,8 +506,12 @@ _EOF"
     # ── Agent lifecycle ─────────────────────────────────
 
     rlPhaseStartTest "agent add"
-        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy.json"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy.json ${PUSH_MODEL_FLAG}"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "agent status"
@@ -524,29 +537,45 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent update"
-        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy.json"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy.json ${PUSH_MODEL_FLAG}"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
         TESTDIR=$(limeCreateTestDir)
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
-        rlRun "rlWaitForCmd 'tail -n 30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+            rlRun "rlWaitForCmd 'tail -n 30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
+        fi
         limeExtendNextExcludelist $TESTDIR
     rlPhaseEnd
 
     rlPhaseStartTest "agent update after failure"
         # Regenerate policy with the bad script now excluded
         rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-updated.json"
-        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy-updated.json"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy-updated.json ${PUSH_MODEL_FLAG}"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "agent reactivate"
         rlRun -s "keylimectl agent reactivate ${AGENT_ID}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "agent remove"
@@ -566,7 +595,7 @@ _EOF"
         rlRun "popd"
         rlRun "rm -rf ${TMPDIR}"
         rlFileRestore /etc/keylime/keylimectl.conf
-        rlRun "limeStopAgent"
+        rlRun "limeStop${AGENT_SERVICE}"
         rlRun "limeStopRegistrar"
         rlRun "limeStopVerifier"
         if limeTPMEmulated; then
