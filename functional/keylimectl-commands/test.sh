@@ -410,6 +410,9 @@ rlJournalStart
             rlRun "limeUpdateConf verifier mode 'push'"
             rlRun "limeUpdateConf verifier challenge_lifetime 1800"
             rlRun "limeUpdateConf verifier session_lifetime 180"
+            # Shorten attestation retry interval so the agent re-authenticates
+            # quickly after keylimectl enrolls it (default 60s is too long for tests)
+            rlRun "limeUpdateConf agent attestation_interval_seconds 10"
         fi
         sleep 5
         rlRun "limeStartVerifier"
