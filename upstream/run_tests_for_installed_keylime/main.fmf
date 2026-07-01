@@ -1,4 +1,8 @@
 summary: Run unit tests for installed keylime
+description: |
+    Verify that the upstream keylime unit tests pass when executed
+    against the RPM-installed or source-installed keylime package
+    using the upstream run_tests.sh harness.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime

@@ -1,4 +1,8 @@
 summary: Run tests from keylime upstream testsuite
+description: |
+    Verify that the keylime upstream Python unit tests and functional
+    test scripts pass against the installed keylime package, optionally
+    collecting code coverage data.
 contact: Karel Srot <ksrot@redhat.com>
 component:
   - keylime
