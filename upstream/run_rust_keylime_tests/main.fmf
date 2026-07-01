@@ -1,5 +1,9 @@
-summary: Run tests from keylime rust upstream testsuite and eventually gather 
+summary: Run tests from keylime rust upstream testsuite and eventually gather
     code coverage
+description: |
+    Verify that the upstream rust keylime cargo tests pass with the
+    testing feature enabled, and optionally measure code coverage
+    using cargo-tarpaulin when KEYLIME_RUST_CODE_COVERAGE is set.
 contact: Patrik Koncity <pkoncity@redhat.com>
 component:
   - keylime

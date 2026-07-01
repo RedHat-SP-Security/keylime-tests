@@ -1,6 +1,9 @@
 summary: Process gathered code coverage data for the rust agent and generate a 
     report
-description:
+description: |
+    Verify that code coverage data collected during rust keylime agent
+    e2e tests can be processed using grcov and exported as HTML and
+    lcov reports for submission.
 contact: Patrik Koncity <pkoncity@redhat.com>
 component:
   - keylime
