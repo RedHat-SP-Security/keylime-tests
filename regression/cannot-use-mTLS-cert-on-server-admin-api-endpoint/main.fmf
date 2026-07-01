@@ -16,6 +16,8 @@ component:
   - keylime
 test: ./test.sh
 framework: beakerlib
+tag:
+  - not-agent-upstream-CI
 require:
   - openssl
   - curl
