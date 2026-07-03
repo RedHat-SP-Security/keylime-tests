@@ -540,7 +540,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent update"
-        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy.json ${PUSH_MODEL_FLAG}"
+        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy.json"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
             rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         else
@@ -564,7 +564,7 @@ _EOF"
     rlPhaseStartTest "agent update after failure"
         # Regenerate policy with the bad script now excluded
         rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-updated.json"
-        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy-updated.json ${PUSH_MODEL_FLAG}"
+        rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy-updated.json"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
             rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         else
