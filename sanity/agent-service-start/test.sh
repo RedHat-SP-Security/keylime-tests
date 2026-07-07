@@ -24,7 +24,7 @@ rlJournalStart
 	# but at least we check that it got to the point of
 	# contacting the registrar
         rlRun "limeStartAgent"
-	rlRun "rlWaitForCmd 'grep -q \"Requesting registrar API version\" \$(limeAgentLogfile)' -m 30 -d 1 -t 5"
+	rlRun "rlWaitForCmd 'grep -q \"Requesting registrar API version\" \$(limeAgentLogfile)' -m ${limeTIMEOUT} -d 1 -t ${limeTIMEOUT}"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
