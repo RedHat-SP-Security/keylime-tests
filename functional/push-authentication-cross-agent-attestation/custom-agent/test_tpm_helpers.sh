@@ -24,7 +24,7 @@ SWTPM_PID=""
 tpm_check_persistent_handle() {
     local persistent_handle="${1}"
 
-    if tpm2_readpublic -c "${persistent_handle}" &>/dev/null; then
+    if tpm2_getcap handles-persistent 2>&1 | grep -q "${persistent_handle}"; then
         return 0
     else
         return 1
