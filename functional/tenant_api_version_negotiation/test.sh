@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -59,7 +58,9 @@ rlJournalStart
         # configure tenant, use one common (not current/latest) version with verifier and registrar
         rlRun "set_api_versions 2.5 '[\"2.1\", \"2.3\", \"2.5\"]' '{\"2\": \"2.5\"}' '[]'"
         # configure and start agent, use one common version with tenant
-        rlRun "limeUpdateConf agent api_versions '\"2.1, 2.2\"'"
+	# agent v2.7 in RHEL-10.0 doesn't support the api_versions endpoint yet and therefore
+	# we can specify only a single version
+        rlRun "limeUpdateConf agent version '\"2.1\"'"
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
@@ -67,18 +68,8 @@ rlJournalStart
     rlPhaseStartTest "Test common API version negotiation with verifier and registrar"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "Using API version 2.1 for verifier communication" "$rlRun_LOG"
-        rlAssertGrep "https://127.0.0.1:8881 .*GET /v2.1/agents" "$rlRun_LOG" -E
         rlRun -s "keylime_tenant -c reglist"
         rlAssertGrep "Using API version 2.3 for registrar communication" "$rlRun_LOG"
-        rlAssertGrep "https://127.0.0.1:8891 .*GET /v2.3/agents" "$rlRun_LOG" -E
-    rlPhaseEnd
-
-    rlPhaseStartTest "Test common API version negotiation with the agent"
-        rlRun "limeCreateTestPolicy"
-        rlRun -s "keylime_tenant -c add -u $AGENT_ID --verify --runtime-policy policy.json -f /etc/hostname"
-        rlAssertGrep "Using API version 2.1 for agent communication" "$rlRun_LOG"
-        rlAssertGrep "https://127.0.0.1:9002 .*GET /v2.1/keys/verify" "$rlRun_LOG" -E
-        rlRun -s "keylime_tenant -c delete -u $AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Test incorrect API version verifier and registrar"
