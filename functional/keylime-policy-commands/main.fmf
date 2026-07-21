@@ -18,6 +18,7 @@ require:
   - rpm-build
   - gpg
   - jq
+  - strace
 recommend:
   - keylime
 duration: 15m
