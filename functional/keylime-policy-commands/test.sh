@@ -219,6 +219,69 @@ rlJournalStart
         done
     rlPhaseEnd
 
+    if [ -d rpm/repo/filelist-ext-match ]; then
+        rlPhaseStartTest "Generate runtime policy from remote RPM repo containing filelist-ext.xml"
+            rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/filelist-ext-match\" 8080 &> server.log &"
+            SERVER_PID=$!
+            rlRun -s "keylime-policy create runtime --remote-rpm-repo http://localhost:8080"
+            rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
+            # check that filelist-ext was downloaded
+            rlRun "kill ${SERVER_PID}"
+            cat server.log
+            rlAssertGrep "GET /repodata/.*filelists-ext.xml.gz" server.log -E
+        rlPhaseEnd
+    fi
+
+    # Test --max-workers option (RHEL-114482)
+
+    rlPhaseStartTest "Verify --max-workers is available in help output"
+        rlRun -s "keylime-policy create runtime --help"
+        rlAssertGrep "\-\-max-workers" "$rlRun_LOG"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test --max-workers with local RPM repo"
+        for WORKERS in 1 2; do
+            rlRun "keylime-policy create runtime --local-rpm-repo \"rpm/repo/signed-rsa\" --max-workers ${WORKERS} -o policy.json"
+            rlRun -s "jq '.digests.\"/etc/dummy-foobar.conf\"' policy.json"
+            rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
+        done
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test --max-workers with remote RPM repo"
+        rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/signed-rsa\" 8080 &> server.log &"
+        SERVER_PID=$!
+        rlRun -s "keylime-policy create runtime --remote-rpm-repo http://localhost:8080 --max-workers 2"
+        rlAssertGrep "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9" "$rlRun_LOG"
+        rlAssertNotGrep "Too many open files" "$rlRun_LOG"
+        rlRun "kill ${SERVER_PID}"
+        cat server.log
+        rlAssertGrep "GET /DUMMY-foo" server.log
+        rlAssertGrep "GET /DUMMY-bar" server.log
+        rlAssertGrep "GET /DUMMY-empty" server.log
+    rlPhaseEnd
+
+    rlPhaseStartTest "Verify --max-workers limits the number of spawned workers"
+        rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/signed-rsa\" 8080 &> server.log &"
+        SERVER_PID=$!
+        rlRun "strace -f -e trace=clone,clone3 -o strace_1.log keylime-policy create runtime --remote-rpm-repo http://localhost:8080 --max-workers 1"
+        rlRun "kill ${SERVER_PID}"
+        rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/signed-rsa\" 8080 &> server.log &"
+        SERVER_PID=$!
+        rlRun "strace -f -e trace=clone,clone3 -o strace_3.log keylime-policy create runtime --remote-rpm-repo http://localhost:8080 --max-workers 3"
+        rlRun "kill ${SERVER_PID}"
+        CLONES_1=$(grep -c 'clone' strace_1.log)
+        CLONES_3=$(grep -c 'clone' strace_3.log)
+        rlLog "clone calls with --max-workers 1: ${CLONES_1}"
+        rlLog "clone calls with --max-workers 3: ${CLONES_3}"
+        rlRun "[ ${CLONES_1} -lt ${CLONES_3} ]" 0 "Fewer workers spawned with --max-workers 1 (${CLONES_1}) than --max-workers 3 (${CLONES_3})"
+    rlPhaseEnd
+
+    rlPhaseStartTest "Test --max-workers with invalid values"
+        for VALUE in 0 -1 abc; do
+            rlRun "keylime-policy create runtime --local-rpm-repo \"rpm/repo/signed-rsa\" --max-workers ${VALUE}" 2 "Expected failure with --max-workers ${VALUE}"
+        done
+    rlPhaseEnd
+
     # Sign runtime policies.
 
     rlPhaseStartTest "Sign runtime policy with the ECDSA DSSE backend"
