@@ -1,0 +1,28 @@
+summary: Push-model attestation with PostgreSQL database
+description: |
+    Verifying a regression for RHEL-189524.
+    Running all services and PostgreSQL on localhost.
+    Configure verifier and registrar to use PostgreSQL.
+    Enable push-model attestation and start push agent.
+    Enroll agent and verify attestation completes successfully
+    (evidence INSERT must accept a full agent UUID / hash_ek id).
+contact: Natália Bubáková <nbubakov@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - yum
+  - postgresql-server
+  - postgresql-contrib
+  - python3-psycopg2
+  - tpm2-tools
+recommend:
+  - keylime
+  - keylime-agent-rust
+  - keylime-agent-rust-push
+duration: 10m
+enabled: true
+link:
+  - verifies: https://issues.redhat.com/browse/RHEL-189524
+id: 53dfdff7-2c04-43a2-af3f-ecc7ef8a0136

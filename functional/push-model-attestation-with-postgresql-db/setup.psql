@@ -1,0 +1,10 @@
+create database verifierdb;
+create user verifier with encrypted password 'fire';
+grant all privileges on database verifierdb to verifier;
+create database registrardb;
+create user registrar with encrypted password 'regi';
+grant all privileges on database registrardb to registrar;
+\connect verifierdb;
+grant all privileges on schema public to verifier;
+\connect registrardb;
+grant all privileges on schema public to registrar;
