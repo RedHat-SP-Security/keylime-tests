@@ -1,15 +1,18 @@
 policy_module(swtpm_permissive, 1.0)
-require {
+
 type swtpm_t;
 type swtpm_exec_t;
+
+require {
 type unreserved_port_t;
 type var_lib_t;
 type init_t;
 type device_t;
 }
-permissive swtpm_t;
 
 init_daemon_domain(swtpm_t, swtpm_exec_t);
+
+permissive swtpm_t;
 
 dontaudit swtpm_t self:tcp_socket { accept listen };
 dontaudit swtpm_t swtpm_t:capability { sys_admin };
