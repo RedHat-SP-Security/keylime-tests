@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 BASE_POLICY="base_policy.json"
@@ -8,6 +7,7 @@ EXCLUDE_LIST="excludelist.txt"
 IMA_LOG="ima_log.txt"
 MB_LOG="mb_log.bin"
 MB_LOG_SECUREBOOT="mb_log_secureboot.bin"
+SCRIPT_DIR="$PWD"
 
 rlJournalStart
 
@@ -276,23 +276,23 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Verify --max-workers limits the number of spawned workers"
-        rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/signed-rsa\" 8080 &> server.log &"
+        # Use a server that serves repodata normally but stalls on RPM downloads,
+        # then count established TCP connections to determine parallelism.
+        rlRun "python3 ${SCRIPT_DIR}/stall_server.py 'rpm/repo/signed-rsa' 8080 &> stall_server.log &"
         SERVER_PID=$!
-        rlRun "strace -f -e trace=clone,clone3 -o strace_1.log keylime-policy create runtime --remote-rpm-repo http://localhost:8080 --max-workers 1"
+        for WORKERS in 1 3; do
+            rlRun "keylime-policy create runtime --remote-rpm-repo http://localhost:8080 --max-workers ${WORKERS} &> keylime_workers_${WORKERS}.log &"
+            KEYLIME_PID=$!
+            sleep 5
+            CONNS=$(ss -tn state established dst 127.0.0.1:8080 | tail -n +2 | wc -l)
+            rlLog "Established connections with --max-workers ${WORKERS}: ${CONNS}"
+            eval "CONNS_${WORKERS}=${CONNS}"
+            rlRun "kill ${KEYLIME_PID}" 0,1
+            wait ${KEYLIME_PID} 2>/dev/null
+        done
         rlRun "kill ${SERVER_PID}"
-        rlRun "python3 -m http.server -b 127.0.0.1 -d \"rpm/repo/signed-rsa\" 8080 &> server.log &"
-        SERVER_PID=$!
-        rlRun "strace -f -e trace=clone,clone3 -o strace_5.log keylime-policy create runtime --remote-rpm-repo http://localhost:8080 --max-workers 5"
-        rlRun "kill ${SERVER_PID}"
-        # Count only process forks (SIGCHLD) from the main keylime-policy process
-        # to filter out non-deterministic thread creation in child processes
-        MAIN_PID_1=$(head -1 strace_1.log | awk '{print $1}')
-        MAIN_PID_5=$(head -1 strace_5.log | awk '{print $1}')
-        CLONES_1=$(grep -c "^${MAIN_PID_1} clone.*SIGCHLD" strace_1.log)
-        CLONES_5=$(grep -c "^${MAIN_PID_5} clone.*SIGCHLD" strace_5.log)
-        rlLog "clone calls with --max-workers 1: ${CLONES_1}"
-        rlLog "clone calls with --max-workers 5: ${CLONES_5}"
-        rlRun "[ ${CLONES_1} -lt ${CLONES_5} ]" 0 "Fewer workers spawned with --max-workers 1 (${CLONES_1}) than --max-workers 5 (${CLONES_5})"
+        rlLog "Connections with --max-workers 1: ${CONNS_1}, --max-workers 3: ${CONNS_3}"
+        rlRun "[ ${CONNS_1} -lt ${CONNS_3} ]" 0 "Fewer connections with --max-workers 1 (${CONNS_1}) than --max-workers 3 (${CONNS_3})"
     rlPhaseEnd
 
     rlPhaseStartTest "Test --max-workers with invalid values"
