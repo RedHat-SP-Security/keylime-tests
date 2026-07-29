@@ -44,8 +44,10 @@ rlJournalStart
         rlRun "cat /proc/cmdline"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
-        rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_template=${IMA_TEMPLATE}'"
-        rlRun -s "grubby --info DEFAULT | grep '^args'"
+        # Ensure IMA args apply to whichever kernel actually reboots (not only DEFAULT)
+        rlRun "grubby --update-kernel ALL --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_template=${IMA_TEMPLATE}'"
+        rlRun -s "grubby --info \"/boot/vmlinuz-$(uname -r)\" | grep '^args'"
+        # Verify IMA args apply to the actual kernel that will boot
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
