@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 [ -z "${IMA_APPRAISE}" ] && IMA_APPRAISE="log"
@@ -44,13 +43,30 @@ rlJournalStart
         rlRun "cat /proc/cmdline"
         rlRun "grubby --info ALL"
         rlRun "grubby --default-index"
+        DEFAULTKERNEL=$( grubby --default-kernel )
+        echo "default kernel: $DEFAULTKERNEL"
         rlRun "grubby --update-kernel DEFAULT --args 'ima_appraise=${IMA_APPRAISE} ima_canonical_fmt ima_template=${IMA_TEMPLATE}'"
         rlRun -s "grubby --info DEFAULT | grep '^args'"
         rlAssertGrep "ima_appraise=${IMA_APPRAISE}" $rlRun_LOG
         rlAssertGrep "ima_canonical_fmt" $rlRun_LOG
         rlAssertGrep "ima_template=${IMA_TEMPLATE}" $rlRun_LOG
         # on s390x run zipl to make change done through grubby effective
-        [ "$(rlGetPrimaryArch)" == "s390x" ] && rlRun "zipl -V"
+        if [ "$(rlGetPrimaryArch)" == "s390x" ]; then
+            # first handle /boot/loader/entries/ffff*.conf files that are making problems on s390x when debug kernel is installed
+            rlRun "ls /boot/loader/entries/"
+            for ENTRY in /boot/loader/entries/ffffffff*.conf; do
+                if [ -f "$ENTRY" ]; then
+                    echo "Fixing $ENTRY"
+                    NEW_ENTRY=$( echo "$ENTRY" | sed "s/ffffffff*/$(cat /etc/machine-id)/" )
+                    rlRun "mv '$ENTRY' '$NEW_ENTRY'"
+                fi
+            done
+            rlRun "ls /boot/loader/entries/"
+            # now run grubby again to re-set the default entry
+            rlRun "grubby --set-default=$DEFAULTKERNEL"
+            # run zipl
+            rlRun "zipl -V"
+        fi
         rlRun "touch $COOKIE"
         # clear TPM
         if ! limeTPMEmulated && [ -c /dev/tpmrm0 ]; then
