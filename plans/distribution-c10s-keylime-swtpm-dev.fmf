@@ -1,5 +1,5 @@
 summary:
-  Container tests from the rhel-10-main branch
+  Container tests from the rhel-10.2 branch
 
 context:
   swtpm: yes
@@ -7,9 +7,9 @@ context:
   faked_measured_boot_log: no
 
 adjust+:
- - when: target_PR_branch is defined and target_PR_branch != rhel-10-main
+ - when: target_PR_branch is defined and target_PR_branch != rhel-10.2
    enabled: false
-   because: we want to run this plan only for PRs targeting the main branch
+   because: we want to run this plan only for PRs targeting the rhel branch
 
 environment:
   AGENT_DOCKERFILE: Dockerfile.agent
