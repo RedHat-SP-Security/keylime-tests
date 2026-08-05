@@ -1,5 +1,5 @@
 # we are not using upstream keylime bits
-# this plan is shared both for main and rhel-10-main repo
+# this plan is for rhel-10.2 branch
 
 summary: Minimal test plan for system setup and keylime execution in RHEL Image mode
 
@@ -32,9 +32,9 @@ prepare+:
       - dnf config-manager --set-enabled epel || true
 
 adjust+:
-  - when: target_PR_branch is defined and target_PR_branch != main and target_PR_branch != rhel-10-main
+  - when: target_PR_branch is defined and target_PR_branch != rhel-10.2
     enabled: false
-    because: we want to run this plan only for PRs targeting the main branch
+    because: we want to run this plan only for PRs targeting the rhel branch
 
   - when: distro != centos-stream-10 and distro != rhel-10
     enabled: false
