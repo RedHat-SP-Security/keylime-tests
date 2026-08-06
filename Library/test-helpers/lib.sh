@@ -599,7 +599,7 @@ __limeStillRunning() {
 
 __limeWaitForProcessEnd() {
     local NAME=$1
-    local TIMEOUT=10
+    local TIMEOUT="${limeTIMEOUT}"
     local RET=1
 
     [ -n "$2" ] && TIMEOUT=$2
