@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   Author: Karel Srot <ksrot@redhat.com>
@@ -267,6 +266,11 @@ fi
     rlPhaseStartCleanup "Agent cleanup"
         rlRun "sync-set AGENT_ALL_TESTS_DONE"
         rlRun "limeStopPushAgent"
+        # save TPM cert for troubleshooting
+        rlRun "tpm2_getekcertificate -o ek_cert.der"
+        rlRun "tpm2_createek -c ek.handle -G rsa -u ek.pub"
+        rlRun "tpm2_createak -C ek.handle -c ak.ctx -u ak.pub -n ak.name"
+        rlRun "rlBundleLogs agent_tpm_identity ek_cert.der ek.pub ak.name"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
@@ -345,6 +349,11 @@ Agent2() {
     rlPhaseStartCleanup "Agent2 cleanup"
         rlRun "kill $HTTP_PID"
         rlRun "limeStopPushAgent"
+        # save TPM cert for troubleshooting
+        rlRun "tpm2_getekcertificate -o ek_cert.der"
+        rlRun "tpm2_createek -c ek.handle -G rsa -u ek.pub"
+        rlRun "tpm2_createak -C ek.handle -c ak.ctx -u ak.pub -n ak.name"
+        rlRun "rlBundleLogs agent2_tpm_identity ek_cert.der ek.pub ak.name"
         if limeTPMEmulated; then
             rlRun "limeStopIMAEmulator"
             rlRun "limeStopTPMEmulator"
