@@ -1,0 +1,39 @@
+summary: Issue 1891 - registrar fails to parse EK certificates wrapped in ASN.1 OCTET STRING
+description: |
+    Some hardware TPMs store the EK certificate in NV RAM wrapped in an
+    ASN.1 OCTET STRING (tag 0x04) instead of raw DER (tag 0x30 SEQUENCE),
+    per a convention mentioned in the TCG EK Credential Profile.
+    Obtains a real EK certificate and AK from the TPM, wraps the EK
+    certificate's DER bytes in an OCTET STRING, and registers a fake agent
+    directly against the registrar's HTTP API with the wrapped certificate,
+    bypassing the agent entirely.
+    A control agent is registered with the same, non-wrapped EK certificate
+    to confirm the test setup itself is sound.
+    Completes registration for both agents (decrypting the registrar's
+    challenge with the shared EK/AK and activating, like a real agent would)
+    and checks that both reach the Registered state, confirming that the
+    registrar genuinely accepts the OCTET-STRING-wrapped EK certificate the
+    same way it accepts the non-wrapped one, not just that the initial POST
+    returns 200.
+contact: Marek Safarik <msafarik@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - gawk
+  - jq
+  - openssl
+  - python3
+  - python3-pyasn1
+  - tpm2-tools
+recommend:
+  - keylime
+duration: 5m
+enabled: true
+id: 404a06ad-01e5-4685-a401-51ad939c8b20
+
+adjust:
+  - when: swtpm is not defined
+    enabled: false
+    because: This test needs a TPM (emulated or hardware) to obtain a real EK certificate
