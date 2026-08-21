@@ -12,6 +12,9 @@ set -exo pipefail
 # you can use BOOTC_DNF_UPDATE set to '1' or 'true' perform dnf update during the build
 # you can use BOOTC_KERNEL_ARGS variable to configure kernel cmdline parameters in the bootc-install-config format
 #   Example: BOOTC_KERNEL_ARGS='["nosmt", "console=tty0"]'
+# you can use BOOTC_LINT_SKIP to skip specific 'bootc container lint' checks (space separated names)
+#   Example: BOOTC_LINT_SKIP="var-tmpfiles"
+
 
 SHORT_IMAGE_NAME=bootc_setup_image
 IMPORTED_IMAGE_NAME="localhost/${SHORT_IMAGE_NAME}"
@@ -217,7 +220,22 @@ _EOF
     echo "RUN restorecon -Rv /usr /etc || true" >> Containerfile
 
     # add bootc container lint
-    echo "RUN bootc container lint" >> Containerfile
+    # bootc 1.16.7 has a regression where the var-tmpfiles lint crashes with
+    # "I/O error on /sys/fs/selinux/checkreqprot: Permission denied" under
+    # unprivileged podman build. The bootc version that ends up installed in
+    # the image is only known at this point (after the dnf install RUN
+    # above), so pass BOOTC_LINT_SKIP in as a build ARG and extend it below
+    # when that version is detected.
+    # See https://github.com/bootc-dev/bootc/issues/2379
+    echo "ARG BOOTC_LINT_SKIP=\"${BOOTC_LINT_SKIP}\"" >> Containerfile
+    cat >> Containerfile <<'_EOF'
+RUN if [ "$(rpm -q --qf '%{version}' bootc)" = "1.16.7" ]; then \
+        BOOTC_LINT_SKIP="$BOOTC_LINT_SKIP var-tmpfiles"; \
+    fi; \
+    ARGS=""; \
+    for L in $BOOTC_LINT_SKIP; do ARGS="$ARGS --skip $L"; done; \
+    bootc container lint $ARGS
+_EOF
 
     echo "Using the following Containerfile:"
     echo -n "---------------------------------"
