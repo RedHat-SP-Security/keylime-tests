@@ -229,7 +229,8 @@ _EOF
     # See https://github.com/bootc-dev/bootc/issues/2379
     echo "ARG BOOTC_LINT_SKIP=\"${BOOTC_LINT_SKIP}\"" >> Containerfile
     cat >> Containerfile <<'_EOF'
-RUN if [ "$(rpm -q --qf '%{version}' bootc)" = "1.16.7" ]; then \
+RUN if [ "$(rpm -q --qf '%{version}' bootc)" = "1.16.7" ] || \
+       [ "$(rpm -q --qf '%{version}' bootc)" = "1.16.9" ]; then \
         BOOTC_LINT_SKIP="$BOOTC_LINT_SKIP var-tmpfiles"; \
     fi; \
     ARGS=""; \
