@@ -73,10 +73,10 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agent with both measured boot and runtime policies"
         rlRun "TPM_INTERFACE_TYPE=socsim tsseventextend -tpm -if /var/tmp/binary_bios_measurements"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID  -f /etc/hostname --mb_refstate mb_refstate.txt --runtime-policy policy.json -c add"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --mb-refstate mb_refstate.txt --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Run keylime offline (durable) attestation - asssuming success"
@@ -87,7 +87,7 @@ rlJournalStart
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/bad-script.sh && chmod a+x $TESTDIR/bad-script.sh"
         rlRun "$TESTDIR/bad-script.sh"
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
     rlPhaseEnd
 
     rlPhaseStartTest "Run keylime offline (durable) attestation - asssuming failure"

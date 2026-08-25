@@ -209,12 +209,12 @@ rlJournalStart
             AGENT_ID=${AGENT_IDS[$i]}
             AGENT_IP=${AGENT_IPS[$i]}
 
-            rlRun -s "keylime_tenant -v $SERVER_IP -t $AGENT_IP -u $AGENT_ID --runtime-policy policy$i.json -f /etc/hosts -c add ${TENANT_ARGS}"
+            rlRun -s "limeCtl --verifier-ip $SERVER_IP agent add $AGENT_ID --ip $AGENT_IP --runtime-policy policy$i.json ${TENANT_ARGS}"
             rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
 
             if [ $i -eq 0 ]; then
-                rlRun -s "keylime_tenant -c cvlist"
-                rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+                rlRun -s "limeCtl agent list"
+                rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
             fi
 
             log_verifier_event "Agent $i activated (ID: $AGENT_ID)"

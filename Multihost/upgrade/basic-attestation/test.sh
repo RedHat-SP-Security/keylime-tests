@@ -155,10 +155,10 @@ KeylimeSetup() {
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "wget -O policy.json 'http://${AGENT_IP}:8000/policy.json'"
         rlRun "cat policy.json"
-        rlRun "keylime_tenant -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --file /etc/hosts -c add"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun "limeCtl agent add ${AGENT_ID} --ip ${AGENT_IP} --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
         rlRun "sync-set AGENT_ADDED"
         limeSubmitCommonLogs
     rlPhaseEnd
@@ -184,12 +184,12 @@ KeylimeStart() {
 
 KeylimeTest() {
     rlPhaseStartTest "Agent attestation"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
-        rlRun -s "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun -s "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
 	ATTEST_COUNT1=$( grep -Eo '"last_successful_attestation": [0-9]*' $rlRun_LOG | cut -d ':' -f 2)
 	rlRun "sleep 60"
-        rlRun -s "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun -s "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
 	ATTEST_COUNT2=$( grep -Eo '"last_successful_attestation": [0-9]*' $rlRun_LOG | cut -d ':' -f 2)
 	rlAssertGreater "last_successful_attestation counter should have increased" ${ATTEST_COUNT2} ${ATTEST_COUNT1}
         rlRun "sync-set KEYLIME_ATTESTATION_DONE"
