@@ -93,7 +93,7 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
         ls -l /var/tmp/test_payload_file
         rlAssertExists /var/tmp/test_payload_file
@@ -104,7 +104,7 @@ _EOF"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
             rlRun "tail -20 $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"

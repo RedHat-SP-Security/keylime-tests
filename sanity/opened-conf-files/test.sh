@@ -37,9 +37,9 @@ rlJournalStart
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration '${AGENT_ID}'"
         rlRun "limeCreateTestPolicy"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u '$AGENT_ID' --verify --runtime-policy policy.json --file /etc/hosts -c add"
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add '$AGENT_ID' --ip 127.0.0.1 --verify --runtime-policy policy.json"
         rlRun "cp '$rlRun_LOG' tenant.log"
-        rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'"
     rlPhaseEnd
 
 function check_for_opened_conf_files() {

@@ -73,10 +73,10 @@ _EOF"
 
     rlPhaseStartTest "Add keylime agent and verify genuine of TPM via EK cert"
         # cp CA cert to dir, where keylime verify genuine of TPM
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname -c update"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" ${rlRun_LOG} -E
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update ${AGENT_ID} --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField ${rlRun_LOG} code=200 status=Success uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

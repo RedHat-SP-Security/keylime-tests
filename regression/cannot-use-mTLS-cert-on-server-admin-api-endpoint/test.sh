@@ -68,7 +68,7 @@ rlJournalStart
         # create allowlist and excludelist
         rlRun "limeCreateTestPolicy"
         # Add keylime agent"
-        rlRun "keylime_tenant -u $AGENT_ID --runtime-policy policy.json -c add --file /etc/hostname ${TENANT_ARGS}"
+        rlRun "limeCtl agent add $AGENT_ID --runtime-policy policy.json ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID PASS" 0,1
         # push agent won't generate the cert so we need to do it on our own
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
@@ -92,9 +92,13 @@ rlJournalStart
         rlRun "limeUpdateConf tenant tls_dir /var/lib/keylime"
         rlRun "limeUpdateConf tenant client_key server-private.pem"
         rlRun "limeUpdateConf tenant client_cert server-cert.crt"
-	rlRun -s "keylime_tenant -c cvlist" 1
+        # keylimectl
+        rlRun "limeUpdateConf keylimectl tls client_cert '\"/var/lib/keylime/server-cert.crt\"'"
+        rlRun "limeUpdateConf keylimectl tls client_key '\"/var/lib/keylime/server-private.pem\"'"
+        rlRun "limeUpdateConf keylimectl tls trusted_ca '[\"/var/lib/keylime/cv_ca/cacert.crt\"]'"
+	rlRun -s "limeCtl agent list" 1
 	rlAssertGrep "(TLSV1_ALERT_UNKNOWN_CA|Connection reset by peer|SSLError)" "$rlRun_LOG" -iE
-	rlRun "keylime_tenant -c delete --uuid ${AGENT_ID}" 1
+	rlRun "limeCtl agent remove ${AGENT_ID}" 1
     rlPhaseEnd
 
     rlPhaseStartTest "Try to use verifier admin API endpoint using curl"

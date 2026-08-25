@@ -109,10 +109,10 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun -s "keylime_tenant -v $IP_VERIFIER  -t $IP_AGENT -u $AGENT_ID --runtime-policy policy.json -f /etc/hosts -c add"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun -s "limeCtl --verifier-ip $IP_VERIFIER agent add $AGENT_ID --ip $IP_AGENT --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Running allowed scripts should not affect attestation"
@@ -121,7 +121,7 @@ rlJournalStart
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script1.sh"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script2.sh"
         rlRun "sleep 5"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
@@ -129,7 +129,7 @@ rlJournalStart
         rlRun "$TESTDIR/bad-script.sh"
         rlRun "sleep 5"
         rlRun "podman logs verifier_container | grep \"keylime.verifier - WARNING - Agent d432fbb3-d2f1-4a97-9ef7-75bd81c00000 failed, stopping polling\""
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

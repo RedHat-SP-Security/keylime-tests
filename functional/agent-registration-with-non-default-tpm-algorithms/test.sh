@@ -57,8 +57,8 @@ rlJournalStart
             rlLogInfo "Skipping attestation for combination of alg/sig (${TPM_ENCRYPTION_ALG} / ${TPM_SIGNING_ALG})"
         else
             rlRun "limeCreateTestPolicy"
-            rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
-            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+            rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         fi
     rlPhaseEnd
 
