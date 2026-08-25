@@ -155,7 +155,7 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlRun "ls $WORKDIR/test_payload_file"
@@ -166,7 +166,7 @@ _EOF"
         rlRun "$TESTDIR/bad-script.sh"
         rlRun "sleep 5"
         rlRun "podman logs $CONT_VERIFIER | grep \"keylime.verifier - WARNING - Agent d432fbb3-d2f1-4a97-9ef7-75bd81c00000 failed, stopping polling\""
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'Executing revocation action local_action_modify_payload'"
         rlRun "podman logs $CONT_AGENT 2>&1 | grep 'A node in the network has been compromised: \[2001:db8:8000::\]'"
         rlRun "ls $WORKDIR/test_payload_file" 2
