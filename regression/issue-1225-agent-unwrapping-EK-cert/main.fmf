@@ -1,0 +1,52 @@
+summary: rust-keylime#1225 - agent must unwrap OCTET-STRING-wrapped EK cert before sending it to the registrar
+description: |
+    Some hardware TPMs store the EK certificate in NV RAM wrapped in an ASN.1
+    OCTET STRING (tag 0x04) instead of a raw DER SEQUENCE (tag 0x30), following
+    a convention mentioned in the TCG EK Credential Profile. The rust agent used
+    to forward these bytes verbatim and older registrars could not parse them
+    (see keylime/keylime#1891 and keylime/rust-keylime#1225).
+
+    This test reconfigures the swtpm emulator so that the EK certificate stored
+    in TPM NV RAM is OCTET-STRING wrapped. It backs up and modifies the swtpm
+    systemd unit so that swtpm_setup uses a custom create_certs_tool that wraps
+    the EK certificate produced by swtpm_localca; swtpm_setup then stores those
+    wrapped bytes in the EK certificate NV index.
+
+    It then starts the agent behind an ncat relay that captures the registration
+    payload the agent sends to the registrar. The primary check verifies that the
+    ekcert the agent puts on the wire is a plain X.509 certificate (starts with
+    the SEQUENCE tag 0x30), i.e. the agent unwrapped the OCTET STRING before
+    sending. This single on-the-wire check covers both known unfixed failure
+    modes: an agent that forwards the wrapped bytes verbatim (capture starts with
+    the OCTET STRING tag 0x04), and an agent that fails to parse the wrapped cert
+    and registers with "ekcert": null (nothing captured, as observed with
+    keylime-agent-rust 0.2.10). As a secondary diagnostic the test also checks
+    that the agent log is free of the ASN.1 "wrong tag" parse error emitted by
+    the latter.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+require:
+  - nmap-ncat
+  - python3
+  - tpm2-tools
+  - openssl
+  - coreutils
+  - policycoreutils-python-utils
+recommend:
+  - keylime
+  - keylime-agent-rust
+duration: 10m
+enabled: true
+id: f1c2a3d4-5b6e-4f70-8a91-2c3d4e5f6a7b
+
+adjust:
+  - when: swtpm is not defined
+    enabled: false
+    because: This test needs the swtpm emulator to store a wrapped EK cert in NV RAM
+
+  - when: arch == s390x or arch == ppc64le
+    enabled: false
+    because: EK certificate tooling is limited on these architectures (see setup/configure_tpm_emulator)
