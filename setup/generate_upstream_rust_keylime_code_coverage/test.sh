@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 rlJournalStart
@@ -16,7 +15,7 @@ rlJournalStart
         # export coverage report in format compatible for codecov, gather code cover for all rust binaries
         rlRun "grcov . --binary-path /usr/bin/ -s /var/tmp/rust-keylime_sources -t lcov --ignore-not-existing -o e2e_coverage.txt"
         # compress files for uploading
-        [ -f e2e_coverage.html ] && \
+        [ -e e2e_coverage.html ] && \
                 rlRun "tar -czf e2e_coverage.tar.gz e2e_coverage.html" && \
                 rlFileSubmit e2e_coverage.tar.gz
         [ -f e2e_coverage.txt ] && \
