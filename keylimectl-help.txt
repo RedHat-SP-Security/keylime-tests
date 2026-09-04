@@ -1,0 +1,671 @@
+================================================================
+$ keylimectl --help
+================================================================
+keylimectl provides an intuitive interface for managing Keylime agents, policies, and attestation. It replaces keylime_tenant with improved usability while maintaining full API compatibility.
+
+Usage: keylimectl [OPTIONS] [COMMAND]
+
+Commands:
+  agent          Manage agents
+  policy         Manage runtime policies
+  measured-boot  Manage measured boot policies
+  info           Show diagnostic information
+  verify         Verify attestation evidence against a verifier
+  configure      Create or update a configuration file
+  help           Print this message or the help of the given subcommand(s)
+
+Options:
+  -c, --config <FILE>
+          Configuration file path
+
+      --verifier-ip <IP>
+          Verifier IP address [default: 127.0.0.1]
+
+      --verifier-port <PORT>
+          Verifier port [default: 8881]
+
+      --registrar-ip <IP>
+          Registrar IP address [default: 127.0.0.1]
+
+      --registrar-port <PORT>
+          Registrar port [default: 8891]
+
+      --timeout <SECONDS>
+          Request timeout in seconds [default: 60]
+
+  -v, --verbose...
+          Enable verbose logging
+
+  -q, --quiet
+          Suppress all output except JSON results
+
+      --format <FORMAT>
+          Output format
+
+          Possible values:
+          - json:  JSON output (default)
+          - table: Human-readable table format
+          - yaml:  YAML output
+          
+          [default: json]
+
+      --color <COLOR>
+          Color output mode
+
+          Possible values:
+          - auto:   Auto-detect based on terminal
+          - always: Always use colors
+          - never:  Never use colors
+          
+          [default: auto]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+CONFIGURATION SOURCES (highest to lowest priority):
+  1. Command-line arguments (--verifier-ip, --timeout, etc.)
+  2. Environment variables (KEYLIME_VERIFIER__IP, KEYLIME_CLIENT__TIMEOUT, etc.)
+  3. Configuration files (keylimectl.toml, ~/.config/keylimectl/config.toml, etc.)
+  4. Built-in defaults
+
+Run `keylimectl configure` to create a configuration file interactively.
+
+================================================================
+$ keylimectl agent --help
+================================================================
+Manage agents
+
+Usage: keylimectl agent <COMMAND>
+
+Commands:
+  add         Add an agent to the verifier
+  remove      Remove an agent from the verifier
+  update      Update an existing agent
+  status      Show agent status
+  reactivate  Reactivate a failed agent
+  list        List all agents
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl agent add --help
+================================================================
+Add an agent to the verifier
+
+Usage: keylimectl agent add [OPTIONS] <AGENT_ID>
+
+Arguments:
+  <AGENT_ID>  Agent identifier (can be any string, not necessarily a UUID)
+
+Options:
+      --ip <IP>                        Agent IP address (if not using push model)
+      --port <PORT>                    Agent port (if not using push model)
+      --verifier-ip <IP>               Verifier IP for the agent to connect to
+      --runtime-policy <POLICY>        Runtime policy to apply
+      --runtime-policy-name <NAME>     Name for the runtime policy in the verifier database
+      --runtime-policy-sig-key <FILE>  Public key file to verify the runtime policy DSSE signature
+      --mb-policy <POLICY>             Measured boot policy to apply
+      --payload <FILE>                 Payload file to deliver securely
+      --cert-dir <DIR>                 Certificate directory for secure delivery
+      --verify                         Verify cryptographic key derivation
+      --push-model                     Use push model (agent connects to verifier)
+      --pull-model                     Force pull model (legacy API 2.x behavior, overrides auto-detection)
+      --tpm-policy <POLICY>            TPM policy in JSON format
+      --wait-for-attestation           Wait for first attestation to complete after enrollment
+      --attestation-timeout <SECONDS>  Timeout in seconds for --wait-for-attestation (default: 60) [default: 60]
+  -h, --help                           Print help
+
+================================================================
+$ keylimectl agent remove --help
+================================================================
+Remove an agent from the verifier
+
+Usage: keylimectl agent remove [OPTIONS] <AGENT_ID>
+
+Arguments:
+  <AGENT_ID>  Agent identifier
+
+Options:
+      --registrar  Also remove from registrar
+      --force      Skip verifier checks (force removal)
+  -h, --help       Print help
+
+================================================================
+$ keylimectl agent update --help
+================================================================
+Update an existing agent
+
+Usage: keylimectl agent update [OPTIONS] <AGENT_ID>
+
+Arguments:
+  <AGENT_ID>  Agent identifier
+
+Options:
+      --runtime-policy <POLICY>        New runtime policy
+      --runtime-policy-name <NAME>     Name for the runtime policy in the verifier database
+      --runtime-policy-sig-key <FILE>  Public key file to verify the runtime policy DSSE signature
+      --mb-policy <POLICY>             New measured boot policy
+  -h, --help                           Print help
+
+================================================================
+$ keylimectl agent status --help
+================================================================
+Show agent status
+
+Usage: keylimectl agent status [OPTIONS] <AGENT_ID>
+
+Arguments:
+  <AGENT_ID>  Agent identifier
+
+Options:
+      --verifier   Check verifier only
+      --registrar  Check registrar only
+  -h, --help       Print help
+
+================================================================
+$ keylimectl agent reactivate --help
+================================================================
+Reactivate a failed agent
+
+Usage: keylimectl agent reactivate <AGENT_ID>
+
+Arguments:
+  <AGENT_ID>  Agent identifier
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl agent list --help
+================================================================
+List all agents
+
+Usage: keylimectl agent list [OPTIONS]
+
+Options:
+      --detailed   Show detailed information
+      --registrar  List agents from registrar only
+  -h, --help       Print help
+
+================================================================
+$ keylimectl policy --help
+================================================================
+Manage runtime policies
+
+Usage: keylimectl policy <COMMAND>
+
+Commands:
+  push              Push a runtime policy to the verifier
+  show              Show a runtime policy from the verifier
+  update            Update an existing runtime policy on the verifier
+  delete            Delete a runtime policy from the verifier
+  list              List all runtime policies
+  generate          Generate a policy locally from input sources
+  sign              Sign a policy file using DSSE
+  verify-signature  Verify the DSSE signature on a signed policy
+  validate          Validate a policy file structure and content
+  convert           Convert a legacy allowlist to the current policy format
+  help              Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl policy push --help
+================================================================
+Push a runtime policy to the verifier
+
+Usage: keylimectl policy push --file <FILE> <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+      --file <FILE>  Policy file path
+  -h, --help         Print help
+
+================================================================
+$ keylimectl policy show --help
+================================================================
+Show a runtime policy from the verifier
+
+Usage: keylimectl policy show <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl policy update --help
+================================================================
+Update an existing runtime policy on the verifier
+
+Usage: keylimectl policy update --file <FILE> <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+      --file <FILE>  Policy file path
+  -h, --help         Print help
+
+================================================================
+$ keylimectl policy delete --help
+================================================================
+Delete a runtime policy from the verifier
+
+Usage: keylimectl policy delete <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl policy list --help
+================================================================
+List all runtime policies
+
+Usage: keylimectl policy list
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl policy generate --help
+================================================================
+Generate a policy locally from input sources
+
+Usage: keylimectl policy generate <COMMAND>
+
+Commands:
+  runtime        Generate a runtime policy from IMA logs, allowlists, or filesystem
+  measured-boot  Generate a measured boot policy from a UEFI event log
+  tpm            Generate a TPM policy from PCR values
+  help           Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl policy generate runtime --help
+================================================================
+Generate a runtime policy from IMA logs, allowlists, or filesystem
+
+Usage: keylimectl policy generate runtime [OPTIONS]
+
+Options:
+  -I, --interactive
+          Run the interactive wizard to guide policy creation
+  -m, --ima-measurement-list [<FILE>]
+          IMA measurement list path. If -m is given without a value, uses the default: /sys/kernel/security/ima/ascii_runtime_measurements
+  -a, --allowlist <FILE>
+          Plain-text allowlist file
+      --rootfs <PATH>
+          Root filesystem path to scan
+      --skip-path <PATH>
+          Paths to skip during filesystem scan (repeatable)
+  -B, --base-policy <FILE>
+          Base policy to merge into
+  -e, --excludelist <FILE>
+          IMA exclude list file
+  -o, --output <FILE>
+          Output file (stdout if omitted)
+  -k, --keyrings
+          Include keyrings entries
+      --ima-buf
+          Include ima-buf entries
+  -i, --ignored-keyrings <KEYRING>
+          Keyrings to ignore (repeatable)
+  -A, --add-ima-signature-verification-key <FILE>
+          Add IMA signature verification key (repeatable)
+      --hash-alg <ALG>
+          Hash algorithm (auto-detected if omitted)
+      --ramdisk-dir <DIR>
+          Directory containing initramfs files (e.g., /boot)
+      --local-rpm-repo <DIR>
+          Local RPM repository directory
+      --remote-rpm-repo <URL>
+          Remote RPM repository URL
+      --gpg-key <FILE>
+          GPG public key file for verifying RPM repository metadata signatures
+  -h, --help
+          Print help
+
+================================================================
+$ keylimectl policy generate measured-boot --help
+================================================================
+Generate a measured boot policy from a UEFI event log
+
+Usage: keylimectl policy generate measured-boot [OPTIONS]
+
+Options:
+  -I, --interactive           Run the interactive wizard to guide policy creation
+      --eventlog-file <FILE>  UEFI event log file [default: /sys/kernel/security/tpm0/binary_bios_measurements]
+      --without-secureboot    Generate policy without Secure Boot variables
+  -o, --output <FILE>         Output file (stdout if omitted)
+  -h, --help                  Print help
+
+================================================================
+$ keylimectl policy generate tpm --help
+================================================================
+Generate a TPM policy from PCR values
+
+Usage: keylimectl policy generate tpm [OPTIONS]
+
+Options:
+  -I, --interactive      Run the interactive wizard to guide policy creation
+      --pcr-file <FILE>  Read PCR values from file (one per line)
+      --from-tpm         Read PCR values from local TPM
+      --pcrs <INDICES>   PCR indices to include (comma-separated, e.g., "0,1,2,7") [default: 0,1,2,3,4,5,6,7]
+      --mask <MASK>      PCR mask (overrides --pcrs, e.g., "0x408000")
+      --hash-alg <ALG>   Hash algorithm [default: sha256]
+  -o, --output <FILE>    Output file (stdout if omitted)
+  -h, --help             Print help
+
+================================================================
+$ keylimectl policy sign --help
+================================================================
+Sign a policy file using DSSE
+
+Usage: keylimectl policy sign [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>
+          Policy file to sign
+
+Options:
+  -k, --keyfile <FILE>
+          Private key file to sign with (generates new key if omitted)
+
+  -p, --keypath <PATH>
+          Path to save generated private key
+
+  -b, --backend <BACKEND>
+          Signing backend
+
+          Possible values:
+          - ecdsa: ECDSA P-256 signing (default)
+          - x509:  X.509 certificate-based signing
+          
+          [default: ecdsa]
+
+  -o, --output <FILE>
+          Output file for signed policy
+
+  -c, --cert-outfile <FILE>
+          Output file for X.509 certificate (x509 backend only)
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+================================================================
+$ keylimectl policy verify-signature --help
+================================================================
+Verify the DSSE signature on a signed policy
+
+Usage: keylimectl policy verify-signature --key <FILE> <FILE>
+
+Arguments:
+  <FILE>  Signed policy file to verify
+
+Options:
+  -k, --key <FILE>  Public key or certificate file to verify against
+  -h, --help        Print help
+
+================================================================
+$ keylimectl policy validate --help
+================================================================
+Validate a policy file structure and content
+
+Usage: keylimectl policy validate [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>  Policy file to validate
+
+Options:
+  -t, --policy-type <TYPE>    Policy type (auto-detected if omitted) [possible values: runtime, measured-boot, tpm]
+  -s, --signature-key <FILE>  Also verify DSSE signature using this key
+  -h, --help                  Print help
+
+================================================================
+$ keylimectl policy convert --help
+================================================================
+Convert a legacy allowlist to the current policy format
+
+Usage: keylimectl policy convert [OPTIONS] --output <FILE> <FILE>
+
+Arguments:
+  <FILE>  Input allowlist or policy file
+
+Options:
+  -o, --output <FILE>              Output file (required)
+  -e, --excludelist <FILE>         Exclude list file to merge
+  -v, --verification-keys <FILES>  Verification key files to add
+  -h, --help                       Print help
+
+================================================================
+$ keylimectl measured-boot --help
+================================================================
+Manage measured boot policies
+
+Usage: keylimectl measured-boot <COMMAND>
+
+Commands:
+  list    List all measured boot policies
+  push    Push a measured boot policy to the verifier
+  show    Show a measured boot policy
+  update  Update an existing measured boot policy
+  delete  Delete a measured boot policy
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl measured-boot list --help
+================================================================
+List all measured boot policies
+
+Usage: keylimectl measured-boot list
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl measured-boot push --help
+================================================================
+Push a measured boot policy to the verifier
+
+Usage: keylimectl measured-boot push --file <FILE> <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+      --file <FILE>  Policy file path
+  -h, --help         Print help
+
+================================================================
+$ keylimectl measured-boot show --help
+================================================================
+Show a measured boot policy
+
+Usage: keylimectl measured-boot show <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl measured-boot update --help
+================================================================
+Update an existing measured boot policy
+
+Usage: keylimectl measured-boot update --file <FILE> <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+      --file <FILE>  Policy file path
+  -h, --help         Print help
+
+================================================================
+$ keylimectl measured-boot delete --help
+================================================================
+Delete a measured boot policy
+
+Usage: keylimectl measured-boot delete <NAME>
+
+Arguments:
+  <NAME>  Policy name
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl info --help
+================================================================
+Show diagnostic information
+
+Usage: keylimectl info [COMMAND]
+
+Commands:
+  verifier   Show verifier status and API version
+  registrar  Show registrar status and API version
+  agent      Show detailed information for a specific agent
+  tls        Validate TLS certificates and test connectivity
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl info verifier --help
+================================================================
+Show verifier status and API version
+
+Usage: keylimectl info verifier
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl info registrar --help
+================================================================
+Show registrar status and API version
+
+Usage: keylimectl info registrar
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl info agent --help
+================================================================
+Show detailed information for a specific agent
+
+Usage: keylimectl info agent <AGENT_ID>
+
+Arguments:
+  <AGENT_ID>  Agent identifier
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl info tls --help
+================================================================
+Validate TLS certificates and test connectivity
+
+Usage: keylimectl info tls
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl verify --help
+================================================================
+Verify attestation evidence against a verifier
+
+Usage: keylimectl verify <COMMAND>
+
+Commands:
+  evidence  Verify TPM or TEE attestation evidence
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+
+================================================================
+$ keylimectl verify evidence --help
+================================================================
+Verify TPM or TEE attestation evidence
+
+Usage: keylimectl verify evidence [OPTIONS]
+
+Options:
+  -I, --interactive                  Run the interactive wizard to guide evidence verification
+      --nonce <NONCE>                Nonce used for the quote
+      --quote <FILE>                 TPM quote file
+      --hash-alg <ALG>               Hash algorithm [default: sha256]
+      --tpm-ak <FILE>                TPM Attestation Key (AK) file
+      --tpm-ek <FILE>                TPM Endorsement Key (EK) file
+      --runtime-policy <FILE>        Runtime policy file
+      --ima-measurement-list <FILE>  IMA measurement list file
+      --mb-policy <FILE>             Measured boot policy file
+      --mb-log <FILE>                Measured boot log file
+      --tpm-policy <FILE>            TPM policy file
+      --evidence-type <TYPE>         Evidence type [default: tpm] [possible values: tpm, tee]
+  -h, --help                         Print help
+
+================================================================
+$ keylimectl configure --help
+================================================================
+Create or update a configuration file
+
+Usage: keylimectl configure [OPTIONS]
+
+Options:
+      --non-interactive
+          Run without interactive prompts
+
+      --scope <SCOPE>
+          Configuration scope
+
+          Possible values:
+          - local:  Local directory: ./.keylimectl/config.toml
+          - user:   User home: ~/.config/keylimectl/config.toml
+          - system: System-wide: /etc/keylime/keylimectl.conf
+          
+          [default: user]
+
+      --verifier-ip <IP>
+          Verifier IP for non-interactive mode
+
+      --verifier-port <PORT>
+          Verifier port for non-interactive mode
+
+      --registrar-ip <IP>
+          Registrar IP for non-interactive mode
+
+      --registrar-port <PORT>
+          Registrar port for non-interactive mode
+
+      --test-connectivity
+          Test connectivity after configuration
+
+  -h, --help
+          Print help (see a summary with '-h')
+

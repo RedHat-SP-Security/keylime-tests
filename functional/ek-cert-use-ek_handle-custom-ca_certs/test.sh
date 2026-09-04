@@ -68,7 +68,7 @@ rlJournalStart
         # create empty CA, which fail the checking of EK cert
         rlRun "touch $CERTDIR/swtpm-localca-rootca-cert.pem $CERTDIR/issuercert.pem $CERTDIR/bundle.pem"
         # expected to fail
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c update" 1
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json" 1
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent and verify genuine of TPM via EK cert"
@@ -79,10 +79,10 @@ rlJournalStart
         rlRun "cp $CACERTDIR/issuercert.pem $CERTDIR"
         rlRun "cat $CACERTDIR/issuercert.pem $CACERTDIR/swtpm-localca-rootca-cert.pem > bundle.pem"
         rlRun "cp bundle.pem $CERTDIR"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c update"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

@@ -176,6 +176,15 @@ replacing OPTION = .* with OPTION = VALUE.
 
     limeUpdateConf [-d CONF_DIR] SECTION OPTION VALUE
 
+When SECTION is 'keylimectl', an extra TOML_SECTION argument is required
+and writes to keylimectl.conf. This is a no-op when keylimectl is not
+installed. Values must be TOML-formatted by the caller (quoted strings,
+arrays), same as for the agent section.
+
+    limeUpdateConf keylimectl tls client_cert '"/path/to/cert.pem"'
+    limeUpdateConf keylimectl tls client_key '"/path/to/key.pem"'
+    limeUpdateConf keylimectl tls trusted_ca '["/path/to/ca.pem"]'
+
 =over
 
 =item
@@ -202,10 +211,39 @@ function limeUpdateConf() {
   local KEY=$2
   local VALUE=$3
   local SED_OPTIONS=$4
+
+  # keylimectl uses a separate TOML config file
+  # syntax: limeUpdateConf keylimectl TOML_SECTION OPTION VALUE
+  if [ "$SECTION" == "keylimectl" ]; then
+      type keylimectl &>/dev/null || return 0
+      local TOML_SECTION=$KEY
+      KEY=$VALUE
+      VALUE=$SED_OPTIONS
+      SED_OPTIONS=""
+      local CONF="${CONF_DIR}/keylimectl.conf"
+      if [ -f "$CONF" ] && grep -q "^\[${TOML_SECTION}\]" "$CONF"; then
+          if sed -n "/^\[${TOML_SECTION}\]/,/^\[/ p" "$CONF" | grep -E -q "^${KEY} *="; then
+              # key exists in the section, replace its value
+              sed -i "/^\[${TOML_SECTION}\]/,/^\[/ s|^${KEY} *=.*|${KEY} = ${VALUE}|" "$CONF"
+          else
+              # section exists but key is missing, add it
+              sed -i "s|^\[${TOML_SECTION}\]|\[${TOML_SECTION}\]\n${KEY} = ${VALUE}|" "$CONF"
+          fi
+      else
+          # file or section does not exist, append
+          echo -e "\n[${TOML_SECTION}]\n${KEY} = ${VALUE}" >> "$CONF"
+      fi
+      echo -e "${CONF}:\n[${TOML_SECTION}]"
+      sed -n "/^\[${TOML_SECTION}\]/,/^\[/ p" "$CONF" | grep -E "^${KEY} *="
+      return
+  fi
+
   local FILES
   local MODIFIED
 
-  FILES="$( find ${CONF_DIR} -name '*.conf' )"
+  # Exclude keylimectl config files — they use TOML format and are handled
+  # by the "keylimectl" prefix path above.
+  FILES="$( find ${CONF_DIR} -name '*.conf' ! -name 'keylimectl.conf' ! -path '*/keylimectl.conf.d/*' )"
   for FILE in ${FILES}; do
       MODIFIED=false
       if [ -f ${FILE} ]; then
@@ -376,6 +414,7 @@ limeBackupConfig() {
 
     rlFileBackup --clean --namespace limeConf --missing-ok \
         /etc/keylime/agent.conf \
+        /etc/keylime/keylimectl.conf \
         /etc/keylime \
         /etc/ima/ima-policy \
         /etc/systemd/system/keylime_agent.service.d \
@@ -863,6 +902,419 @@ limeKeylimeTenant() {
     else
         keylime_tenant $TENANT_CMD
     fi
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeCtl
+
+Unified keylime management wrapper with a keylimectl-shaped interface.
+Translates subcommand-style calls to keylime_tenant flags by default,
+or passes them through to keylimectl when limeCtlCommand is set to
+'keylimectl'.
+
+    limeCtl [GLOBAL OPTIONS] agent         add|remove|update|status|list|reactivate [ARGS]
+    limeCtl [GLOBAL OPTIONS] policy        push|show|update|delete|list [ARGS]
+    limeCtl [GLOBAL OPTIONS] measured-boot push|show|update|delete|list [ARGS]
+
+Global options (parsed before the subcommand):
+
+    --verifier-ip IP       verifier address
+    --verifier-port PORT   verifier port
+    --registrar-ip IP      registrar address
+    --registrar-port PORT  registrar port
+
+=over
+
+=item agent add UUID [OPTIONS]
+
+    --ip IP                                    agent/target address
+    --runtime-policy FILE                      runtime policy JSON file
+    --runtime-policy-name NAME                 named policy already on verifier
+    --tpm-policy JSON                          TPM PCR policy JSON string
+    --mb-refstate FILE                         measured boot refstate file (legacy)
+    --mb-policy FILE                           inline measured boot policy file
+    --mb-policy-name NAME                      named managed measured boot policy
+    --file FILE                                IMA-protected file (repeatable)
+    --payload DIR                              payload directory
+    --cert FILE|default                        enrollment certificate
+    --ima-key KEY                              IMA sign verification key (repeatable)
+    --allowlist FILE                           legacy allowlist file
+    --exclude FILE                             legacy excludelist file
+    --signature-verification-key-sig FILE      GPG/DSSE sig for IMA key
+    --signature-verification-key-sig-key FILE  key to verify the sig
+    --signature-verification-key-url URL       URL for IMA sign key
+    --signature-verification-key-sig-url URL   URL for IMA key sig
+    --signature-verification-key-sig-url-key FILE  key to verify URL sig
+    --push-model                               use push attestation model
+    --verify                                   wait for attestation before returning
+
+=item agent remove UUID
+
+Removes agent from the verifier only. Use 'keylime_tenant -c regdelete'
+to also clean the registrar entry.
+
+=item agent update UUID [same options as add, minus --verify]
+
+=item agent status UUID
+
+=item agent list
+
+=item agent reactivate UUID
+
+=item policy push NAME --file FILE [--sig-key KEY] [--url URL] [--checksum SHA]
+
+=item policy show NAME
+
+=item policy update NAME --file FILE
+
+=item policy delete NAME
+
+=item policy list
+
+=item measured-boot push NAME --file FILE
+
+=item measured-boot show NAME
+
+=item measured-boot update NAME --file FILE
+
+=item measured-boot delete NAME
+
+=item measured-boot list
+
+=back
+
+=cut
+
+limeCtl() {
+    local _subcmd="" _vip="" _rip="" _vport="" _rport=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --verifier-ip)    _vip="$2";   shift 2 ;;
+            --registrar-ip)   _rip="$2";   shift 2 ;;
+            --verifier-port)  _vport="$2"; shift 2 ;;
+            --registrar-port) _rport="$2"; shift 2 ;;
+            -*)
+                echo "limeCtl: unknown option '$1'" >&2
+                return 1
+                ;;
+            *) _subcmd="$1"; shift; break ;;
+        esac
+    done
+
+    local cmd="${limeCtlCommand:-keylime_tenant}"
+
+    # __limeCtlKtGlobal carries translated global opts for keylime_tenant handlers
+    __limeCtlKtGlobal=()
+    [ -n "$_vip" ]   && __limeCtlKtGlobal+=(-v "$_vip")
+    [ -n "$_rip" ]   && __limeCtlKtGlobal+=(-r "$_rip")
+
+    case "$cmd" in
+        keylimectl)
+            case "$_subcmd" in
+                *)
+                    local _g=()
+                    [ -n "$_vip" ]   && _g+=(--verifier-ip "$_vip")
+                    [ -n "$_rip" ]   && _g+=(--registrar-ip "$_rip")
+                    [ -n "$_vport" ] && _g+=(--verifier-port "$_vport")
+                    [ -n "$_rport" ] && _g+=(--registrar-port "$_rport")
+                    local _op="$1"
+                    local _a=()
+                    while [ $# -gt 0 ]; do
+                        case "$1" in
+                            --push-model|--pull-model)
+                                if [ "$_subcmd" = "agent" ] && [ "$_op" = "update" ]; then
+                                    echo "limeCtl: dropping '$1' (not supported by keylimectl agent update)" >&2
+                                    shift; continue
+                                fi
+                                _a+=("$1"); shift ;;
+                            *)  _a+=("$1"); shift ;;
+                        esac
+                    done
+                    echo "limeCtl: executing: keylimectl ${_g[*]} $_subcmd ${_a[*]}" >&2
+                    keylimectl "${_g[@]}" "$_subcmd" "${_a[@]}"
+                    __limeCtlKtGlobal=()
+                    return
+                    ;;
+            esac
+            ;;
+        keylime_tenant)
+            if [ -n "$_vport" ] || [ -n "$_rport" ]; then
+                echo "limeCtl: keylime_tenant backend does not support --verifier-port/--registrar-port" >&2
+                __limeCtlKtGlobal=()
+                return 1
+            fi
+            ;;
+        *)
+            echo "limeCtl: unsupported limeCtlCommand value '$cmd'" >&2
+            __limeCtlKtGlobal=()
+            return 1
+            ;;
+    esac
+
+    case "$_subcmd" in
+        agent)         __limeCtlAgent        "$@" ;;
+        policy)        __limeCtlPolicy       "$@" ;;
+        measured-boot) __limeCtlMeasuredBoot "$@" ;;
+        *)
+            echo "limeCtl: unknown subcommand '$_subcmd'" >&2
+            __limeCtlKtGlobal=()
+            return 1
+            ;;
+    esac
+    local _status=$?
+    __limeCtlKtGlobal=()
+    return "$_status"
+}
+
+true <<'=cut'
+=pod
+
+=head2 limePolicy
+
+Wrapper for policy generation and signing that dispatches to either
+C<keylime-policy> or C<keylimectl policy> depending on C<$limeCtlCommand>.
+
+Uses the C<keylimectl policy> syntax as the canonical interface.
+When C<$limeCtlCommand> is set to C<keylime_tenant> (default), translates
+to C<keylime-policy> syntax automatically.
+
+To avoid short-flag collisions between the two tools, callers should use
+long options (e.g. C<--eventlog-file> instead of C<-e> for measured-boot).
+
+    limePolicy generate runtime --allowlist FILE --excludelist FILE --output FILE
+    limePolicy generate measured-boot --eventlog-file FILE --output FILE
+    limePolicy sign FILE --keypath KEY --backend ecdsa --output FILE
+    limePolicy sign FILE --keypath KEY --backend x509 --cert-outfile CERT --output FILE
+
+=cut
+
+limePolicy() {
+    local cmd="${limeCtlCommand:-keylime_tenant}"
+    local action="$1"; shift
+
+    case "$cmd" in
+        keylimectl)
+            echo "limePolicy: executing: keylimectl policy $action $*" >&2
+            keylimectl policy "$action" "$@"
+            ;;
+        keylime_tenant)
+            case "$action" in
+                generate)
+                    # generate → create
+                    echo "limePolicy: executing: keylime-policy create $*" >&2
+                    keylime-policy create "$@"
+                    ;;
+                sign)
+                    # sign FILE [opts] → sign runtime --runtime-policy FILE [opts]
+                    local _policy_file=""
+                    local _args=()
+                    while [ $# -gt 0 ]; do
+                        case "$1" in
+                            -k|--keyfile|-p|--keypath|-b|--backend|-o|--output|-c|--cert-outfile)
+                                _args+=("$1" "$2"); shift 2 ;;
+                            -*)
+                                _args+=("$1"); shift ;;
+                            *)
+                                _policy_file="$1"; shift ;;
+                        esac
+                    done
+                    echo "limePolicy: executing: keylime-policy sign runtime --runtime-policy $_policy_file ${_args[*]}" >&2
+                    keylime-policy sign runtime --runtime-policy "$_policy_file" "${_args[@]}"
+                    ;;
+                *)
+                    echo "limePolicy: unknown action '$action'" >&2
+                    return 1
+                    ;;
+            esac
+            ;;
+        *)
+            echo "limePolicy: unsupported limeCtlCommand value '$cmd'" >&2
+            return 1
+            ;;
+    esac
+}
+
+__limeCtlAgent() {
+    local op="$1"
+    shift
+
+    case "$op" in
+        add|update)
+            local uuid="$1"; shift
+            local args=(-c "$op" -u "$uuid")
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --ip)                  args+=(-t "$2");                                        shift 2 ;;
+                    --port)                shift 2 ;;
+                    --runtime-policy)      args+=(--runtime-policy "$2");                          shift 2 ;;
+                    --runtime-policy-name) args+=(--runtime-policy-name "$2");                     shift 2 ;;
+                    --runtime-policy-sig-key) shift 2 ;;
+                    --tpm-policy)          args+=(--tpm_policy "$2");                              shift 2 ;;
+                    --mb-refstate)         args+=(--mb_refstate "$2");                             shift 2 ;;
+                    --mb-policy)           args+=(--mb-policy "$2");                               shift 2 ;;
+                    --mb-policy-name)      args+=(--mb-policy-name "$2");                          shift 2 ;;
+                    --file)                args+=(-f "$2");                                         shift 2 ;;
+                    --payload)             args+=(--include "$2");                                  shift 2 ;;
+                    --cert-dir)            args+=(--cert "$2");                                     shift 2 ;;
+                    --ima-key)             args+=(--sign_verification_key "$2");                    shift 2 ;;
+                    --allowlist)           args+=(--allowlist "$2");                                shift 2 ;;
+                    --exclude)             args+=(--exclude "$2");                                  shift 2 ;;
+                    --signature-verification-key-sig)         args+=(--signature-verification-key-sig "$2");         shift 2 ;;
+                    --signature-verification-key-sig-key)     args+=(--signature-verification-key-sig-key "$2");     shift 2 ;;
+                    --signature-verification-key-url)         args+=(--signature-verification-key-url "$2");         shift 2 ;;
+                    --signature-verification-key-sig-url)     args+=(--signature-verification-key-sig-url "$2");     shift 2 ;;
+                    --signature-verification-key-sig-url-key) args+=(--signature-verification-key-sig-url-key "$2"); shift 2 ;;
+                    --push-model)          args+=(--push-model);                                    shift   ;;
+                    --pull-model)          shift   ;;
+                    --verify)              args+=(--verify);                                        shift   ;;
+                    *)
+                        echo "limeCtl agent $op: unknown option '$1'" >&2
+                        return 1
+                        ;;
+                esac
+            done
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        remove)
+            local uuid="$1"; shift
+            local args=(-c delete -u "$uuid")
+            [ $# -gt 0 ] && { echo "limeCtl agent remove: unknown option '$1'" >&2; return 1; }
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        status)
+            local uuid="$1"; shift
+            local args=(-c status -u "$uuid")
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --verifier) shift ;;
+                    *)
+                        echo "limeCtl agent status: unknown option '$1'" >&2
+                        return 1
+                        ;;
+                esac
+            done
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        list)
+            local args=(-c cvlist)
+            [ $# -gt 0 ] && { echo "limeCtl agent list: unknown option '$1'" >&2; return 1; }
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        reactivate)
+            local uuid="$1"; shift
+            local args=(-c reactivate -u "$uuid")
+            [ $# -gt 0 ] && { echo "limeCtl agent reactivate: unknown option '$1'" >&2; return 1; }
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        *)
+            echo "limeCtl agent: unknown operation '$op'" >&2
+            return 1
+            ;;
+    esac
+}
+
+__limeCtlPolicy() {
+    local op="$1"
+    shift
+
+    case "$op" in
+        push)
+            local name="$1"; shift
+            local args=(-c addruntimepolicy --runtime-policy-name "$name")
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --file)     args+=(--runtime-policy "$2");              shift 2 ;;
+                    --sig-key)  args+=(--runtime-policy-sig-key "$2");      shift 2 ;;
+                    --url)      args+=(--runtime-policy-url "$2");          shift 2 ;;
+                    --checksum) args+=(--runtime-policy-checksum "$2");     shift 2 ;;
+                    *)
+                        echo "limeCtl policy push: unknown option '$1'" >&2
+                        return 1
+                        ;;
+                esac
+            done
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        show)
+            limeKeylimeTenant -c showruntimepolicy --runtime-policy-name "$1" "${__limeCtlKtGlobal[@]}"
+            ;;
+        update)
+            local name="$1"; shift
+            local args=(-c updateruntimepolicy --runtime-policy-name "$name")
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --file) args+=(--runtime-policy "$2"); shift 2 ;;
+                    *)
+                        echo "limeCtl policy update: unknown option '$1'" >&2
+                        return 1
+                        ;;
+                esac
+            done
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        delete)
+            limeKeylimeTenant -c deleteruntimepolicy --runtime-policy-name "$1" "${__limeCtlKtGlobal[@]}"
+            ;;
+        list)
+            limeKeylimeTenant -c listruntimepolicy "${__limeCtlKtGlobal[@]}"
+            ;;
+        *)
+            echo "limeCtl policy: unknown operation '$op'" >&2
+            return 1
+            ;;
+    esac
+}
+
+__limeCtlMeasuredBoot() {
+    local op="$1"
+    shift
+
+    case "$op" in
+        push)
+            local name="$1"; shift
+            local args=(-c addmbpolicy --mb-policy-name "$name")
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --file) args+=(--mb-policy "$2"); shift 2 ;;
+                    *)
+                        echo "limeCtl measured-boot push: unknown option '$1'" >&2
+                        return 1
+                        ;;
+                esac
+            done
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        show)
+            limeKeylimeTenant -c showmbpolicy --mb-policy-name "$1" "${__limeCtlKtGlobal[@]}"
+            ;;
+        update)
+            local name="$1"; shift
+            local args=(-c updatembpolicy --mb-policy-name "$name")
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    --file) args+=(--mb-policy "$2"); shift 2 ;;
+                    *)
+                        echo "limeCtl measured-boot update: unknown option '$1'" >&2
+                        return 1
+                        ;;
+                esac
+            done
+            limeKeylimeTenant "${args[@]}" "${__limeCtlKtGlobal[@]}"
+            ;;
+        delete)
+            limeKeylimeTenant -c deletembpolicy --mb-policy-name "$1" "${__limeCtlKtGlobal[@]}"
+            ;;
+        list)
+            limeKeylimeTenant -c listmbpolicy "${__limeCtlKtGlobal[@]}"
+            ;;
+        *)
+            echo "limeCtl measured-boot: unknown operation '$op'" >&2
+            return 1
+            ;;
+    esac
 }
 
 true <<'=cut'
@@ -1510,6 +1962,44 @@ limeWaitForTPMEmulator() {
 true <<'=cut'
 =pod
 
+=head2 limeAssertJsonField
+
+Check that a file containing JSON output has expected key/value pairs.
+The key is searched recursively at any depth. The value is matched as
+a grep -E pattern. Arrays and objects are stringified before matching.
+
+    limeAssertJsonField FILE KEY=VALUE [KEY=VALUE ...]
+
+Returns 0 when all pairs match, 1 otherwise.
+
+=cut
+
+limeAssertJsonField() {
+    local file="$1"
+    shift
+    local json
+    json=$(sed -n '/^{/,/^}/p' "$file")
+    local rc=0
+    for pair in "$@"; do
+        local key="${pair%%=*}"
+        local expected="${pair#*=}"
+        local value
+        value=$(echo "$json" | jq -r --arg k "$key" \
+            '.. | objects | .[$k]? | select(. != null) | tostring')
+        if echo "$value" | grep -qE "$expected"; then
+            echo "JSON field '$key' matches '$expected'" >&2
+        else
+            echo "FAIL: JSON field '$key' does not match '$expected' (got: $value)" >&2
+            rc=1
+        fi
+    done
+    return $rc
+}
+
+
+true <<'=cut'
+=pod
+
 =head2 limeWaitForAgentStatus
 
 Run 'keylime_tenant -c status' wrapper repeatedly up to TIMEOUT seconds
@@ -1554,8 +2044,8 @@ limeWaitForAgentStatus() {
 
     local START=$SECONDS
     for I in `seq $TIMEOUT`; do
-        limeTimeoutCommand $TIMEOUT "limeKeylimeTenant -c status -u $UUID" &> $OUTPUT
-        AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].${FIELD}")
+        limeTimeoutCommand $TIMEOUT "limeCtl agent status $UUID --verifier" &> $OUTPUT
+        AGTSTATE=$(sed -n '/^{/,/^}/p' "$OUTPUT" | jq -r 'first(.. | objects | .'"${FIELD}"'? | select(. != null))')
         if echo "$AGTSTATE" | grep -E -q "$VALUE"; then
             cat $OUTPUT
             rm $OUTPUT
@@ -1951,9 +2441,9 @@ limeCreateTestPolicy() {
     $LISTS_ONLY && return
 
     # create policy.json and create signed policies and keys
-    keylime-policy create runtime --allowlist allowlist.txt --excludelist excludelist.txt --output policy.json && \
-    keylime-policy sign runtime -r policy.json -p dsse-ecdsa-privkey.key -b ecdsa -o policy-dsse-ecdsa.json && \
-    keylime-policy sign runtime -r policy.json -p dsse-x509-privkey.key -b x509 -c dsse-x509-cert.pem -o policy-dsse-x509.json && \
+    limePolicy generate runtime --allowlist allowlist.txt --excludelist excludelist.txt --output policy.json && \
+    limePolicy sign policy.json --keypath dsse-ecdsa-privkey.key --backend ecdsa --output policy-dsse-ecdsa.json && \
+    limePolicy sign policy.json --keypath dsse-x509-privkey.key --backend x509 --cert-outfile dsse-x509-cert.pem --output policy-dsse-x509.json && \
     openssl ec -in dsse-ecdsa-privkey.key -pubout -out dsse-ecdsa-pubkey.pub && \
     openssl ec -in dsse-x509-privkey.key -pubout -out dsse-x509-pubkey.pub
 }

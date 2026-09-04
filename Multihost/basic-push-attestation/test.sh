@@ -235,11 +235,11 @@ if [ -n "${AGENT2}" ]; then
         rlRun "wget -O policy2.json 'http://${AGENT2_IP}:8000/policy.json'"
         rlRun "cat policy2.json"
         # activate
-        rlRun -s "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT2_IP} -u ${AGENT2_ID} --runtime-policy policy2.json -c add --push-model"
+        rlRun -s "limeCtl --verifier-ip ${VERIFIER_IP} agent add ${AGENT2_ID} --ip ${AGENT2_IP} --runtime-policy policy2.json --push-model"
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
 	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT2_ID}' 'PASS'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=${AGENT2_ID}"
     rlPhaseEnd
 fi
 
@@ -247,11 +247,11 @@ fi
         # activate AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat policy.json"
-        rlRun -s "keylime_tenant -v ${VERIFIER_IP} -t ${AGENT_IP} -u ${AGENT_ID} --runtime-policy policy.json --push-model -c add"
+        rlRun -s "limeCtl --verifier-ip ${VERIFIER_IP} agent add ${AGENT_ID} --ip ${AGENT_IP} --runtime-policy policy.json --push-model"
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
 	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT_ID}' 'PASS'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Agent attestation test: Fail keylime agent"

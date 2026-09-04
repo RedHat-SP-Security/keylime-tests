@@ -1,0 +1,471 @@
+KEYLIME_TENANT → limeCtl MIGRATION NOTES
+=========================================
+
+This document covers what to do and what to avoid when migrating tests
+from direct keylime_tenant calls to the limeCtl wrapper.
+
+
+1. TESTS THAT SHOULD USE limeKeylimeTenant, NOT limeCtl
+---------------------------------------------------------
+
+Tests with "tenant" in their directory name test the keylime_tenant CLI
+itself.  Replace keylime_tenant calls with limeKeylimeTenant in these
+tests but do NOT convert to limeCtl — the calls are intentionally
+keylime_tenant-specific and many cover commands that have no limeCtl
+or keylimectl equivalent (cvstatus, bulkinfo, allowlist management,
+API version negotiation, error-path calls without UUID):
+
+  functional/keylime_tenant-commands-on-localhost/
+  functional/keylime_tenant-ima-signature-sanity/
+  functional/tenant-runtime-policy-sanity/
+  functional/tenant_api_version_negotiation/
+
+
+2. THE limeCtl INTERFACE
+-------------------------
+
+limeCtl [GLOBAL OPTIONS] SUBCMD OPERATION [ARGS]
+
+Global options (appear before the subcommand):
+
+  --verifier-ip IP       verifier address  (keylime_tenant: -v)
+  --verifier-port PORT   verifier port     (keylimectl only; no kt equivalent)
+  --registrar-ip IP      registrar address (keylime_tenant: -r)
+  --registrar-port PORT  registrar port    (keylimectl only; no kt equivalent)
+
+These are translated automatically for whichever backend is active.
+
+
+3. KEYLIME_TENANT → limeCtl TRANSLATION TABLE
+----------------------------------------------
+
+AGENT COMMANDS
+
+  keylime_tenant -c add -t IP -u UUID [OPTS]
+  → limeCtl [GLOBAL] agent add UUID --ip IP [OPTS]
+
+  keylime_tenant -c update -u UUID [OPTS]
+  → limeCtl [GLOBAL] agent update UUID [OPTS]
+
+  keylime_tenant -c delete -u UUID
+  → limeCtl [GLOBAL] agent remove UUID
+
+  keylime_tenant -c status -u UUID
+  → limeCtl [GLOBAL] agent status UUID
+
+  keylime_tenant -c cvlist
+  → limeCtl [GLOBAL] agent list
+
+  keylime_tenant -c reactivate -u UUID
+  → limeCtl [GLOBAL] agent reactivate UUID
+
+REGISTRAR COMMANDS  (always use limeKeylimeTenant, see §5)
+
+  keylime_tenant -c regstatus -u UUID
+  → limeCtl [GLOBAL] registrar status UUID
+
+  keylime_tenant -c reglist
+  → limeCtl [GLOBAL] registrar list
+
+  keylime_tenant -c regdelete -u UUID
+  → limeCtl [GLOBAL] registrar remove UUID
+
+RUNTIME POLICY COMMANDS
+
+  keylime_tenant -c addruntimepolicy --runtime-policy-name N --runtime-policy F
+  → limeCtl policy push N --file F
+
+  keylime_tenant -c showruntimepolicy --runtime-policy-name N
+  → limeCtl policy show N
+
+  keylime_tenant -c updateruntimepolicy --runtime-policy-name N --runtime-policy F
+  → limeCtl policy update N --file F
+
+  keylime_tenant -c deleteruntimepolicy --runtime-policy-name N
+  → limeCtl policy delete N
+
+  keylime_tenant -c listruntimepolicy
+  → limeCtl policy list
+
+MEASURED BOOT POLICY COMMANDS
+
+  keylime_tenant -c addmbpolicy --mb-policy-name N --mb-policy F
+  → limeCtl measured-boot push N --file F
+
+  keylime_tenant -c showmbpolicy --mb-policy-name N
+  → limeCtl measured-boot show N
+
+  keylime_tenant -c updatembpolicy --mb-policy-name N --mb-policy F
+  → limeCtl measured-boot update N --file F
+
+  keylime_tenant -c deletembpolicy --mb-policy-name N
+  → limeCtl measured-boot delete N
+
+  keylime_tenant -c listmbpolicy
+  → limeCtl measured-boot list
+
+
+4. AGENT ADD/UPDATE OPTION MAPPING
+------------------------------------
+
+limeCtl option names follow keylimectl conventions. The keylime_tenant
+backend translates them automatically. Options marked "kt-only" have
+no keylimectl equivalent and will error when limeCtlCommand=keylimectl.
+
+  limeCtl option                                keylimectl flag          keylime_tenant flag
+  ──────────────────────────────────────────────────────────────────────────────────────────────
+  GLOBAL OPTIONS
+  --verifier-ip IP                              --verifier-ip IP         -v IP
+  --registrar-ip IP                             --registrar-ip IP        -r IP
+  --verifier-port PORT                          --verifier-port PORT     (not supported)
+  --registrar-port PORT                         --registrar-port PORT    (not supported)
+
+  AGENT ADD/UPDATE OPTIONS (keylimectl-compatible)
+  --ip IP                                       --ip IP                  -t IP
+  --runtime-policy FILE                         --runtime-policy FILE    --runtime-policy FILE
+  --runtime-policy-name NAME                    --runtime-policy-name N  --runtime-policy-name N
+  --runtime-policy-sig-key FILE                 --runtime-policy-sig-key (not supported)
+  --tpm-policy JSON                             --tpm-policy JSON        --tpm_policy JSON
+  --mb-policy FILE                              --mb-policy FILE         --mb-policy FILE
+  --payload DIR                                 --payload DIR            --include DIR
+  --cert-dir DIR                                --cert-dir DIR           --cert DIR
+  --push-model                                  --push-model             --push-model
+  --pull-model                                  --pull-model             (not supported)
+  --verify                                      --verify                 --verify
+  --port PORT                                   --port PORT              (not supported)
+
+  AGENT ADD/UPDATE OPTIONS (kt-only, no keylimectl equivalent)
+  --mb-refstate FILE                            (not supported)          --mb_refstate FILE
+  --mb-policy-name NAME                         (not supported)          --mb-policy-name NAME
+  --file FILE                                   (not supported)          -f FILE / --file FILE
+    NOTE: most tests used --file /etc/hostname as a dummy payload.
+    These have been removed since keylimectl has no --file equivalent.
+    The option is still supported by limeCtl for the keylime_tenant
+    backend but will error with keylimectl.
+  --ima-key KEY                                 (not supported)          --sign_verification_key KEY
+  --allowlist FILE                              (not supported)          --allowlist FILE  (legacy)
+  --exclude FILE                                (not supported)          --exclude FILE  (legacy)
+  --signature-verification-key-sig FILE         (not supported)          --signature-verification-key-sig FILE
+  --signature-verification-key-sig-key FILE     (not supported)          --signature-verification-key-sig-key FILE
+  --signature-verification-key-url URL          (not supported)          --signature-verification-key-url URL
+  --signature-verification-key-sig-url URL      (not supported)          --signature-verification-key-sig-url URL
+  --signature-verification-key-sig-url-key FILE (not supported)          --signature-verification-key-sig-url-key FILE
+
+
+5. COMMANDS WITH NO keylimectl EQUIVALENT
+------------------------------------------
+
+The following keylime_tenant commands cannot be expressed via keylimectl.
+When limeCtlCommand=keylimectl, limeCtl falls back to limeKeylimeTenant
+automatically for registrar subcommands.  For the others, call
+limeKeylimeTenant directly — do not route them through limeCtl.
+
+  keylime_tenant -c cvstatus          → no keylimectl equivalent
+  keylime_tenant -c bulkinfo          → no keylimectl equivalent
+  keylime_tenant -c addallowlist      → no keylimectl equivalent (legacy)
+  keylime_tenant -c showallowlist     → no keylimectl equivalent (legacy)
+  keylime_tenant -c deleteallowlist   → no keylimectl equivalent (legacy)
+  keylime_tenant -c regstatus/reglist/regdelete
+                                      → keylimectl has no registrar management;
+                                        limeCtl registrar always uses limeKeylimeTenant
+
+Note: addruntimepolicy with --tpm_policy (without a policy file) is only
+used in tenant-runtime-policy-sanity, which uses limeKeylimeTenant directly.
+
+
+6. CALLS WITHOUT A UUID (error-path tests)
+-------------------------------------------
+
+Several tests in keylime_tenant-commands-on-localhost call commands
+without -u to test missing-argument error paths:
+
+  keylime_tenant -c reactivate   (no UUID)
+  keylime_tenant -c regdelete    (no UUID)
+  keylime_tenant -c regstatus    (no UUID)
+  keylime_tenant -c delete       (no UUID)
+
+limeCtl always requires a UUID as a positional argument.  Replace these
+with limeKeylimeTenant calls keeping the original flags.
+
+
+7. USING THE keylimectl BACKEND
+---------------------------------
+
+Set limeCtlCommand before calling limeCtl:
+
+  export limeCtlCommand=keylimectl
+
+Or unset / set to keylime_tenant to use the default:
+
+  unset limeCtlCommand          # default: keylime_tenant
+  export limeCtlCommand=keylime_tenant
+
+The limeWaitForAgentStatus and limeWaitForAgentRegistration helpers
+call limeCtl internally and will automatically use whichever backend
+is active.
+
+
+8. TESTS USING 'spawn keylime_tenant' (expect)
+------------------------------------------------
+
+Several tests across functional, compatibility, and container suites use
+expect(1) to interact with keylime_tenant's interactive output.  The
+'spawn' call cannot simply be replaced with limeCtl since spawn is an
+expect command.  These tests need special handling — either wrap the
+spawn call in a helper that selects between keylime_tenant and keylimectl
+based on limeCtlCommand, or restructure to avoid the interactive flow.
+
+Tests affected:
+
+  compatibility/api_version_compatibility/
+  compatibility/basic-attestation-on-localhost-api-version-bump/
+  container/functional/keylime_ipv6_multihost/
+  functional/add-agent-with-malformed-ek-cert/
+  functional/basic-attestation-on-localhost/
+  functional/basic-attestation-with-custom-certificates/
+  functional/basic-attestation-with-unpriviledged-agent/
+  functional/basic-attestation-without-mtls/
+  functional/keylime-non-default-ports/
+  functional/webhook-certificate-on-localhost/
+  Multihost/basic-attestation/
+
+
+9. TESTS ELIGIBLE FOR MIGRATION TO limeCtl
+--------------------------------------------
+
+All files listed here call keylime_tenant directly (without spawn) and
+should be converted to limeCtl:
+
+  compatibility/basic-attestation-on-localhost-with-allowlist-excludelist/
+  container/functional/keylime_agent_container-basic-attestation/
+  container/functional/keylime_verifier_registrar_container-basic-attestation/
+  functional/agent-registration-with-non-default-tpm-algorithms/
+  functional/agent-resilience-and-reattestation/
+  functional/attestation-mode-mismatch/
+  functional/basic-attestation-with-concatenated-certificates/
+  functional/basic-attestation-with-ima-signatures/
+  functional/db-mariadb-sanity-on-localhost/
+  functional/db-mysql-sanity-on-localhost/
+  functional/db-postgresql-sanity-on-localhost/
+  functional/durable-attestion-sanity-on-localhost/
+  functional/ek-cert-use-ek_check_script/
+  functional/ek-cert-use-ek_handle-custom-ca_certs/
+  functional/install-rpm-with-ima-signature/
+  functional/measured-boot-policy-sanity/
+  functional/measured-boot-swtpm-sanity/
+  functional/push-attestation-on-localhost/
+  functional/push-authentication-basic/
+  functional/push-authentication-cross-agent-attestation/
+  functional/push-authentication-persistence/
+  functional/push-authentication-protocol/
+  functional/push-authentication-token-lifecycle/
+  functional/push-model-attestation-with-postgresql-db/
+  functional/tpm-issuer-cert-using-ecc/
+  functional/tpm_policy-sanity-on-localhost/
+  functional/use-multiple-ima-sign-verification-keys/
+  functional/verifier_registrar_unreachable/
+  Multihost/basic-push-attestation/
+  Multihost/upgrade/basic-attestation/
+  regression/CVE-2023-3674/
+  regression/CVE-2025-13609/
+  regression/cannot-use-mTLS-cert-on-server-admin-api-endpoint/
+  regression/cve-2023-38200/
+  regression/cve-2023-38201/
+  regression/db-connection-leak-reproducer/
+  regression/issue-1380-agent-removed-and-re-added/
+  sanity/manpages/
+  sanity/opened-conf-files/
+  setup/install_upstream_keylime/
+  update/basic-attestation-on-localhost/
+
+
+10. MIGRATION NOTES FOR SPECIFIC TESTS
+----------------------------------------
+
+basic-attestation-on-localhost-with-allowlist-excludelist:
+  Uses --allowlist and --exclude legacy flags. limeCtl passes them
+  through for the keylime_tenant backend. No keylimectl equivalent —
+  when the keylimectl backend is active this test will likely need to
+  be skipped or replaced with a runtime policy.
+
+measured-boot-policy-sanity:
+  Uses --mb_refstate (old flag) → --mb-refstate in limeCtl.
+
+measured-boot-swtpm-sanity:
+  Uses both --mb-policy FILE (inline) and --mb-policy-name NAME at
+  agent add time. Both are mapped in limeCtl agent add/update.
+
+push-authentication-cross-agent-attestation/custom-agent/setup_test_agent.sh:
+  Uses keylime_tenant directly as a standalone script (does not source
+  lib.sh). Needs special handling — either source lib.sh or replace
+  with a direct limeKeylimeTenant-equivalent call.
+
+basic-attestation-without-mtls:
+  Calls regdelete with -r 127.0.0.1 as a positional flag. Registrar
+  management is not part of limeCtl (see §11), so this call stays on
+  keylime_tenant: keylime_tenant -r 127.0.0.1 -t 127.0.0.1 -u UUID -c regdelete
+
+KNOWN keylimectl BUGS:
+  1. keylimectl agent add fails with EcDsa TPM signing algorithm:
+       "Unsupported TPM signature algorithm: EcDsa. Only RSA-SSA and
+       RSA-PSS are currently supported."
+     This affects systems where the TPM uses ECC signing keys (e.g.
+     ecschnorr/ecdsa). keylime_tenant handles this correctly.
+     Affected tests: any agent add/update on a system with ECC TPM keys.
+
+  3. keylimectl does not validate PCR15 conflict with measured boot.
+     keylime_tenant rejects agent add when tpm_policy contains PCR 15
+     and measured boot is also configured, printing:
+       ERROR - WARNING: PCR 15 is specified in "tpm_policy", but will
+       in fact be used by measured boot. Please remove it from policy
+     keylimectl performs no such client-side validation and accepts the
+     call successfully. This affects measured-boot-policy-sanity test
+     "Try adding agent with PRC15 configured in tpm_policy" which
+     expects exit code 1 and the error message in the output.
+
+  4. keylimectl agent update does not support --push-model/--pull-model.
+     The push/pull model is set at agent add time only. keylime_tenant
+     accepted these on update but keylimectl does not. limeCtl silently
+     drops --push-model and --pull-model for keylimectl agent update.
+
+  5. keylimectl agent add has no --ima-key (--sign_verification_key).
+     keylime_tenant accepts --sign_verification_key at agent add time
+     to specify IMA signature verification keys separately from the
+     policy. keylimectl has no equivalent agent add option — instead,
+     IMA verification keys must be embedded into the runtime policy at
+     generation time via:
+       keylimectl policy generate runtime \
+         --add-ima-signature-verification-key KEY_FILE
+     limeCtl currently passes --ima-key through to keylimectl verbatim,
+     which fails with "unexpected argument '--ima-key' found".
+     Affected test: functional/basic-attestation-with-ima-signatures
+
+  6. keylimectl agent status returns numeric operational_state (e.g. 3)
+     instead of the string name (e.g. "Get Quote") that keylime_tenant
+     returns. This causes limeWaitForAgentStatus to fail because it
+     greps for the string value. Mapping: 0=Registered, 1=Start,
+     2=Saved, 3=Get Quote, 4=Provide V, 5=Failed, 6=Post Failed,
+     7=Invalid Quote, 8=Tenant Failed, 9=Terminated, 10=Measured Boot.
+
+OPTION RENAMES (keylimectl alignment):
+  The following limeCtl options were renamed to match keylimectl naming.
+  Tests calling limeCtl must use the new names; the keylime_tenant
+  backend translates internally.
+
+    --agent-ip  →  --ip       (keylimectl uses --ip; kt uses -t)
+    --cert      →  --cert-dir (keylimectl uses --cert-dir; kt uses --cert)
+
+
+11. TEST MIGRATION STATUS
+--------------------------
+
+The migration described above has been carried out. The scope was
+narrowed to only migrate keylime_tenant calls that have a keylimectl
+equivalent; everything else stays on keylime_tenant / limeKeylimeTenant.
+
+REGISTRAR SUBCOMMAND DROPPED
+  keylimectl has no registrar management, so the 'limeCtl registrar'
+  subcommand (status|list|remove) and its __limeCtlRegistrar handler
+  were removed from Library/test-helpers/lib.sh. All registrar
+  operations (reglist/regstatus/regdelete) remain direct keylime_tenant
+  calls. limeWaitForAgentRegistration also uses keylime_tenant -c
+  regstatus internally.
+
+  limeCtl now exposes only: agent, policy, measured-boot.
+
+CURRENT NUMBERS (test.sh files, excluding the test-helpers library)
+  Total tests in the repo ............................... 93
+  Tests calling limeCtl ................................. 35
+  Tests with no functional keylime_tenant call ......... 30
+  Tests still making real keylime_tenant calls ......... 26
+
+TESTS FULLY ON limeCtl (agent/policy/measured-boot migrated, no
+keylime_tenant calls). Note: measured-boot-policy-sanity,
+measured-boot-swtpm-sanity, attestation-mode-mismatch,
+agent-resilience-and-reattestation and
+cannot-use-mTLS-cert-on-server-admin-api-endpoint use limeCtl for
+agent/policy/measured-boot but keep keylime_tenant for registrar ops
+(so they are counted under "still using keylime_tenant" below):
+
+  container/functional/keylime_agent_container-basic-attestation
+  container/functional/keylime_verifier_registrar_container-basic-attestation
+  functional/agent-registration-with-non-default-tpm-algorithms
+  functional/basic-attestation-with-concatenated-certificates
+  functional/basic-attestation-with-ima-signatures
+  functional/db-mariadb-sanity-on-localhost
+  functional/db-mysql-sanity-on-localhost
+  functional/db-postgresql-sanity-on-localhost
+  functional/durable-attestion-sanity-on-localhost
+  functional/ek-cert-use-ek_check_script
+  functional/ek-cert-use-ek_handle-custom-ca_certs
+  functional/install-rpm-with-ima-signature
+  functional/push-attestation-on-localhost
+  functional/push-authentication-basic
+  functional/push-authentication-cross-agent-attestation
+  functional/push-authentication-persistence
+  functional/push-authentication-protocol
+  functional/push-authentication-token-lifecycle
+  functional/push-model-attestation-with-postgresql-db
+  functional/tpm-issuer-cert-using-ecc
+  functional/tpm_policy-sanity-on-localhost
+  functional/use-multiple-ima-sign-verification-keys
+  functional/verifier_registrar_unreachable
+  regression/CVE-2023-3674
+  regression/cve-2023-38200   (uses 'timeout bash -c "limeCtl ..."' with
+                               exported functions; see below)
+  regression/issue-1380-agent-removed-and-re-added
+  sanity/opened-conf-files
+  update/basic-attestation-on-localhost
+  Multihost/basic-push-attestation
+  Multihost/upgrade/basic-attestation
+
+TESTS STILL USING keylime_tenant, grouped by reason:
+
+  (a) spawn/expect-based — cannot be replaced without restructuring:
+        compatibility/api_version_compatibility
+        compatibility/basic-attestation-on-localhost-api-version-bump
+        container/functional/keylime_ipv6_multihost
+        functional/add-agent-with-malformed-ek-cert
+        functional/basic-attestation-on-localhost
+        functional/basic-attestation-with-custom-certificates
+        functional/basic-attestation-without-mtls
+        functional/basic-attestation-with-unpriviledged-agent
+        functional/keylime-non-default-ports
+        functional/webhook-certificate-on-localhost
+        Multihost/basic-attestation
+
+  (b) tenant CLI tests — exercise keylime_tenant itself (use
+      limeKeylimeTenant, not limeCtl):
+        functional/keylime_tenant-commands-on-localhost
+        functional/keylime_tenant-ima-signature-sanity
+        functional/tenant_api_version_negotiation
+        functional/tenant-runtime-policy-sanity
+
+  (c) registrar-only remnant — agent/policy/measured-boot migrated to
+      limeCtl, only reglist/regstatus/regdelete stay on keylime_tenant:
+        functional/agent-resilience-and-reattestation
+        functional/attestation-mode-mismatch
+        functional/measured-boot-policy-sanity
+        functional/measured-boot-swtpm-sanity
+        regression/cannot-use-mTLS-cert-on-server-admin-api-endpoint
+        regression/cve-2023-38201
+        regression/CVE-2025-13609
+
+  (d) --allowlist/--exclude — no keylimectl equivalent:
+        compatibility/basic-attestation-on-localhost-with-allowlist-excludelist
+
+  (e) intentionally skipped:
+        regression/db-connection-leak-reproducer
+
+  (f) not attestation calls (man page / --help):
+        sanity/manpages
+        setup/install_upstream_keylime
+
+SPECIAL CASE — timeout + shell function
+  limeCtl is a bash function, so 'timeout limeCtl ...' does not work
+  (timeout exec's a binary). Where a timeout wrapper is needed, export
+  the functions first and run through bash -c, e.g. in cve-2023-38200:
+
+      export -f limeCtl limeKeylimeTenant __limeCtlAgent \
+                __limeCtlPolicy __limeCtlMeasuredBoot
+      timeout 30 bash -c "limeCtl ... agent add ..."

@@ -91,14 +91,14 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agent using the named allowlist"
         rlRun "keylime_tenant -t 127.0.0.1 -u $AGENT_ID --runtime-policy-name list2 -f policy.json -c add"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "Update keylime agent while adding new named allowlist"
         rlRun "keylime_tenant -t 127.0.0.1 -u $AGENT_ID --runtime-policy-name list8 --runtime-policy policy.json -f policy.json -c update"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlRun -s "keylime_tenant -c showruntimepolicy --runtime-policy-name list8"
