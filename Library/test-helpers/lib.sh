@@ -241,7 +241,9 @@ function limeUpdateConf() {
   local FILES
   local MODIFIED
 
-  FILES="$( find ${CONF_DIR} -name '*.conf' )"
+  # Exclude keylimectl config files — they use TOML format and are handled
+  # by the "keylimectl" prefix path above.
+  FILES="$( find ${CONF_DIR} -name '*.conf' ! -name 'keylimectl.conf' ! -path '*/keylimectl.conf.d/*' )"
   for FILE in ${FILES}; do
       MODIFIED=false
       if [ -f ${FILE} ]; then
