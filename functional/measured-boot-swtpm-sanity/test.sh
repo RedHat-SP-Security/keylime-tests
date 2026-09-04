@@ -94,8 +94,8 @@ rlJournalStart
 
     MB_POLICIES=()
     rlPhaseStartTest "Create measured boot policy"
-        # Use keylime-policy to create the measured boot policy
-        rlRun "keylime-policy create measured-boot -e /var/tmp/binary_bios_measurements -o mb_refstate3.txt"
+        # Use keylime-policy / keylimectl to create the measured boot policy
+        rlRun "limePolicy generate measured-boot --eventlog-file /var/tmp/binary_bios_measurements --output mb_refstate3.txt"
         MB_POLICIES+=("mb_refstate3.txt")
     rlPhaseEnd
 
