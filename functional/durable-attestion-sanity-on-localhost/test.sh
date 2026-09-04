@@ -60,8 +60,8 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
 
         # create refstat from fake binary_bios_measurements
-        if command -v keylime-policy; then
-            rlRun "keylime-policy create measured-boot -e /var/tmp/binary_bios_measurements -o mb_refstate.txt"
+        if command -v keylime-policy || command -v keylimectl; then
+            rlRun "limePolicy generate measured-boot --eventlog-file /var/tmp/binary_bios_measurements --output mb_refstate.txt"
         else
             rlRun "python3 /usr/share/keylime/scripts/create_mb_refstate /var/tmp/binary_bios_measurements mb_refstate.txt"
         fi
