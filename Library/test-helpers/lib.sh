@@ -1066,6 +1066,74 @@ limeCtl() {
     return "$_status"
 }
 
+true <<'=cut'
+=pod
+
+=head2 limePolicy
+
+Wrapper for policy generation and signing that dispatches to either
+C<keylime-policy> or C<keylimectl policy> depending on C<$limeCtlCommand>.
+
+Uses the C<keylimectl policy> syntax as the canonical interface.
+When C<$limeCtlCommand> is set to C<keylime_tenant> (default), translates
+to C<keylime-policy> syntax automatically.
+
+To avoid short-flag collisions between the two tools, callers should use
+long options (e.g. C<--eventlog-file> instead of C<-e> for measured-boot).
+
+    limePolicy generate runtime --allowlist FILE --excludelist FILE --output FILE
+    limePolicy generate measured-boot --eventlog-file FILE --output FILE
+    limePolicy sign FILE --keypath KEY --backend ecdsa --output FILE
+    limePolicy sign FILE --keypath KEY --backend x509 --cert-outfile CERT --output FILE
+
+=cut
+
+limePolicy() {
+    local cmd="${limeCtlCommand:-keylime_tenant}"
+    local action="$1"; shift
+
+    case "$cmd" in
+        keylimectl)
+            echo "limePolicy: executing: keylimectl policy $action $*" >&2
+            keylimectl policy "$action" "$@"
+            ;;
+        keylime_tenant)
+            case "$action" in
+                generate)
+                    # generate → create
+                    echo "limePolicy: executing: keylime-policy create $*" >&2
+                    keylime-policy create "$@"
+                    ;;
+                sign)
+                    # sign FILE [opts] → sign runtime --runtime-policy FILE [opts]
+                    local _policy_file=""
+                    local _args=()
+                    while [ $# -gt 0 ]; do
+                        case "$1" in
+                            -k|--keyfile|-p|--keypath|-b|--backend|-o|--output|-c|--cert-outfile)
+                                _args+=("$1" "$2"); shift 2 ;;
+                            -*)
+                                _args+=("$1"); shift ;;
+                            *)
+                                _policy_file="$1"; shift ;;
+                        esac
+                    done
+                    echo "limePolicy: executing: keylime-policy sign runtime --runtime-policy $_policy_file ${_args[*]}" >&2
+                    keylime-policy sign runtime --runtime-policy "$_policy_file" "${_args[@]}"
+                    ;;
+                *)
+                    echo "limePolicy: unknown action '$action'" >&2
+                    return 1
+                    ;;
+            esac
+            ;;
+        *)
+            echo "limePolicy: unsupported limeCtlCommand value '$cmd'" >&2
+            return 1
+            ;;
+    esac
+}
+
 __limeCtlAgent() {
     local op="$1"
     shift
@@ -2370,9 +2438,9 @@ limeCreateTestPolicy() {
     $LISTS_ONLY && return
 
     # create policy.json and create signed policies and keys
-    keylime-policy create runtime --allowlist allowlist.txt --excludelist excludelist.txt --output policy.json && \
-    keylime-policy sign runtime -r policy.json -p dsse-ecdsa-privkey.key -b ecdsa -o policy-dsse-ecdsa.json && \
-    keylime-policy sign runtime -r policy.json -p dsse-x509-privkey.key -b x509 -c dsse-x509-cert.pem -o policy-dsse-x509.json && \
+    limePolicy generate runtime --allowlist allowlist.txt --excludelist excludelist.txt --output policy.json && \
+    limePolicy sign policy.json --keypath dsse-ecdsa-privkey.key --backend ecdsa --output policy-dsse-ecdsa.json && \
+    limePolicy sign policy.json --keypath dsse-x509-privkey.key --backend x509 --cert-outfile dsse-x509-cert.pem --output policy-dsse-x509.json && \
     openssl ec -in dsse-ecdsa-privkey.key -pubout -out dsse-ecdsa-pubkey.pub && \
     openssl ec -in dsse-x509-privkey.key -pubout -out dsse-x509-pubkey.pub
 }
