@@ -412,6 +412,7 @@ limeBackupConfig() {
 
     rlFileBackup --clean --namespace limeConf --missing-ok \
         /etc/keylime/agent.conf \
+        /etc/keylime/keylimectl.conf \
         /etc/keylime \
         /etc/ima/ima-policy \
         /etc/systemd/system/keylime_agent.service.d \
