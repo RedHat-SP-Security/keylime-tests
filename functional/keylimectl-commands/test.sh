@@ -395,19 +395,24 @@ rlJournalStart
         rlRun "echo foobar > bad-validate-input"
         rlRun "keylimectl policy validate bad-validate-input" 1 "Invalid policy"
 
-        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/keylime-ecdsa-key.pem" 0 "Signed policy with correct key"
+        # Extract public keys for signature verification (validate/verify-signature
+        # require an X.509 certificate or ECDSA public key, not a private key)
+        rlRun "openssl pkey -in sign-ecdsa/keylime-ecdsa-key.pem -pubout -out sign-ecdsa/keylime-ecdsa-pubkey.pem" 0 "Extract public key from signing key"
+        rlRun "openssl pkey -in sign-ecdsa/prime256v1-privkey.pem -pubout -out sign-ecdsa/prime256v1-pubkey.pem" 0 "Extract public key from wrong key"
 
-        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/prime256v1-privkey.pem" 1 "Signed policy with wrong key"
+        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/keylime-ecdsa-pubkey.pem" 0 "Signed policy with correct key"
+
+        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/prime256v1-pubkey.pem" 1 "Signed policy with wrong key"
     rlPhaseEnd
 
     # ── Policy signature verification ───────────────────
 
     rlPhaseStartTest "policy verify-signature"
-        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/keylime-ecdsa-key.pem" 0 "Verify valid signature"
+        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/keylime-ecdsa-pubkey.pem" 0 "Verify valid signature"
 
-        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/prime256v1-privkey.pem" 1 "Verify with wrong key"
+        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/prime256v1-pubkey.pem" 1 "Verify with wrong key"
 
-        rlRun "keylimectl policy verify-signature policy-ima.json -k sign-ecdsa/keylime-ecdsa-key.pem" 1 "Verify unsigned policy"
+        rlRun "keylimectl policy verify-signature policy-ima.json -k sign-ecdsa/keylime-ecdsa-pubkey.pem" 1 "Verify unsigned policy"
     rlPhaseEnd
 
     # ── Policy conversion ───────────────────────────────
@@ -723,6 +728,10 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartSetup "Wait for agent re-registration"
+        # After remove --registrar the agent must re-register with the registrar.
+        # Restart the agent service to trigger immediate re-registration.
+        rlRun "limeStop${AGENT_SERVICE}"
+        rlRun "limeStart${AGENT_SERVICE}"
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
     rlPhaseEnd
 
