@@ -118,6 +118,24 @@ rlJournalStart
         rlRun "keylimectl info --help"
         rlRun "keylimectl configure -h"
         rlRun "keylimectl configure --help"
+        rlRun "keylimectl verify -h"
+        rlRun "keylimectl verify --help"
+        rlRun "keylimectl verify evidence -h"
+        rlRun "keylimectl verify evidence --help"
+        rlRun "keylimectl policy convert -h"
+        rlRun "keylimectl policy convert --help"
+        rlRun "keylimectl policy merge -h"
+        rlRun "keylimectl policy merge --help"
+        rlRun "keylimectl policy generate tpm -h"
+        rlRun "keylimectl policy generate tpm --help"
+        rlRun "keylimectl info verifier -h"
+        rlRun "keylimectl info verifier --help"
+        rlRun "keylimectl info registrar -h"
+        rlRun "keylimectl info registrar --help"
+        rlRun "keylimectl info agent -h"
+        rlRun "keylimectl info agent --help"
+        rlRun "keylimectl info tls -h"
+        rlRun "keylimectl info tls --help"
     rlPhaseEnd
 
     # ── Policy generation (local, no services needed) ───
@@ -337,35 +355,89 @@ rlJournalStart
             rlRun "limeVerifyRuntimePolicySignature signed-x509-02.json x509-02"
 
             # Non-existing key
-            rlRun "keylimectl policy sign test-policy.json -b x509 -c x509-03 -k NON-EXISTING -o signed-x509-03.json" 1 "Attempting to use non-existing key"
+            rlRun "keylimectl policy sign test-policy.json -b x509 -C x509-03 -k NON-EXISTING -o signed-x509-03.json" 1 "Attempting to use non-existing key"
             rlAssertNotExists signed-x509-03.json
             rlAssertNotExists x509-03
 
             # Use an RSA key with a matching self-signed certificate
             rlRun "openssl genrsa -out rsa2048-privkey.pem 2048" 0 "Creating RSA private key (2048)"
             rlRun "openssl req -new -x509 -key rsa2048-privkey.pem -out rsa2048-cert.pem -days 1 -subj '/CN=Test'" 0 "Create self-signed certificate for RSA key"
-            rlRun "keylimectl policy sign test-policy.json -b x509 -c rsa2048-cert.pem -k rsa2048-privkey.pem -o signed-x509-04.json" 0 "Sign with RSA key"
+            rlRun "keylimectl policy sign test-policy.json -b x509 -C rsa2048-cert.pem -k rsa2048-privkey.pem -o signed-x509-04.json" 0 "Sign with RSA key"
             rlAssertExists signed-x509-04.json
 
             # Use an EC key with a matching self-signed certificate
-            # When -k is provided, -c is an INPUT certificate (not output)
+            # When -k is provided, -C is the INPUT certificate
             rlRun "openssl ecparam -out prime256v1-privkey.pem -name prime256v1 -genkey" 0 "Create EC private key (prime256v1)"
             rlRun "openssl req -new -x509 -key prime256v1-privkey.pem -out prime256v1-cert.pem -days 1 -subj '/CN=Test'" 0 "Create self-signed certificate for EC key"
-            rlRun "keylimectl policy sign test-policy.json -b x509 -c prime256v1-cert.pem -k prime256v1-privkey.pem -o signed-x509-05.json"
+            rlRun "keylimectl policy sign test-policy.json -b x509 -C prime256v1-cert.pem -k prime256v1-privkey.pem -o signed-x509-05.json"
             rlAssertExists signed-x509-05.json
             rlRun "limeVerifyRuntimePolicySignature signed-x509-05.json prime256v1-privkey.pem"
             rlRun "limeVerifyRuntimePolicySignature signed-x509-05.json prime256v1-cert.pem"
 
-            # Providing -k without -c should fail (cert is required as input when key is given)
+            # Providing -k without -C should fail (cert is required as input when key is given)
             rlRun "keylimectl policy sign test-policy.json -b x509 -k prime256v1-privkey.pem -o signed-x509-05b.json" 1 "Key without certificate"
             rlAssertNotExists signed-x509-05b.json
 
             # Dummy data as key
             rlRun "echo foobar > dummy.key"
-            rlRun "keylimectl policy sign test-policy.json -b x509 -c x509-06 -k dummy.key -o signed-x509-06.json" 1 "Attempting to use bad input file as key"
+            rlRun "keylimectl policy sign test-policy.json -b x509 -C x509-06 -k dummy.key -o signed-x509-06.json" 1 "Attempting to use bad input file as key"
             rlAssertNotExists signed-x509-06.json
             rlAssertNotExists x509-06
         rlRun "popd"
+    rlPhaseEnd
+
+    # ── Policy validation ───────────────────────────────
+
+    rlPhaseStartTest "policy validate"
+        rlRun "keylimectl policy validate policy-ima.json" 0 "Valid runtime policy"
+        rlRun "keylimectl policy validate policy-ima.json -t runtime" 0 "Valid runtime policy with --policy-type"
+
+        rlRun "echo foobar > bad-validate-input"
+        rlRun "keylimectl policy validate bad-validate-input" 1 "Invalid policy"
+
+        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/keylime-ecdsa-key.pem" 0 "Signed policy with correct key"
+
+        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/prime256v1-privkey.pem" 1 "Signed policy with wrong key"
+    rlPhaseEnd
+
+    # ── Policy signature verification ───────────────────
+
+    rlPhaseStartTest "policy verify-signature"
+        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/keylime-ecdsa-key.pem" 0 "Verify valid signature"
+
+        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/prime256v1-privkey.pem" 1 "Verify with wrong key"
+
+        rlRun "keylimectl policy verify-signature policy-ima.json -k sign-ecdsa/keylime-ecdsa-key.pem" 1 "Verify unsigned policy"
+    rlPhaseEnd
+
+    # ── Policy conversion ───────────────────────────────
+
+    rlPhaseStartTest "policy convert"
+        rlRun "keylimectl policy convert ${ALLOW_LIST} -o converted-policy.json" 0 "Convert allowlist"
+        rlAssertExists converted-policy.json
+        rlRun -s "jq '.digests' converted-policy.json"
+        rlAssertGrep "test" "$rlRun_LOG"
+
+        rlRun "keylimectl policy convert ${ALLOW_LIST} -e ${EXCLUDE_LIST} -o converted-excl-policy.json" 0 "Convert with excludelist"
+        rlAssertExists converted-excl-policy.json
+        rlRun -s "jq '.excludes' converted-excl-policy.json"
+        rlAssertGrep "test" "$rlRun_LOG"
+
+        rlRun "keylimectl policy convert NON-EXISTING -o converted-bad.json" 1 "Non-existing input"
+        rlAssertNotExists converted-bad.json
+    rlPhaseEnd
+
+    # ── Policy merge ────────────────────────────────────
+
+    rlPhaseStartTest "policy merge"
+        rlRun "keylimectl policy merge policy-ima.json policy-al.json -o merged-policy.json" 0 "Merge two policies"
+        rlAssertExists merged-policy.json
+        rlRun -s "jq '.digests' merged-policy.json"
+        rlAssertGrep "boot_aggregate" "$rlRun_LOG"
+        rlAssertGrep "test" "$rlRun_LOG"
+
+        rlRun -s "keylimectl policy merge policy-ima.json policy-al.json" 0 "Merge to stdout"
+        rlAssertGrep "digests" "$rlRun_LOG"
     rlPhaseEnd
 
     # ── Measured boot policy generation ─────────────────
@@ -395,6 +467,12 @@ rlJournalStart
         rlRun "popd"
     rlPhaseEnd
   fi
+
+    # ── Configuration ──────────────────────────────────
+
+    rlPhaseStartTest "configure --non-interactive"
+        rlRun "keylimectl configure --non-interactive --verifier-ip 127.0.0.1 --verifier-port 8881 --registrar-ip 127.0.0.1 --registrar-port 8891 --scope local"
+    rlPhaseEnd
 
     # ── Start services for agent and verifier policy tests ─
 
@@ -443,6 +521,33 @@ _EOF"
 
         # Generate a runtime policy from the current IMA state
         rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy.json"
+    rlPhaseEnd
+
+    # ── Info / diagnostics ───────────────────────────────
+
+    rlPhaseStartTest "info"
+        rlRun -s "keylimectl info"
+    rlPhaseEnd
+
+    rlPhaseStartTest "info verifier"
+        rlRun -s "keylimectl info verifier"
+    rlPhaseEnd
+
+    rlPhaseStartTest "info registrar"
+        rlRun -s "keylimectl info registrar"
+    rlPhaseEnd
+
+    rlPhaseStartTest "info agent"
+        rlRun -s "keylimectl info agent ${AGENT_ID}"
+    rlPhaseEnd
+
+    rlPhaseStartTest "info tls"
+        rlRun -s "keylimectl info tls"
+    rlPhaseEnd
+
+    rlPhaseStartTest "diag alias for info"
+        rlRun -s "keylimectl diag"
+        rlRun -s "keylimectl diag verifier"
     rlPhaseEnd
 
     # ── Runtime policy CRUD on verifier ─────────────────
@@ -504,6 +609,16 @@ _EOF"
         rlRun -s "keylimectl measured-boot delete testmb1"
         rlRun "keylimectl measured-boot show testmb1" 1
     rlPhaseEnd
+
+    rlPhaseStartTest "mb alias for measured-boot"
+        rlRun "keylimectl mb push testmb-alias --file mb-verifier-policy.json" 0 "Push via mb alias"
+        rlRun -s "keylimectl mb show testmb-alias"
+        rlAssertGrep "testmb-alias" $rlRun_LOG
+        rlRun -s "keylimectl mb list"
+        rlAssertGrep "testmb-alias" $rlRun_LOG
+        rlRun "keylimectl mb delete testmb-alias" 0 "Delete via mb alias"
+        rlRun "keylimectl mb show testmb-alias" 1
+    rlPhaseEnd
   fi
 
     # ── Agent lifecycle ─────────────────────────────────
@@ -536,6 +651,11 @@ _EOF"
 
     rlPhaseStartTest "agent list --registrar"
         rlRun -s "keylimectl agent list --registrar"
+        rlAssertGrep "${AGENT_ID}" $rlRun_LOG
+    rlPhaseEnd
+
+    rlPhaseStartTest "agent list --detailed"
+        rlRun -s "keylimectl agent list --detailed"
         rlAssertGrep "${AGENT_ID}" $rlRun_LOG
     rlPhaseEnd
 
@@ -590,6 +710,35 @@ _EOF"
     rlPhaseStartTest "agent add fails due to bad policy"
         rlRun "echo '{}' > bad-policy.json"
         rlRun -s "keylimectl agent add ${AGENT_ID} --runtime-policy bad-policy.json" 1
+    rlPhaseEnd
+
+    rlPhaseStartTest "agent add with --wait-for-attestation"
+        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy.json --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
+    rlPhaseEnd
+
+    rlPhaseStartTest "agent remove --registrar"
+        rlRun -s "keylimectl agent remove ${AGENT_ID} --registrar" 0 "Remove from verifier and registrar"
+        rlRun -s "keylimectl agent status ${AGENT_ID} --verifier" 0
+        rlAssertGrep "not_found" "$rlRun_LOG"
+    rlPhaseEnd
+
+    rlPhaseStartSetup "Wait for agent re-registration"
+        rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+    rlPhaseEnd
+
+    rlPhaseStartTest "agent add with --runtime-policy-name"
+        rlRun "keylimectl policy push testpolicy-named --file runtime-policy.json" 0 "Push a named policy"
+        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy-name testpolicy-named ${PUSH_MODEL_FLAG}" 0 "Add agent with named policy"
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        else
+            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        fi
+    rlPhaseEnd
+
+    rlPhaseStartTest "agent remove after --runtime-policy-name add"
+        rlRun -s "keylimectl agent remove ${AGENT_ID}"
+        rlRun "keylimectl policy delete testpolicy-named" 0 "Clean up named policy"
     rlPhaseEnd
 
     # ── Cleanup ─────────────────────────────────────────

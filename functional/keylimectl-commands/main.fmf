@@ -3,7 +3,8 @@ description: |
     Comprehensive test of the keylimectl CLI tool which replaces
     keylime_tenant and keylime-policy. Tests agent lifecycle commands,
     runtime policy CRUD, measured boot policy CRUD, policy generation,
-    and policy signing.
+    policy signing, policy validation, policy conversion, policy merging,
+    signature verification, info/diagnostics, configure, and command aliases.
 contact: Anderson Sasaki <ansasaki@redhat.com>
 component:
   - keylime
@@ -23,7 +24,7 @@ require:
 recommend:
   - keylime
   - keylime-agent-rust-push
-duration: 20m
+duration: 30m
 enabled: true
 /push:
     environment:
