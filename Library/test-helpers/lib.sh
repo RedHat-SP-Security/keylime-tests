@@ -2045,7 +2045,11 @@ limeWaitForAgentStatus() {
     local START=$SECONDS
     for I in `seq $TIMEOUT`; do
         limeTimeoutCommand $TIMEOUT "limeCtl agent status $UUID --verifier" &> $OUTPUT
-        AGTSTATE=$(sed -n '/^{/,/^}/p' "$OUTPUT" | jq -r 'first(.. | objects | .'"${FIELD}"'? | select(. != null))')
+        if [ "${limeCtlCommand:-keylime_tenant}" == "keylimectl" ]; then
+            AGTSTATE=$(sed -n '/^{/,/^}/p' "$OUTPUT" | jq -r 'first(.. | objects | .'"${FIELD}"'? | select(. != null))')
+        else
+            AGTSTATE=$(grep "^{" "$OUTPUT" | tail -1 | jq -r 'first(.. | objects | .'"${FIELD}"'? | select(. != null))')
+        fi
         if echo "$AGTSTATE" | grep -E -q "$VALUE"; then
             cat $OUTPUT
             rm $OUTPUT
