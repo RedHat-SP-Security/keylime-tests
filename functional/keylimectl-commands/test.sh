@@ -402,7 +402,7 @@ rlJournalStart
 
         rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/keylime-ecdsa-pubkey.pem" 0 "Signed policy with correct key"
 
-        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/prime256v1-pubkey.pem" 1 "Signed policy with wrong key"
+        rlRun "keylimectl policy validate sign-ecdsa/signed-ecdsa-01.json -s sign-ecdsa/prime256v1-pubkey.pem" 10 "Signed policy with wrong key"
     rlPhaseEnd
 
     # ── Policy signature verification ───────────────────
@@ -410,7 +410,7 @@ rlJournalStart
     rlPhaseStartTest "policy verify-signature"
         rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/keylime-ecdsa-pubkey.pem" 0 "Verify valid signature"
 
-        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/prime256v1-pubkey.pem" 1 "Verify with wrong key"
+        rlRun "keylimectl policy verify-signature sign-ecdsa/signed-ecdsa-01.json -k sign-ecdsa/prime256v1-pubkey.pem" 10 "Verify with wrong key"
 
         rlRun "keylimectl policy verify-signature policy-ima.json -k sign-ecdsa/keylime-ecdsa-pubkey.pem" 1 "Verify unsigned policy"
     rlPhaseEnd
@@ -718,7 +718,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent add with --wait-for-attestation"
-        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy.json --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
+        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy-updated.json --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
     rlPhaseEnd
 
     rlPhaseStartTest "agent remove --registrar"
@@ -736,7 +736,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent add with --runtime-policy-name"
-        rlRun "keylimectl policy push testpolicy-named --file runtime-policy.json" 0 "Push a named policy"
+        rlRun "keylimectl policy push testpolicy-named --file runtime-policy-updated.json" 0 "Push a named policy"
         rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy-name testpolicy-named ${PUSH_MODEL_FLAG}" 0 "Add agent with named policy"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
             rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
