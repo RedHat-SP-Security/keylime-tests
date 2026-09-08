@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # shellcheck disable=SC2154
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
@@ -17,7 +16,10 @@ complete_registration() {
 
     local blob
     blob=$(jq -r '.results.blob' "${response_file}")
-    [ "${blob}" != "null" ] && [ -n "${blob}" ] || rlDie "No challenge blob received for agent ${agent_id}"
+    if [ "${blob}" == "null" ] || [ -z "${blob}" ]; then
+        rlFail "No challenge blob received for agent ${agent_id}"
+        return 1
+    fi
     echo "${blob}" | base64 -d > "${agent_id}.blob"
 
     rlRun "tpm2_startauthsession --policy-session -S ${agent_id}.session"
@@ -100,8 +102,9 @@ open('ek_cert_wrapped.der', 'wb').write(encoder.encode(univ.OctetString(data)))
         rlLogInfo "Control response body: $(cat control_register_response.json)"
         rlAssertEquals "Control: registrar should accept the properly-encoded EK cert" "${CONTROL_HTTP_CODE}" "200"
 
-        complete_registration "${AGENT_ID_CONTROL}" control_register_response.json
-        rlRun "limeWaitForAgentRegistration ${AGENT_ID_CONTROL}" 0 "Control agent should complete registration and reach the Registered state"
+        if complete_registration "${AGENT_ID_CONTROL}" control_register_response.json; then
+            rlRun "limeWaitForAgentRegistration ${AGENT_ID_CONTROL}" 0 "Control agent should complete registration and reach the Registered state"
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "Registrar should accept the OCTET-STRING-wrapped EK cert and complete registration (keylime#1891)"
@@ -118,8 +121,9 @@ open('ek_cert_wrapped.der', 'wb').write(encoder.encode(univ.OctetString(data)))
         # the control case above.
         rlAssertEquals "Registrar should accept OCTET-STRING-wrapped EK cert" "${WRAPPED_HTTP_CODE}" "200"
 
-        complete_registration "${AGENT_ID_WRAPPED}" wrapped_register_response.json
-        rlRun "limeWaitForAgentRegistration ${AGENT_ID_WRAPPED}" 0 "Registration should genuinely complete (not just the initial POST) for the OCTET-STRING-wrapped EK cert"
+        if complete_registration "${AGENT_ID_WRAPPED}" wrapped_register_response.json; then
+            rlRun "limeWaitForAgentRegistration ${AGENT_ID_WRAPPED}" 0 "Registration should genuinely complete (not just the initial POST) for the OCTET-STRING-wrapped EK cert"
+        fi
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
