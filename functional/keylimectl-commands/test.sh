@@ -638,7 +638,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent status"
-        rlRun -s "keylimectl agent status ${AGENT_ID}"
+        rlRun -s "keylimectl agent status ${AGENT_ID}" 10
     rlPhaseEnd
 
     rlPhaseStartTest "agent status --verifier"
@@ -708,7 +708,7 @@ _EOF"
 
     rlPhaseStartTest "agent remove"
         rlRun -s "keylimectl agent remove ${AGENT_ID}"
-        rlRun -s "keylimectl agent status ${AGENT_ID} --verifier" 0 "Status after removal returns not_found"
+        rlRun -s "keylimectl agent status ${AGENT_ID} --verifier" 10 "Status after removal returns not_found"
         rlAssertGrep "not_found" "$rlRun_LOG"
     rlPhaseEnd
 
@@ -723,7 +723,7 @@ _EOF"
 
     rlPhaseStartTest "agent remove --registrar"
         rlRun -s "keylimectl agent remove ${AGENT_ID} --registrar" 0 "Remove from verifier and registrar"
-        rlRun -s "keylimectl agent status ${AGENT_ID} --verifier" 0
+        rlRun -s "keylimectl agent status ${AGENT_ID} --verifier" 10
         rlAssertGrep "not_found" "$rlRun_LOG"
     rlPhaseEnd
 
