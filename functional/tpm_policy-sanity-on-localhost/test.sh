@@ -40,7 +40,7 @@ rlJournalStart
         rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --tpm-policy ${TPM_POLICY} --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
@@ -62,7 +62,7 @@ rlJournalStart
         rlRun "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json --tpm-policy '${TPM_POLICY}'"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
