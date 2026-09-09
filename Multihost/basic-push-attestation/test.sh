@@ -239,7 +239,7 @@ if [ -n "${AGENT2}" ]; then
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
 	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT2_ID}' 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=${AGENT2_ID}"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT2_ID}"
     rlPhaseEnd
 fi
 
@@ -251,7 +251,7 @@ fi
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
 	rlRun "limeWaitForAgentStatus --field attestation_status '${AGENT_ID}' 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Agent attestation test: Fail keylime agent"

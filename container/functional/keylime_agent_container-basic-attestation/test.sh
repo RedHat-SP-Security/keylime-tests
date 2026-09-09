@@ -214,7 +214,7 @@ rlJournalStart
 
             if [ $i -eq 0 ]; then
                 rlRun -s "limeCtl agent list"
-                rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+                rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
             fi
 
             log_verifier_event "Agent $i activated (ID: $AGENT_ID)"

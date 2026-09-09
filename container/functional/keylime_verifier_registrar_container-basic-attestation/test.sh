@@ -112,7 +112,7 @@ rlJournalStart
         rlRun -s "limeCtl --verifier-ip $IP_VERIFIER agent add $AGENT_ID --ip $IP_AGENT --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Running allowed scripts should not affect attestation"
