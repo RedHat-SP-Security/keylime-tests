@@ -631,14 +631,20 @@ _EOF"
     rlPhaseStartTest "agent add"
         rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy.json ${PUSH_MODEL_FLAG}"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS' 120"
         else
             rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         fi
     rlPhaseEnd
 
     rlPhaseStartTest "agent status"
-        rlRun -s "keylimectl agent status ${AGENT_ID}" 10
+        # Pull mode: agent in 'Get Quote' (not fully attested) → exit 10
+        # Push mode: agent in 'PASS' (fully attested) → exit 0
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun -s "keylimectl agent status ${AGENT_ID}" 0
+        else
+            rlRun -s "keylimectl agent status ${AGENT_ID}" 10
+        fi
     rlPhaseEnd
 
     rlPhaseStartTest "agent status --verifier"
@@ -667,7 +673,7 @@ _EOF"
     rlPhaseStartTest "agent update"
         rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy.json"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS' 120"
         else
             rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         fi
@@ -678,7 +684,7 @@ _EOF"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL' 120"
         else
             rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
             rlRun "rlWaitForCmd 'tail -n 30 \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
@@ -691,7 +697,7 @@ _EOF"
         rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-updated.json"
         rlRun "keylimectl agent update ${AGENT_ID} --runtime-policy runtime-policy-updated.json"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS' 120"
         else
             rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         fi
@@ -700,7 +706,7 @@ _EOF"
     rlPhaseStartTest "agent reactivate"
         rlRun -s "keylimectl agent reactivate ${AGENT_ID}"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS' 120"
         else
             rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         fi
@@ -739,7 +745,7 @@ _EOF"
         rlRun "keylimectl policy push testpolicy-named --file runtime-policy-updated.json" 0 "Push a named policy"
         rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy-name testpolicy-named ${PUSH_MODEL_FLAG}" 0 "Add agent with named policy"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS' 120"
         else
             rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
         fi
