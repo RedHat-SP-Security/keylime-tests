@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -100,11 +99,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add agent with measured boot policy and incorrect PCR banks"
-        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
-            rlRun -s "limeCtl agent add $AGENT_ID --tpm-policy '{}' --runtime-policy policy.json --mb-policy mb_refstate3.txt ${TENANT_ARGS}"
-        else
-            rlRun -s "limeCtl agent add $AGENT_ID --verify --tpm-policy '{}' --runtime-policy policy.json --mb-policy mb_refstate3.txt ${TENANT_ARGS}" 1
-        fi
+        rlRun -s "limeCtl agent add $AGENT_ID --tpm-policy '{}' --runtime-policy policy.json --mb-policy mb_refstate3.txt ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         rlAssertGrep "keylime.tpm - ERROR - For PCR 0 and hash sha256 the boot event log has value '.*' but the agent .*returned '.*'" $(limeVerifierLogfile) -E
     rlPhaseEnd
