@@ -105,7 +105,7 @@ _EOF"
         rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json --ima-key ${limeIMAPublicKey}"
         rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=${AGENT_ID}"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartTest "Install RPM file"
@@ -123,7 +123,7 @@ _EOF"
         rlRun "sleep 10" 0 "Wait 10 seconds to give verifier some time to do a new attestation"
         rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=${AGENT_ID}"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

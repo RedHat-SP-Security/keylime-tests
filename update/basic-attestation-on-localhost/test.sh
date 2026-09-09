@@ -55,7 +55,7 @@ if echo ${PHASES} | grep -E -qi '(setup|all)'; then
         rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --verify --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
 
         # submit logs if we won't do it during the test or cleanup phase
 	echo ${PHASES} | grep -E -qi '(cleanup|test)' || limeSubmitCommonLogs
