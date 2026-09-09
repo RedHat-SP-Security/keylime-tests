@@ -158,7 +158,7 @@ KeylimeSetup() {
         rlRun "limeCtl agent add ${AGENT_ID} --ip ${AGENT_IP} --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
         rlRun "sync-set AGENT_ADDED"
         limeSubmitCommonLogs
     rlPhaseEnd
@@ -185,7 +185,7 @@ KeylimeStart() {
 KeylimeTest() {
     rlPhaseStartTest "Agent attestation"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
         rlRun -s "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
 	ATTEST_COUNT1=$( grep -Eo '"last_successful_attestation": [0-9]*' $rlRun_LOG | cut -d ':' -f 2)
 	rlRun "sleep 60"

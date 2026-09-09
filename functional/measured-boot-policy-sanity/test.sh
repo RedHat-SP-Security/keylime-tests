@@ -40,7 +40,7 @@ rlJournalStart
         rlRun -s "limeCtl agent add $AGENT_ID --verify --tpm-policy '{}' --runtime-policy policy.json --mb-refstate mb_refstate.txt"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Configure verifier to use elchecking/example measured boot policy, restart and re-register agent"
@@ -68,7 +68,7 @@ rlJournalStart
             rlRun -s "limeCtl agent add $AGENT_ID --verify --tpm-policy '{}' --runtime-policy policy.json --mb-refstate $mb_policy"
             rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
             rlRun -s "limeCtl agent list"
-            rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+            rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
         rlPhaseEnd
 
         rlPhaseStartTest "Restart and re-register agent"

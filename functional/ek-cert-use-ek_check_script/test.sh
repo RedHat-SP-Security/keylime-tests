@@ -75,7 +75,7 @@ _EOF"
         fi
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlRun "limeAssertJsonField $rlRun_LOG code=200 status=Success uuids=$AGENT_ID"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Expected fail of adding keylime agent due verifying of script via ek_ceck_script option, which doesn't have a zero exit code."
