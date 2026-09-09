@@ -724,6 +724,13 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent add with --wait-for-attestation"
+        # In push mode, restart the agent to reset exponential backoff accumulated
+        # from failed authentication attempts after the previous agent remove.
+        if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
+            rlRun "limeStop${AGENT_SERVICE}"
+            rlRun "limeStart${AGENT_SERVICE}"
+            rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+        fi
         rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy-updated.json --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
     rlPhaseEnd
 
