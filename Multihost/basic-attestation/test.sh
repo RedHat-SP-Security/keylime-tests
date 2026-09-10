@@ -306,10 +306,10 @@ expect eof
 _EOF"
         rlRun -s "expect script.expect"
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
-        rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT2_ID} 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT2_ID}'" $rlRun_LOG -E
-        rlRun "limeWaitForAgentStatus ${AGENT2_ID} 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT2_ID} 'PASS'"
     rlPhaseEnd
 fi
 
@@ -326,7 +326,7 @@ expect eof
 _EOF"
         rlRun -s "expect script.expect"
         rlAssertNotGrep "ERROR" $rlRun_LOG -i
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
@@ -339,7 +339,7 @@ _EOF"
         limeExtendNextExcludelist $TESTDIR
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             # give the revocation notifier a bit more time to contact the agent
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: ${AGENT_IP}\"' -m 20 -d 1 -t 20"

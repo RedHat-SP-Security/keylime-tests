@@ -86,7 +86,7 @@ rlJournalStart
         # Attempt to add pull-agent to push-verifier (mode mismatch)
         # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add pull-based agent to push-model verifier..."
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add" 0
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json" 0
 
         # Registration succeeded, now wait and verify that attestation fails due to mode mismatch
         rlLogInfo "Checking if attestation is not performed due to mode mismatch..."
@@ -98,7 +98,7 @@ rlJournalStart
         rlRun "limeStopAgent"
 
         # Delete agent from verifier to ensure clean state for scenario 2
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID -c delete" 0-255
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent remove $AGENT_ID" 0-255
         rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID -c regdelete" 0-255
 
         rlRun "limeStopRegistrar"
@@ -130,7 +130,7 @@ rlJournalStart
         # Attempt to add push-agent to pull-verifier (mode mismatch)
         # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add push-model agent to pull-based verifier..."
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model" 1
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json --push-model" 1
         rlAssertGrep "400.*mTLS certificate for agent is required" "$rlRun_LOG" -E
 
         # Cleanup scenario 2

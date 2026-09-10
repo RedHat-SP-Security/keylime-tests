@@ -86,7 +86,7 @@ rlJournalStart
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"     
         # Add the agent to the verifier database
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         for i in {1..2}; do
             rlLogInfo "Iteration $i: Stopping and Restarting Verifier"

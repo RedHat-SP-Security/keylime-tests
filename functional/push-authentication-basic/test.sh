@@ -86,10 +86,10 @@ rlJournalStart
         rlRun "limeCreateTestPolicy"
 
         # Enroll the agent
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --runtime-policy policy.json --push-model"
 
         # Verify agent appears in verifier's agent list
-        rlRun -s "keylime_tenant -c cvlist"
+        rlRun -s "limeCtl agent list"
         rlAssertGrep "$AGENT_ID" "$rlRun_LOG"
 
         # Start push-attestation agent (now enrolled)

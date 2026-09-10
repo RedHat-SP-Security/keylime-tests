@@ -54,3 +54,11 @@ adjust+:
     discover+:
        test-:
          - /setup/generate_upstream_rust_keylime_code_coverage
+
+/with-keylimectl:
+  environment+:
+    limeCtlCommand: keylimectl
+
+/with-keylime_tenant:
+  environment+:
+    limeCtlCommand: keylime_tenant

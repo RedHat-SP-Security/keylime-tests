@@ -63,7 +63,7 @@ send \"keylime\n\"
 expect eof
 _EOF"
             rlRun "expect script.expect"
-            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
             rlRun -s "keylime_tenant -c cvlist"
             rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
             rlRun "limeStopAgent"
