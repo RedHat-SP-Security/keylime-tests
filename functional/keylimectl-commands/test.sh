@@ -593,6 +593,8 @@ _EOF"
   if [ "$ARCH" != "s390x" ] && [ "$ARCH" != "ppc64le" ]; then
     rlPhaseStartTest "measured-boot push"
         rlRun "keylimectl policy generate measured-boot --eventlog-file ${MB_LOG_SECUREBOOT} -o mb-verifier-policy.json"
+        # Clean up any leftover state from previous test runs
+        keylimectl measured-boot delete testmb1 2>/dev/null || true
         rlRun -s "keylimectl measured-boot push testmb1 --file mb-verifier-policy.json"
     rlPhaseEnd
 
@@ -726,12 +728,17 @@ _EOF"
     rlPhaseStartTest "agent add with --wait-for-attestation"
         # In push mode, restart the agent to reset exponential backoff accumulated
         # from failed authentication attempts after the previous agent remove.
+        # Also regenerate the runtime policy so it covers all current IMA measurements.
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
             rlRun "limeStop${AGENT_SERVICE}"
             rlRun "limeStart${AGENT_SERVICE}"
             rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+            rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-current.json"
+            WAIT_POLICY="runtime-policy-current.json"
+        else
+            WAIT_POLICY="runtime-policy-updated.json"
         fi
-        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy runtime-policy-updated.json --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
+        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy ${WAIT_POLICY} --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
     rlPhaseEnd
 
     rlPhaseStartTest "agent remove --registrar"
