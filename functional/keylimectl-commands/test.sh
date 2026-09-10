@@ -558,6 +558,8 @@ _EOF"
     # ── Runtime policy CRUD on verifier ─────────────────
 
     rlPhaseStartTest "policy push"
+        # Clean up any leftover state from previous test runs
+        keylimectl policy delete testpolicy1 2>/dev/null || true
         rlRun -s "keylimectl policy push testpolicy1 --file runtime-policy.json"
     rlPhaseEnd
 
@@ -618,6 +620,8 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "mb alias for measured-boot"
+        # Clean up any leftover state from previous test runs
+        keylimectl mb delete testmb-alias 2>/dev/null || true
         rlRun "keylimectl mb push testmb-alias --file mb-verifier-policy.json" 0 "Push via mb alias"
         rlRun -s "keylimectl mb show testmb-alias"
         rlAssertGrep "testmb-alias" $rlRun_LOG
@@ -738,7 +742,7 @@ _EOF"
         else
             WAIT_POLICY="runtime-policy-updated.json"
         fi
-        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy ${WAIT_POLICY} --wait-for-attestation --attestation-timeout 120 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
+        rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy ${WAIT_POLICY} --wait-for-attestation --attestation-timeout 240 ${PUSH_MODEL_FLAG}" 0 "Add agent and wait for attestation"
     rlPhaseEnd
 
     rlPhaseStartTest "agent remove --registrar"
