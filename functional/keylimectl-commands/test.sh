@@ -559,7 +559,7 @@ _EOF"
 
     rlPhaseStartTest "policy push"
         # Clean up any leftover state from previous test runs
-        keylimectl policy delete testpolicy1 2>/dev/null || true
+        rlRun "keylimectl policy delete testpolicy1" 0-255
         rlRun -s "keylimectl policy push testpolicy1 --file runtime-policy.json"
     rlPhaseEnd
 
@@ -596,7 +596,7 @@ _EOF"
     rlPhaseStartTest "measured-boot push"
         rlRun "keylimectl policy generate measured-boot --eventlog-file ${MB_LOG_SECUREBOOT} -o mb-verifier-policy.json"
         # Clean up any leftover state from previous test runs
-        keylimectl measured-boot delete testmb1 2>/dev/null || true
+        rlRun "keylimectl measured-boot delete testmb1" 0-255
         rlRun -s "keylimectl measured-boot push testmb1 --file mb-verifier-policy.json"
     rlPhaseEnd
 
@@ -621,7 +621,7 @@ _EOF"
 
     rlPhaseStartTest "mb alias for measured-boot"
         # Clean up any leftover state from previous test runs
-        keylimectl mb delete testmb-alias 2>/dev/null || true
+        rlRun "keylimectl mb delete testmb-alias" 0-255
         rlRun "keylimectl mb push testmb-alias --file mb-verifier-policy.json" 0 "Push via mb alias"
         rlRun -s "keylimectl mb show testmb-alias"
         rlAssertGrep "testmb-alias" $rlRun_LOG
@@ -765,7 +765,7 @@ _EOF"
 
     rlPhaseStartTest "agent add with --runtime-policy-name"
         # Clean up any leftover state from previous test runs
-        keylimectl policy delete testpolicy-named 2>/dev/null || true
+        rlRun "keylimectl policy delete testpolicy-named" 0-255
         rlRun "keylimectl policy push testpolicy-named --file runtime-policy-updated.json" 0 "Push a named policy"
         rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy-name testpolicy-named ${PUSH_MODEL_FLAG}" 0 "Add agent with named policy"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
