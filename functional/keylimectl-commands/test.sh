@@ -735,12 +735,15 @@ _EOF"
         # Also regenerate the runtime policy so it covers all current IMA measurements.
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
             rlRun "limeStop${AGENT_SERVICE}"
-            rlRun "limeStart${AGENT_SERVICE}"
-            rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+            # Wait for IMA emulator to process pending open-file events before
+            # generating the policy, so no new measurements appear after the policy.
+            sleep 3
             # Sync all /keylime-tests/ directories from the IMA log into the
             # excludelist, covering bad scripts from the current and previous runs.
             limeSyncIMAExcludelist
             rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-current.json"
+            rlRun "limeStart${AGENT_SERVICE}"
+            rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
             WAIT_POLICY="runtime-policy-current.json"
         else
             WAIT_POLICY="runtime-policy-updated.json"
