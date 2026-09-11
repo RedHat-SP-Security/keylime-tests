@@ -737,6 +737,9 @@ _EOF"
             rlRun "limeStop${AGENT_SERVICE}"
             rlRun "limeStart${AGENT_SERVICE}"
             rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
+            # Re-apply the exclusion for the bad script test directory, which was
+            # consumed by the 'agent update after failure' policy generation.
+            limeExtendNextExcludelist $TESTDIR
             rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-current.json"
             WAIT_POLICY="runtime-policy-current.json"
         else
