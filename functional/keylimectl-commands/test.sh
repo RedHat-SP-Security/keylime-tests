@@ -741,7 +741,7 @@ _EOF"
             # Sync all /keylime-tests/ directories from the IMA log into the
             # excludelist, covering bad scripts from the current and previous runs.
             limeSyncIMAExcludelist
-            rlRun "keylimectl policy generate runtime --ima-measurement-list -o runtime-policy-current.json"
+            rlRun "keylimectl policy generate runtime --ima-measurement-list --excludelist ${__INTERNAL_limeBaseExcludeList} -o runtime-policy-current.json"
             rlRun "limeStart${AGENT_SERVICE}"
             rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
             WAIT_POLICY="runtime-policy-current.json"
