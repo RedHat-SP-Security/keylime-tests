@@ -760,6 +760,8 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "agent add with --runtime-policy-name"
+        # Clean up any leftover state from previous test runs
+        keylimectl policy delete testpolicy-named 2>/dev/null || true
         rlRun "keylimectl policy push testpolicy-named --file runtime-policy-updated.json" 0 "Push a named policy"
         rlRun "keylimectl agent add ${AGENT_ID} --runtime-policy-name testpolicy-named ${PUSH_MODEL_FLAG}" 0 "Add agent with named policy"
         if [ "${AGENT_SERVICE}" == "PushAgent" ]; then
