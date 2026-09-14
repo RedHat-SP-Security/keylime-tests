@@ -19,7 +19,7 @@ recommend:
   - keylime
 duration: 15m
 enabled: true
-
 adjust:
- - when: distro == rhel-8 or distro == rhel-9
-   enabled: false
+  - when: distro == rhel-8 or distro == rhel-9
+    enabled: false
+id: ce511747-c0c7-49ea-ac11-7427ba7645ed

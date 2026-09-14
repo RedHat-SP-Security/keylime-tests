@@ -26,6 +26,8 @@ enabled: true
 /unreachability-push:
     environment:
         AGENT_SERVICE: PushAgent
+    id: 49a299e9-f550-4bc8-a622-f31f376d3bee
 /unreachability-pull:
     environment:
         AGENT_SERVICE: Agent
+    id: 881b68b5-3664-4782-93a8-bb5302d17941
