@@ -5,7 +5,6 @@ description: |
     Tests:
     - POST /sessions response format validation
     - PATCH /sessions failure response format validation
-
 contact: Sergio Correia <scorreia@redhat.com>
 component:
   - keylime
@@ -23,3 +22,4 @@ recommend:
   - keylime-agent-rust-push
 duration: 5m
 enabled: true
+id: 3ddf947e-2ddb-4667-9cb5-0e164741de72

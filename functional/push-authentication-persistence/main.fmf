@@ -6,7 +6,6 @@ description: |
     - Token persistence across verifier restarts (database)
     - Token remains valid during failed attestations
     - Agent continues to submit attestations in push mode
-
 contact: Sergio Correia <scorreia@redhat.com>
 component:
   - keylime
@@ -21,3 +20,4 @@ recommend:
   - keylme-agent-rust-push
 duration: 8m
 enabled: true
+id: e78d7366-7c69-4cfe-a6d6-aeba703a96f5

@@ -12,8 +12,8 @@ test: ./test.sh
 framework: beakerlib
 tag:
   - CI-Tier-1
-
 recommend:
   - keylime
 duration: 5m
 enabled: true
+id: 03312e23-baaf-428a-b6c3-bc4ae1e5b5bf
