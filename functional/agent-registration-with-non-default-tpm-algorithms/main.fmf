@@ -18,12 +18,10 @@ recommend:
   - keylime
 duration: 5m
 enabled: true
-
 adjust+:
-  # we require SWTPM
+ # we require SWTPM
   - when: swtpm == no
     enabled: false
-
 # As of now (Keylime tip of tree being e558fe3b425c6e79419ede5ecd8427ce06ef4dd6):
 # For attestation:
 # - ECC is supported with ECDSA
@@ -33,62 +31,56 @@ adjust+:
 #   > https://github.com/pyca/cryptography/issues/8202
 #   > https://github.com/openssl/openssl/issues/8440
 # - RSAPSS support is missing, but may be implemented in the future
-
-
 # this is not a complete set possible variants
 # RSA with RSASSA - should be supported for both registration and attestation.
 /rsa2048-rsassa:
-  summary: Tests agent registration with rsa2048-rsassa TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: rsa2048
-    TPM_SIGNING_ALG: rsassa
-
+    summary: Tests agent registration with rsa2048-rsassa TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: rsa2048
+        TPM_SIGNING_ALG: rsassa
+    id: a0454027-ed8a-43ce-8080-e2773e92990c
 /rsa3072-rsassa:
-  summary: Tests agent registration with rsa3072-rsassa TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: rsa3072
-    TPM_SIGNING_ALG: rsassa
-
-# RSAPSS is missing support in the server side, so it will only work for
-# registration, not attestation.
+    summary: Tests agent registration with rsa3072-rsassa TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: rsa3072
+        TPM_SIGNING_ALG: rsassa
+    id: 3bdb4732-eddf-4d61-961c-46f9ff101edd
 /rsa3072-rsapss:
-  summary: Tests agent registration with rsa3072-rsapss TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: rsa3072
-    TPM_SIGNING_ALG: rsapss
-    SKIP_ATTESTATION: yes
-
-# ECC with ECDSA should work for both registration and attestation.
+    summary: Tests agent registration with rsa3072-rsapss TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: rsa3072
+        TPM_SIGNING_ALG: rsapss
+        SKIP_ATTESTATION: yes
+    id: aec8646e-d87a-4c12-9aae-9611fdaa74d6
 /ecc256-ecdsa:
-  summary: Tests agent registration with ecc256-ecdsa TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: ecc256
-    TPM_SIGNING_ALG: ecdsa
-
+    summary: Tests agent registration with ecc256-ecdsa TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: ecc256
+        TPM_SIGNING_ALG: ecdsa
+    id: 26983851-2789-444c-a765-db9d0041ef89
 /ecc384-ecdsa:
-  summary: Tests agent registration with ecc384-ecdsa TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: ecc384
-    TPM_SIGNING_ALG: ecdsa
-
+    summary: Tests agent registration with ecc384-ecdsa TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: ecc384
+        TPM_SIGNING_ALG: ecdsa
+    id: f79be201-5682-46ad-82f9-3f7b45d1a4b4
 /ecc521-ecdsa:
-  summary: Tests agent registration with ecc521-ecdsa TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: ecc521
-    TPM_SIGNING_ALG: ecdsa
-
-# schnorr is not supported by either OpenSSL or python-cryptography, so
-# only registration works here.
+    summary: Tests agent registration with ecc521-ecdsa TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: ecc521
+        TPM_SIGNING_ALG: ecdsa
+    id: 258f306a-c251-4cc2-97af-92916015047f
 /ecc256-ecschnorr:
-  summary: Tests agent registration with ecc256-ecschnorr TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: ecc256
-    TPM_SIGNING_ALG: ecschnorr
-    SKIP_ATTESTATION: yes
-
+    summary: Tests agent registration with ecc256-ecschnorr TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: ecc256
+        TPM_SIGNING_ALG: ecschnorr
+        SKIP_ATTESTATION: yes
+    id: d350cf73-a35d-4c7a-9537-aa384bde35eb
 /ecc384-ecschnorr:
-  summary: Tests agent registration with ecc384-ecschnorr TPM algorithms
-  environment:
-    TPM_ENCRYPTION_ALG: ecc384
-    TPM_SIGNING_ALG: ecschnorr
-    SKIP_ATTESTATION: yes
+    summary: Tests agent registration with ecc384-ecschnorr TPM algorithms
+    environment:
+        TPM_ENCRYPTION_ALG: ecc384
+        TPM_SIGNING_ALG: ecschnorr
+        SKIP_ATTESTATION: yes
+    id: e8bda1e7-8a40-4019-ad9a-f8d98d839f5f
