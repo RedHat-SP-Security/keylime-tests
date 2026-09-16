@@ -40,6 +40,8 @@ rlJournalStart
         limeCreateTestPolicy
         rlRun "limeInstallIMAKeys first_key $PWD"
         rlRun "limeInstallIMAKeys second_key $PWD"
+        rlRun "limePolicy generate runtime --base-policy policy.json --add-ima-signature-verification-key x509_first_key.pem --add-ima-signature-verification-key x509_second_key.pem --output policy-with-keys.json"
+        rlRun "mv policy-with-keys.json policy.json"
         rlRun "cat > script_first.sh <<_EOF
 #!/bin/bash
 echo \"Hello one!\"
@@ -58,7 +60,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent with keys"
-        rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json --ima-key x509_first_key.pem --ima-key x509_second_key.pem"
+        rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
