@@ -73,7 +73,7 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agent with both measured boot and runtime policies"
         rlRun "TPM_INTERFACE_TYPE=socsim tsseventextend -tpm -if /var/tmp/binary_bios_measurements"
-        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --mb-refstate mb_refstate.txt --runtime-policy policy.json"
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --mb-policy mb_refstate.txt --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
