@@ -25,10 +25,11 @@ recommend:
   - keylime-agent-rust-push
 duration: 15m
 enabled: true
-
 /push:
     environment:
         AGENT_SERVICE: PushAgent
+    id: b3bdf86e-4d5b-42a0-8218-d4aaa1f40196
 /pull:
     environment:
         AGENT_SERVICE: Agent
+    id: 502d154c-a246-4220-a83f-74d02bd1894b

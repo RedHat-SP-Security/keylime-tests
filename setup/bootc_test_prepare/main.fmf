@@ -1,10 +1,13 @@
 summary: Deploy bootc image with tmt test requires
-description: On an Image mode system does system update from a built bootc image containing provided test requires. On a traditional (package mode) system does install the bootc image.
+description: On an Image mode system does system update from a built bootc image
+    containing provided test requires. On a traditional (package mode) system 
+    does install the bootc image.
 contact: Karel Srot <ksrot@redhat.com>
 test: ./test.sh
 tag:
-- setup
-- image-mode
+  - setup
+  - image-mode
 framework: shell
 duration: 60m
 enabled: true
+id: 0411d822-79ea-40e0-9bc7-1ef70413aba5
