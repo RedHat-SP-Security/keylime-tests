@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
@@ -60,11 +59,13 @@ rlJournalStart
         rlRun "limeUpdateConf verifier zmq_port 18992"
         # default port 8891
         rlRun "limeUpdateConf tenant registrar_port 18891"
+        rlRun "limeUpdateConf keylimectl registrar port 18891"
         rlRun "limeUpdateConf verifier registrar_port 18891"
         rlRun "limeUpdateConf registrar tls_port 18891"
         # default port 8881
         rlRun "limeUpdateConf verifier port 18881"
         rlRun "limeUpdateConf tenant verifier_port 18881"
+        rlRun "limeUpdateConf keylimectl verifier port 18881"
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier 18881"
         rlRun "limeStartRegistrar"

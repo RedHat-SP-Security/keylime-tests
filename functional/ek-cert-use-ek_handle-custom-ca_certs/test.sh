@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -68,7 +67,7 @@ rlJournalStart
         # create empty CA, which fail the checking of EK cert
         rlRun "touch $CERTDIR/swtpm-localca-rootca-cert.pem $CERTDIR/issuercert.pem $CERTDIR/bundle.pem"
         # expected to fail
-        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json" 1
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json" 1
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent and verify genuine of TPM via EK cert"
@@ -79,7 +78,7 @@ rlJournalStart
         rlRun "cp $CACERTDIR/issuercert.pem $CERTDIR"
         rlRun "cat $CACERTDIR/issuercert.pem $CACERTDIR/swtpm-localca-rootca-cert.pem > bundle.pem"
         rlRun "cp bundle.pem $CERTDIR"
-        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
