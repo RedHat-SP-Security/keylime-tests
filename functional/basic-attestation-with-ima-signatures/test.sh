@@ -37,6 +37,8 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
+        rlRun "limePolicy generate runtime --base-policy policy.json --add-ima-signature-verification-key ${limeIMAPublicKey} --output policy-with-keys.json"
+        rlRun "mv policy-with-keys.json policy.json"
     rlPhaseEnd
 
     rlPhaseStartTest "Add IMA signature to a test file"
@@ -56,7 +58,7 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add ${AGENT_ID} --ip 127.0.0.1 --runtime-policy policy.json --ima-key ${limeIMAPublicKey}"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add ${AGENT_ID} --ip 127.0.0.1 --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
