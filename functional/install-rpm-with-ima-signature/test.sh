@@ -51,6 +51,8 @@ rlJournalStart
 
         # create allowlist and excludelist
         limeCreateTestPolicy
+        rlRun "limePolicy generate runtime --base-policy policy.json --add-ima-signature-verification-key ${limeIMAPublicKey} --output policy-with-keys.json"
+        rlRun "mv policy-with-keys.json policy.json"
 
         # start rngd to provide more random data
         pidof rngd && ENTROPY=false || ENTROPY=true
@@ -102,7 +104,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json --ima-key ${limeIMAPublicKey}"
+        rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
