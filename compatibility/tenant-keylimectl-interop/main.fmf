@@ -1,0 +1,30 @@
+summary: Test interoperability between keylime_tenant and keylimectl for agent management
+description: |
+    Verifies that agents enrolled with keylime_tenant (v2 API) can be managed with
+    keylimectl (v3 API) and vice versa. Tests both pull (standard) and push attestation
+    modes. This covers the migration path for users moving from keylime_tenant to
+    keylimectl without needing to re-enroll existing agents.
+contact: Anderson Sasaki <ansasaki@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-2
+  - compatibility
+require:
+  - keylime
+  - expect
+  - jq
+recommend:
+  - keylime-agent-rust-push
+duration: 15m
+enabled: true
+/pull:
+    environment:
+        AGENT_SERVICE: Agent
+    id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+/push:
+    environment:
+        AGENT_SERVICE: PushAgent
+    id: b2c3d4e5-f6a7-8901-bcde-f12345678901
