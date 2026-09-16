@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 HTTP_SERVER_PORT=8080
@@ -59,7 +58,7 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent and check genuine of TPM via ek_check_script option"
-        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
         rlAssertGrep "AGENT_UUID=$AGENT_ID" $rlRun_LOG -E
         rlAssertGrep "EK=-----BEGIN PUBLIC KEY-----" $rlRun_LOG -E
         rlAssertGrep "EK_CERT=[^ ]+" $rlRun_LOG -E
@@ -82,7 +81,7 @@ _EOF"
         #veryfing of ek cert via own custom script, verifying fail
         rlRun "limeUpdateConf tenant ek_check_script /var/lib/keylime/check_ek_script_fail.sh"
         #expected to fail
-        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json" 1
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json" 1
         rlAssertGrep "ERROR - External check script failed to validate EK" $rlRun_LOG
     rlPhaseEnd
 
