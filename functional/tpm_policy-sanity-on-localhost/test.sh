@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -59,7 +58,7 @@ rlJournalStart
         # prepare new policy with current PCR values
         SHA256=$( tpm2_pcrread sha256:23 | tail -1 | cut -d 'x' -f 2 )
         TPM_POLICY="{\"23\":[\"${SHA256}\"]}"
-        rlRun "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json --tpm-policy '${TPM_POLICY}'"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json --tpm-policy '${TPM_POLICY}'"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
