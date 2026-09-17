@@ -56,7 +56,7 @@ rlJournalStart
 
         # Enroll agent with verifier after it's registered
         rlRun "limeCreateTestPolicy"
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --runtime-policy policy.json --push-model"
     rlPhaseEnd
 
     rlPhaseStartTest "Validate POST /sessions response format"

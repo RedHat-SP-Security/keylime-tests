@@ -54,9 +54,9 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json --push-model"
         # Check that agent appears in verifier's agent list
-        rlRun -s "keylime_tenant -c cvlist"
+        rlRun -s "limeCtl agent list"
         # shellcheck disable=SC2154  # rlRun_LOG is set by BeakerLib's rlRun -s
         rlAssertGrep "$AGENT_ID" "$rlRun_LOG"
 	rlRun "rlWaitForCmd 'grep -qE \"Attestation [0-9]+ for agent .${AGENT_ID}.\" \$(limeVerifierLogfile)' -m $(( ${ATTESTATION_INTERVAL}*2 )) -d 1"

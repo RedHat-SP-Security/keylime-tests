@@ -85,7 +85,7 @@ rlJournalStart
 
         # Create policy and enroll Agent A
         rlRun "limeCreateTestPolicy"
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_A_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_A_ID --runtime-policy policy.json --push-model"
 
         # Wait for Agent A to authenticate
         rlRun "rlWaitForCmd 'grep -q \"authorization: \\\"Bearer\" \$(limePushAgentLogfile)' -m 60 -d 1" \

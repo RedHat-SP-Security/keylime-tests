@@ -1,0 +1,155 @@
+keylime-policy → keylimectl policy migration plan
+==================================================
+
+Goal: Allow tests to use either keylime-policy or keylimectl policy,
+controlled by the same $limeCtlCommand environment variable used by limeCtl.
+
+Syntax Comparison
+-----------------
+
+1. create runtime → generate runtime
+
+   keylime-policy:  keylime-policy create runtime --allowlist FILE --excludelist FILE -o FILE
+   keylimectl:      keylimectl policy generate runtime --allowlist FILE --excludelist FILE -o FILE
+
+   Verdict: Nearly identical. Only the verb changes (create → generate).
+   All options (--allowlist, --excludelist, -o/--output) are compatible.
+
+2. create measured-boot → generate measured-boot
+
+   keylime-policy:  keylime-policy create measured-boot -e EVENTLOG --without-secureboot -o FILE
+   keylimectl:      keylimectl policy generate measured-boot --eventlog-file EVENTLOG --without-secureboot -o FILE
+
+   Key differences:
+   - -e shorthand for --eventlog-file does NOT exist in keylimectl
+     (in keylimectl -e is --excludelist in the runtime subcommand context)
+   - -i shorthand for --without-secureboot does NOT exist in keylimectl
+   - eventlog-file is optional in keylimectl (defaults to
+     /sys/kernel/security/tpm0/binary_bios_measurements), required in keylime-policy
+
+3. sign runtime → sign
+
+   keylime-policy:  keylime-policy sign runtime -r POLICY -p KEY -b ecdsa -o OUTPUT
+   keylimectl:      keylimectl policy sign -p KEY -b ecdsa -o OUTPUT POLICY
+
+   Key differences:
+   - sign runtime → sign (no subtype needed)
+   - -r POLICY → positional argument (at end)
+   - Other flags (-p, -k, -b, -o, -c) are compatible
+
+Tests to migrate (use keylime-policy as a utility)
+--------------------------------------------------
+
+1. Library/test-helpers/lib.sh:2373-2375
+   limeCreateTestPolicy() — central helper, uses all three patterns:
+   - keylime-policy create runtime --allowlist A --excludelist E --output O
+   - keylime-policy sign runtime -r policy.json -p KEY -b ecdsa -o OUT
+   - keylime-policy sign runtime -r policy.json -p KEY -b x509 -c CERT -o OUT
+
+2. functional/durable-attestion-sanity-on-localhost/test.sh:64
+   keylime-policy create measured-boot -e FILE -o FILE
+
+3. functional/measured-boot-swtpm-sanity/test.sh:98
+   keylime-policy create measured-boot -e FILE -o FILE
+
+4. functional/measured-boot-policy-sanity/test.sh:62
+   keylime-policy create measured-boot -e $NO_SB_PARAM FILE -o FILE
+
+5. functional/one-shot-attestation/test.sh:56
+   keylime-policy create measured-boot -e FILE -o FILE
+
+6. regression/db-connection-leak-reproducer/test.sh:248,251
+   keylime-policy create runtime -o FILE
+   keylime-policy create measured-boot -e FILE -o FILE
+
+DO NOT TOUCH (dedicated keylime-policy tests)
+---------------------------------------------
+
+- functional/keylime-policy-commands/test.sh
+- sanity/manpages/test.sh
+- setup/install_upstream_keylime/test.sh (installs manpage)
+
+Proposed implementation
+-----------------------
+
+Introduce a limePolicy wrapper function in Library/test-helpers/lib.sh
+(similar to limeCtl) that:
+
+- When $limeCtlCommand = keylime_tenant (default): passes through to keylime-policy
+- When $limeCtlCommand = keylimectl: translates to keylimectl policy subcommands
+
+Translation rules for keylimectl mode:
+
+  create runtime ...       → keylimectl policy generate runtime ...
+                             (options are compatible, no further translation needed)
+
+  create measured-boot ... → keylimectl policy generate measured-boot ...
+                             -e FILE        → --eventlog-file FILE
+                             -i             → --without-secureboot
+                             (other options pass through)
+
+  sign runtime ...         → keylimectl policy sign ...
+                             drop "runtime" subtype
+                             -r POLICY      → move POLICY to positional arg (end)
+                             (other options: -p, -k, -b, -o, -c pass through)
+
+Then update all 6 test locations above to use limePolicy instead of
+keylime-policy directly.
+
+Gap analysis
+------------
+
+Features in keylime-policy MISSING from keylimectl:
+
+  --max-workers N            RPM processing parallelism tuning.
+                             Not used in any migrated test.
+
+  --show-legacy-allowlist    Output digests in legacy allowlist format.
+                             Not used in any migrated test.
+
+  -v / --verbose             Debug logging.
+                             Not used in any migrated test.
+
+  None of these block the migration.
+
+Short-flag and option-name collisions (the main hazard):
+
+  keylime-policy              keylimectl                   Risk
+  --------------------------  ---------------------------  ----------------------------
+  --algo {sha1,...}           --hash-alg <ALG>             Different option name!
+                                                           Not used in migrated tests.
+
+  -p / --base-policy FILE    -B / --base-policy FILE      Short flag collision: -p means
+    (in create runtime)        (in generate runtime)      --keypath in keylimectl sign.
+                                                           Long form is compatible.
+                                                           Not used in migrated tests.
+
+  -b / --ima-buf             --ima-buf (no -b shorthand)  Short flag collision: -b means
+    (boolean, create runtime)                              --backend in keylimectl sign.
+                                                           Long form is compatible.
+                                                           Not used in migrated tests.
+
+  -e / --eventlog-file       --eventlog-file only         Short flag collision: -e means
+    (in create measured-boot)  (no -e shorthand)           --excludelist in keylimectl
+                                                           generate runtime.
+                                                           USED in migrated tests —
+                                                           wrapper must translate.
+
+  -i / --without-secureboot  --without-secureboot only    No -i shorthand in keylimectl.
+    (in create measured-boot)  (no -i shorthand)           Used in measured-boot-policy-
+                                                           sanity test indirectly.
+                                                           Wrapper should translate.
+
+  Summary: The only collision affecting migrated tests is -e in
+  create measured-boot. The wrapper handles it by expanding to
+  --eventlog-file. All other collisions involve features not used
+  in the 6 test locations.
+
+Features in keylimectl NOT in keylime-policy (bonuses):
+
+  policy validate              Validate policy file structure
+  policy verify-signature      Verify DSSE signature
+  policy convert               Convert legacy allowlist to current format
+  policy generate tpm          Generate TPM policy from PCR values
+  policy push/show/update/     Server-side policy management
+    delete/list

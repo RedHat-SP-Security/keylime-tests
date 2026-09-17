@@ -98,7 +98,7 @@ _EOF"
         rlRun -s "expect script.expect"
         rlAssertNotGrep "EK signature did not match certificates from TPM cert store" $rlRun_LOG
 
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd

@@ -46,7 +46,7 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agent"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --allowlist allowlist.txt --exclude excludelist.txt -f /etc/hosts -c add"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
     rlPhaseEnd
@@ -57,13 +57,13 @@ rlJournalStart
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script1.sh"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script2.sh"
 	rlRun "sleep 5"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/bad-script.sh && chmod a+x $TESTDIR/bad-script.sh"
         rlRun "$TESTDIR/bad-script.sh"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
         rlAssertGrep "WARNING - File not found in allowlist: $TESTDIR/bad-script.sh" $(limeVerifierLogfile)
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" $(limeVerifierLogfile)
