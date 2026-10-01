@@ -112,7 +112,7 @@ rlJournalStart
 
     rlPhaseStartTest "Add keylime agent"
         rlRun "limeKeylimeTenant -v $IP_VERIFIER  -t $IP_AGENT -u $AGENT_ID --runtime-policy /workdir/policy.json -f /etc/hosts -c add"
-        rlRun -s "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun -s "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeKeylimeTenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
     rlPhaseEnd
@@ -123,7 +123,7 @@ rlJournalStart
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script1.sh"
         rlRun "tail /sys/kernel/security/ima/ascii_runtime_measurements | grep good-script2.sh"
         rlRun "sleep 5"
-        rlRun -s "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun -s "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
@@ -131,7 +131,7 @@ rlJournalStart
         rlRun "$TESTDIR/bad-script.sh"
         rlRun "sleep 5"
         rlRun "podman logs verifier_container | grep \"keylime.verifier - WARNING - Agent d432fbb3-d2f1-4a97-9ef7-75bd81c00000 failed, stopping polling\""
-        rlRun -s "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun -s "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

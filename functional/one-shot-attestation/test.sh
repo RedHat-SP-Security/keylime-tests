@@ -53,7 +53,7 @@ rlJournalStart
             rlRun "sed -i 's%^MEASUREDBOOT_ML =.*%MEASUREDBOOT_ML = \"/var/tmp/binary_bios_measurements\"%' ${ONESHOT_SCRIPT}"
             # Extend emulated TPM PCRs to match the boot event log
             rlRun "TPM_INTERFACE_TYPE=socsim tsseventextend -tpm -if /var/tmp/binary_bios_measurements"
-            rlRun "keylime-policy create measured-boot -e /var/tmp/binary_bios_measurements -o mb_refstate.txt"
+            rlRun "limePolicy generate measured-boot --eventlog-file /var/tmp/binary_bios_measurements --output mb_refstate.txt"
             MB_TENANT_ARG="--mb-policy mb_refstate.txt"
         fi
 

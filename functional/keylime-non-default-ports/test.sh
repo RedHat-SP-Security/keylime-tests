@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 # set REVOCATION_NOTIFIER=zeromq to use the zeromq notifier
@@ -60,11 +59,13 @@ rlJournalStart
         rlRun "limeUpdateConf verifier zmq_port 18992"
         # default port 8891
         rlRun "limeUpdateConf tenant registrar_port 18891"
+        rlRun "limeUpdateConf keylimectl registrar port 18891"
         rlRun "limeUpdateConf verifier registrar_port 18891"
         rlRun "limeUpdateConf registrar tls_port 18891"
         # default port 8881
         rlRun "limeUpdateConf verifier port 18881"
         rlRun "limeUpdateConf tenant verifier_port 18881"
+        rlRun "limeUpdateConf keylimectl verifier port 18881"
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier 18881"
         rlRun "limeStartRegistrar"
@@ -93,7 +94,7 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlWaitForFile /var/tmp/test_payload_file -t 30 -d 1  # we may need to wait for it to appear a bit
         ls -l /var/tmp/test_payload_file
         rlAssertExists /var/tmp/test_payload_file
@@ -104,7 +105,7 @@ _EOF"
         rlRun "echo -e '#!/bin/bash\necho boom' > $TESTDIR/keylime-bad-script.sh && chmod a+x $TESTDIR/keylime-bad-script.sh"
         rlRun "$TESTDIR/keylime-bad-script.sh"
         rlRun "rlWaitForCmd 'tail \$(limeVerifierLogfile) | grep -q \"Agent $AGENT_ID failed\"' -m 10 -d 1 -t 10"
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         if [ -z "$KEYLIME_TEST_DISABLE_REVOCATION" ]; then
             rlRun "rlWaitForCmd 'tail \$(limeAgentLogfile) | grep -q \"A node in the network has been compromised: 127.0.0.1\"' -m 10 -d 1 -t 10"
             rlRun "tail -20 $(limeAgentLogfile) | grep 'Executing revocation action local_action_modify_payload'"

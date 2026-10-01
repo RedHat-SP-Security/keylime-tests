@@ -245,10 +245,10 @@ rlJournalStart
         rlRun "cp ./binary_bios_measurements $TESTDIR/binary_bios_measurements"
 
         # Create test policies for policy operations
-        rlRun "keylime-policy create runtime -o $TESTDIR/test-policy.json"
+        rlRun "limePolicy generate runtime --output $TESTDIR/test-policy.json"
 	# efivar not available on s390x and ppc64le
 	if [ "$ARCH" != "s390x" ] && [ "$ARCH" != "ppc64le" ]; then
-            rlRun "keylime-policy create measured-boot -e $TESTDIR/binary_bios_measurements -o $TESTDIR/test-mb-policy.json"
+            rlRun "limePolicy generate measured-boot --eventlog-file $TESTDIR/binary_bios_measurements --output $TESTDIR/test-mb-policy.json"
 	fi
     rlPhaseEnd
 
