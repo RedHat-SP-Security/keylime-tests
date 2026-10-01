@@ -1035,8 +1035,9 @@ limeCtl() {
                     done
                     echo "limeCtl: executing: keylimectl ${_g[*]} $_subcmd ${_a[*]}" >&2
                     keylimectl "${_g[@]}" "$_subcmd" "${_a[@]}"
+                    local _status=$?
                     __limeCtlKtGlobal=()
-                    return
+                    return "$_status"
                     ;;
             esac
             ;;
