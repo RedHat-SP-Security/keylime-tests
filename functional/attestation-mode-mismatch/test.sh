@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 #   runtest.sh of /CoreOS/keylime/Functional/attestation-mode-mismatch
@@ -131,7 +130,8 @@ rlJournalStart
         # Registration should succeed, but attestation must fail
         rlLogInfo "Attempting to add push-model agent to pull-based verifier..."
         rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json --push-model" 1
-        rlAssertGrep "400.*mTLS certificate for agent is required" "$rlRun_LOG" -E
+        rlAssertGrep "mTLS certificate for agent is required" "$rlRun_LOG" -E
+        rlAssertGrep "(Response code 400|status code: 400)" "$rlRun_LOG" -E
 
         # Cleanup scenario 2
         rlRun "limeStopPushAgent"
