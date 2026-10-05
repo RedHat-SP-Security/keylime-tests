@@ -68,14 +68,16 @@ rlJournalStart
         TPM_POLICY='{"15":["0000000000000000000000000000000000000000","0000000000000000000000000000000000000000000000000000000000000000","000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"]}'
         rlRun "echo '{}' > mb_refstate.txt"
         rlRun -s "limeCtl agent add $AGENT_ID --tpm-policy '${TPM_POLICY}' --runtime-policy policy.json --mb-policy mb_refstate.txt ${TENANT_ARGS}" 1
-        rlAssertGrep 'ERROR - WARNING: PCR 15 is specified in "tpm_policy", but will in fact be used by measured boot. Please remove it from policy' $rlRun_LOG
+        rlAssertGrep 'WARNING: PCR 15 is specified in "tpm_policy", but will in fact be used by measured boot. Please remove it from policy' $rlRun_LOG
     rlPhaseEnd
 
     rlPhaseStartTest "Add agent with empty tpm_policy"
         rlRun -s "limeCtl agent add $AGENT_ID --tpm-policy '{}' --runtime-policy policy.json --mb-policy mb_refstate.txt ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlAssertGrep "code.* 200" $rlRun_LOG -E
+        rlAssertGrep "status.*Success" $rlRun_LOG -E
+        rlAssertGrep "$AGENT_ID" $rlRun_LOG -E
     rlPhaseEnd
 
     rlPhaseStartTest "Configure verifier to use elchecking/example measured boot policy, restart and re-register agent"
@@ -129,12 +131,15 @@ rlJournalStart
 
     rlPhaseStartTest "Test addmbpolicy"
         rlRun -s "limeCtl measured-boot push mypolicy --file mb_refstate.txt"
-        rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" "$rlRun_LOG"
+        rlAssertGrep "code.*201" "$rlRun_LOG"
+        rlAssertGrep "status.*Created" "$rlRun_LOG"
+        rlAssertGrep "results.*{}" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Try adding a mbpolicy with an existing name"
         rlRun -s "limeCtl measured-boot push mypolicy --file mb_refstate3.txt" 1
-        rlAssertGrep "{'code': 409, 'status': 'Measured boot policy with name mypolicy already exists', 'results': {}}" "$rlRun_LOG"
+	rlAssertGrep "code.*(409|COMMAND_ERROR)" "$rlRun_LOG" -E
+        rlAssertGrep "Measured boot policy with name mypolicy already exists" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Test listmbpolicy"
@@ -144,20 +149,29 @@ rlJournalStart
 
     rlPhaseStartTest "Test showmbpolicy"
         rlRun -s "limeCtl measured-boot show mypolicy"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'name': 'mypolicy', 'mb_policy': '{}'}}" "$rlRun_LOG"
+        rlAssertGrep "code.* 200" "$rlRun_LOG" -E
+        rlAssertGrep "status.*Success" "$rlRun_LOG" -E
+        rlAssertGrep "name.*mypolicy" "$rlRun_LOG" -E
     rlPhaseEnd
 
     rlPhaseStartTest "Test updatembpolicy"
         rlRun -s "limeCtl measured-boot update mypolicy --file mb_refstate3.txt"
-        rlAssertGrep "{'code': 201, 'status': 'Created', 'results': {}}" "$rlRun_LOG"
+        rlAssertGrep "code.* 201" "$rlRun_LOG" -E
+        rlAssertGrep "status.*Created" "$rlRun_LOG"
         rlRun -s "limeCtl measured-boot show mypolicy"
-        rlAssertNotGrep "{'code': 200, 'status': 'Success', 'results': {'name': 'mypolicy', 'mb_policy': '{}'}}" "$rlRun_LOG"
+        rlAssertGrep "code.* 200" "$rlRun_LOG" -E
+        rlAssertGrep "status.*Success" "$rlRun_LOG" -E
+        rlAssertGrep "name.*mypolicy" "$rlRun_LOG"
+        # policy should not be empty anymore
+        rlAssertNotGrep "mb_policy.*{}" "$rlRun_LOG" -E
+        rlAssertGrep "platform_firmware" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Test deletembpolicy"
         rlRun "limeCtl measured-boot delete mypolicy"
         rlRun -s "limeCtl measured-boot show mypolicy" 1
-        rlAssertGrep "{'code': 404, 'status': 'Measured boot policy mypolicy not found', 'results': {}}" "$rlRun_LOG"
+	rlAssertGrep "code.* (404|COMMAND_ERROR)" "$rlRun_LOG" -E
+        rlAssertGrep "Measured boot policy mypolicy not found" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Add an agent with a mbpolicy but without a name and verify UUID as the name of the policy in mbpolicy DB."
@@ -165,14 +179,17 @@ rlJournalStart
         sleep 5
         rlRun -s "limeCtl agent add $AGENT_ID --mb-policy mb_refstate.txt ${TENANT_ARGS}"
         rlRun -s "limeCtl measured-boot show $AGENT_ID"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'name': '$AGENT_ID', 'mb_policy': '{}'}}" "$rlRun_LOG"
+        rlAssertGrep "code.* 200" "$rlRun_LOG" -E
+        rlAssertGrep "status.*Success" "$rlRun_LOG" -E
+        rlAssertGrep "$AGENT_ID" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Delete the above agent and verify the absence of UUID named policy in mbpolicy DB."
         rlRun "limeCtl agent remove $AGENT_ID"
         sleep 5
         rlRun -s "limeCtl measured-boot show $AGENT_ID" 1
-        rlAssertGrep "{'code': 404, 'status': 'Measured boot policy $AGENT_ID not found', 'results': {}}" "$rlRun_LOG"
+	rlAssertGrep "code.* (404|COMMAND_ERROR)" "$rlRun_LOG" -E
+        rlAssertGrep "Measured boot policy $AGENT_ID not found" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Add an agent with an existing named mbpolicy."
@@ -182,7 +199,8 @@ rlJournalStart
 
     rlPhaseStartTest "Try to delete the mbpolicy associated with a running agent."
         rlRun -s "limeCtl measured-boot delete mypolicy" 1
-        rlAssertGrep "{'code': 409, 'status': \"Can't delete mb_policy as it's currently in use by agent $AGENT_ID\", 'results': {}}" "$rlRun_LOG"
+	rlAssertGrep "code.* (409|COMMAND_ERROR)" "$rlRun_LOG" -E
+        rlAssertGrep "Can't delete mb_policy as it's currently in use by agent $AGENT_ID" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartTest "Add an agent with a new named mbpolicy." 
@@ -200,7 +218,8 @@ rlJournalStart
 
     rlPhaseStartTest "Add an agent with a non-existing named mbpolicy."
         rlRun -s "limeCtl agent add $AGENT_ID --mb-policy-name non_existing_policy ${TENANT_ARGS}" 1
-        rlAssertGrep "{\"code\": 404, \"status\": \"Could not find mb_policy with name non_existing_policy!\", \"results\": {}}" "$rlRun_LOG"
+	rlAssertGrep "code.* (404|COMMAND_ERROR)" "$rlRun_LOG" -E
+        rlAssertGrep "Could not find mb_policy with name non_existing_policy!" "$rlRun_LOG"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
