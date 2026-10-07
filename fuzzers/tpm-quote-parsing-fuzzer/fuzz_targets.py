@@ -35,6 +35,7 @@ What we do NOT tolerate - these are re-raised so the fuzzer records a crash:
 """
 
 import base64
+import logging
 import os
 import struct
 import zlib
@@ -43,6 +44,11 @@ import zlib
 # atheris.instrument_imports()). We only reference the modules lazily so that
 # this file itself can be imported before deciding whether keylime is present.
 from keylime.tpm import tpm2_objects
+
+# Silence keylime logging: it logs rejected/odd input verbatim, which floods the
+# captured campaign output (and can fail to encode surrogate-escaped bytes). The
+# fuzzer judges the parsers by the exceptions they raise, not by what they log.
+logging.disable(logging.CRITICAL)
 
 # Tpm pulls in a lot of keylime (config, logging, ...). It is optional: the
 # quote_params target is skipped if it cannot be imported.

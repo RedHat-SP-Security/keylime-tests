@@ -55,6 +55,7 @@ the only surviving exceptions are the ALLOWED controlled validation errors.
 import base64
 import datetime
 import json
+import logging
 import os
 
 # Importing keylime is done here at module load; the atheris harness wraps this
@@ -64,6 +65,12 @@ from keylime import signing
 from keylime.dsse import dsse
 from keylime.ima import ima
 from keylime.ima.ima import ImaValidationError
+
+# Silence keylime logging: these handlers log rejected input verbatim, which
+# floods the captured campaign output (and can fail to encode surrogate-escaped
+# bytes). The fuzzer judges the parsers by the exceptions they raise, not by what
+# they log.
+logging.disable(logging.CRITICAL)
 
 # Resource-exhaustion / broken-invariant exceptions. They are never in ALLOWED
 # (so they are already re-raised as findings); the tuple is kept so replay.py

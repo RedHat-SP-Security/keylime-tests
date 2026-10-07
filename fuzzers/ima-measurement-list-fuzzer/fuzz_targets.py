@@ -56,12 +56,21 @@ coverage-guided campaign can drive each parser directly (faster to reach deep
 states) and so a reproducer pins the blame on one component.
 """
 
+import logging
 import os
 import struct
 
 # Importing keylime is done by the caller (the atheris harness wraps it in
 # atheris.instrument_imports()) so that atheris gets coverage feedback.
 from keylime.ima import ast
+
+# Silence keylime logging. It logs rejected input verbatim, and with the
+# surrogate-escaped fuzz bytes we feed it the stderr StreamHandler fails to
+# UTF-8-encode the record, so Python's logging dumps a handleError "Call stack:"
+# on every such iteration - tens of thousands over a campaign, flooding the
+# captured output (30 MB+ logs). The fuzzer judges the parser by the exceptions
+# it raises, not by what it logs, so turn logging off entirely.
+logging.disable(logging.CRITICAL)
 
 # The one exception type that means "hostile line gracefully rejected". Only
 # this is swallowed; see module docstring for the rationale (it is the only
