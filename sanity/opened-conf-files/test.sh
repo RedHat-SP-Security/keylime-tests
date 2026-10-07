@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -59,8 +58,10 @@ function check_for_opened_conf_files() {
 }
 
     rlPhaseStartTest "Check opened configuration files"
-        # test tenant
-	check_for_opened_conf_files tenant.log tenant.conf logging.conf -e verifier.conf registrar.conf ca.conf agent.conf
+        if [ "$limeCtlCommand" != 'keylimectl' ]; then
+            # test tenant
+            check_for_opened_conf_files tenant.log tenant.conf logging.conf -e verifier.conf registrar.conf ca.conf agent.conf
+        fi
 	check_for_opened_conf_files "$(limeVerifierLogfile)" verifier.conf ca.conf logging.conf -e tenant.conf registrar.conf agent.conf
 	check_for_opened_conf_files "$(limeRegistrarLogfile)" registrar.conf logging.conf -e tenant.conf verifier.conf ca.conf agent.conf
 	# not checking agent as it doesn't say which logs it opens
