@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -37,9 +36,9 @@ rlJournalStart
         rlRun "limeStartAgent"
         rlRun "limeWaitForAgentRegistration '${AGENT_ID}'"
         rlRun "limeCreateTestPolicy"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u '$AGENT_ID' --verify --runtime-policy policy.json --file /etc/hosts -c add"
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add '$AGENT_ID' --ip 127.0.0.1 --runtime-policy policy.json"
         rlRun "cp '$rlRun_LOG' tenant.log"
-        rlRun "limeWaitForAgentStatus '$AGENT_ID' 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'"
     rlPhaseEnd
 
 function check_for_opened_conf_files() {
@@ -59,8 +58,10 @@ function check_for_opened_conf_files() {
 }
 
     rlPhaseStartTest "Check opened configuration files"
-        # test tenant
-	check_for_opened_conf_files tenant.log tenant.conf logging.conf -e verifier.conf registrar.conf ca.conf agent.conf
+        if [ "$limeCtlCommand" != 'keylimectl' ]; then
+            # test tenant
+            check_for_opened_conf_files tenant.log tenant.conf logging.conf -e verifier.conf registrar.conf ca.conf agent.conf
+        fi
 	check_for_opened_conf_files "$(limeVerifierLogfile)" verifier.conf ca.conf logging.conf -e tenant.conf registrar.conf agent.conf
 	check_for_opened_conf_files "$(limeRegistrarLogfile)" registrar.conf logging.conf -e tenant.conf verifier.conf ca.conf agent.conf
 	# not checking agent as it doesn't say which logs it opens
