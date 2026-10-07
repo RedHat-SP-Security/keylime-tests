@@ -24,6 +24,7 @@ discover:
    - /functional/basic-attestation-on-localhost
    - "^/container/functional/.*"
    - "/container/compatibility/.*"
+   - "^/fuzzers/.*"
 
 execute:
     how: tmt
