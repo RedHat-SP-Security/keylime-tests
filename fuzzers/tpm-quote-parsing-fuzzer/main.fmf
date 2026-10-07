@@ -1,0 +1,50 @@
+summary: Fuzz keylime TPM quote and TPM2B structure parsing (keylime#1139)
+description: |
+    Fuzzer test for the hand-written binary parsers in keylime that consume
+    data originating from a potentially compromised agent, the highest-priority
+    fuzzing target identified in keylime/keylime#1139:
+
+      * tpm2_objects.unmarshal_tpms_attest()  - TPMS_ATTEST quote blob
+      * tpm2_objects.pubkey_from_tpm2b_public() - TPM2B_PUBLIC key structure
+      * tpm_main.Tpm._get_quote_parameters()  - quote string (base64 + zlib)
+
+    These are manual offset walkers with input-controlled lengths and 32-bit
+    loop counts, so the test specifically hunts for crashes, uncaught exception
+    types, hangs (input-controlled loop counts -> CPU DoS) and memory
+    exhaustion (TPM2B length fields, zlib decompression bombs).
+
+    The test runs in two layers. A deterministic replayer feeds a generated
+    corpus of valid and known-adversarial blobs through each parser under a
+    wall-clock timeout and requires every input to be rejected gracefully and
+    quickly; this needs only the installed keylime package and runs on every
+    platform. When atheris (coverage-guided, libFuzzer-backed) can be imported
+    or pip-installed, a bounded coverage-guided campaign is run on top, seeded
+    from the same corpus; any reproducer atheris saves fails the test and is
+    attached to the results.
+
+    Campaign budgets can be raised for longer local runs via the
+    FUZZ_MAX_TOTAL_TIME, FUZZ_TIMEOUT and FUZZ_RSS_MB environment variables.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - fuzzing
+require:
+  - python3
+  - python3-pip
+  - python3-cryptography
+recommend:
+  - keylime
+  - clang
+  - python3-devel
+  # keylime already requires these (unconditional imports in signing.py and
+  # ima_dm.py), but the quote_params target imports tpm_main.Tpm, which pulls
+  # them in transitively; listing them keeps that target from silently
+  # degrading to a no-op if keylime's dependency chain ever changes.
+  - python3-gpg
+  - python3-lark
+duration: 15m
+enabled: true
+id: 6c9d2bd3-4914-411e-932b-6c87997df526
