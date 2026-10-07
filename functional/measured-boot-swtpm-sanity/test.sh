@@ -171,7 +171,7 @@ rlJournalStart
         rlRun "limeCtl measured-boot delete mypolicy"
         rlRun -s "limeCtl measured-boot show mypolicy" 1
 	rlAssertGrep "code.* (404|COMMAND_ERROR)" "$rlRun_LOG" -E
-        rlAssertGrep "Measured boot policy mypolicy not found" "$rlRun_LOG"
+        rlAssertGrep "(Measured boot policy mypolicy not found|Policy 'mypolicy' not found)" "$rlRun_LOG" -E
     rlPhaseEnd
 
     rlPhaseStartTest "Add an agent with a mbpolicy but without a name and verify UUID as the name of the policy in mbpolicy DB."
