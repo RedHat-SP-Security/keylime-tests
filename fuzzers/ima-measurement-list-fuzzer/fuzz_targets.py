@@ -56,6 +56,7 @@ coverage-guided campaign can drive each parser directly (faster to reach deep
 states) and so a reproducer pins the blame on one component.
 """
 
+import os
 import struct
 
 # Importing keylime is done by the caller (the atheris harness wraps it in
@@ -123,6 +124,40 @@ def run_one(target, data):
     except GRACEFUL:
         # Declared rejection of a malformed line - not a crash.
         return
+
+
+def is_finding(exc):
+    """Crash policy predicate: True if ``exc`` is a finding, not graceful.
+
+    The parser's contract is to reject bad lines with ``ParserError`` (the only
+    type the verifier loop catches); any other escaping exception is a finding.
+    Same policy run_one applies, exposed so the survey harness can record
+    findings and continue.
+    """
+    return not isinstance(exc, GRACEFUL)
+
+
+def classify_exception(exc):
+    """Return a short, stable signature for ``exc``: ``ExcType@file.py:lineno``.
+
+    The location is the deepest traceback frame *inside keylime* (so the
+    signature points at the keylime line that failed, not at a stdlib frame).
+    The survey harness uses this to group many crashing inputs into distinct
+    findings, so each real bug is reported once.
+    """
+    loc = None
+    tb = exc.__traceback__
+    while tb is not None:
+        filename = tb.tb_frame.f_code.co_filename
+        if f"{os.sep}keylime{os.sep}" in filename or os.path.basename(os.path.dirname(filename)) == "keylime":
+            loc = f"{os.path.basename(filename)}:{tb.tb_lineno}"
+        tb = tb.tb_next
+    if loc is None and exc.__traceback__ is not None:
+        tb = exc.__traceback__
+        while tb.tb_next is not None:
+            tb = tb.tb_next
+        loc = f"{os.path.basename(tb.tb_frame.f_code.co_filename)}:{tb.tb_lineno}"
+    return f"{type(exc).__name__}@{loc or 'unknown'}"
 
 
 # --------------------------------------------------------------------------

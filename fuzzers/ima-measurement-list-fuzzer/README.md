@@ -59,8 +59,31 @@ The test runs in two complementary layers:
 2. **Coverage-guided campaign (`fuzz_harness.py`)** — runs on top when
    [atheris](https://github.com/google/atheris) can be imported or
    pip-installed (it needs `clang` and a compatible Python). Seeded from the
-   same corpus. Any reproducer atheris saves fails the test and is attached to
-   the beakerlib results.
+   same corpus. Runs in **survey mode** (see below); every distinct finding it
+   records fails the test and its reproducer + traceback are attached to the
+   beakerlib results.
+
+### Survey mode (finding *multiple* distinct bugs per run)
+
+By default (`FUZZ_SURVEY=1`) the campaign does not stop at the first finding.
+The harness *catches* each finding (a non-ParserError escape, decided by
+`fuzz_targets.is_finding()`), records a de-duplicated signature
+(`ExcType@file.py:line`, located at the deepest keylime frame) plus a reproducer
+input and traceback under `FUZZ_CRASH_DIR`, and **returns** so libFuzzer keeps
+its coverage feedback and fuzzes for the full budget. One bounded run therefore
+enumerates *all distinct* findings it can reach, not just the first. `test.sh`
+then fails with the count, logs each signature, and submits one reproducer per
+distinct bug. (atheris's `-fork` mode is not used: coverage does not survive the
+fork, so forked jobs just re-crash on the corpus without progressing.)
+
+Set `FUZZ_SURVEY=0` for the strict single-reproducer behaviour (first finding
+propagates and libFuzzer minimizes/saves it) — handy when minimizing one crash.
+A **hang** or **OOM** still ends the campaign and is reported via libFuzzer's own
+timeout/oom artifact.
+
+On a crash the test attaches: the replay report + each crashing seed
+(deterministic phase), and the campaign log, signature summary, and per-finding
+input+traceback reproducers (survey phase).
 
 ### Crash policy (shared by both layers, see `fuzz_targets.py`)
 
@@ -121,10 +144,12 @@ export PYTHONPATH=/path/to/keylime
 python3 generate_seeds.py /tmp/corpus
 python3 replay.py entry /tmp/corpus/entry --timeout 10
 
-# coverage-guided (requires atheris)
-FUZZ_TARGET=entry python3 fuzz_harness.py \
-    -max_total_time=60 -timeout=10 -rss_limit_mb=2048 \
+# coverage-guided survey (requires atheris): enumerate distinct findings
+FUZZ_TARGET=entry FUZZ_SURVEY=1 FUZZ_CRASH_DIR=/tmp/survey \
+    python3 fuzz_harness.py \
+    -max_total_time=600 -timeout=10 -rss_limit_mb=2048 \
     -artifact_prefix=/tmp/art- /tmp/corpus/entry
+sort -u /tmp/survey/entry.signatures   # the distinct findings, if any
 ```
 
 ### Tuning the campaign
@@ -134,6 +159,8 @@ FUZZ_TARGET=entry python3 fuzz_harness.py \
 * `FUZZ_MAX_TOTAL_TIME` (30) — atheris seconds per target
 * `FUZZ_TIMEOUT` (10) — per-input hang timeout, seconds
 * `FUZZ_RSS_MB` (2048) — per-input RSS limit, MiB
+* `FUZZ_SURVEY` (1) — 1: enumerate all distinct findings over the full budget;
+  0: stop at the first finding and save a single minimized reproducer
 
 ## Extending
 

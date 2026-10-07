@@ -44,6 +44,6 @@ recommend:
   - keylime
   - clang
   - python3-devel
-duration: 15m
+duration: 12h
 enabled: true
 id: f207aa41-215b-44b1-aa4a-6af34c3eca0b

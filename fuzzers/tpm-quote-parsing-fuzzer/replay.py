@@ -61,14 +61,18 @@ def replay_file(target, path, timeout):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("target", choices=fuzz_targets.TARGETS)
-    ap.add_argument("corpus_dir")
+    ap.add_argument("corpus_dir", help="a corpus directory or a single input file")
     ap.add_argument("--timeout", type=float, default=10.0)
     args = ap.parse_args()
 
+    # Accept either a corpus directory or a single reproducer file.
     files = []
-    for root, _dirs, names in os.walk(args.corpus_dir):
-        for n in names:
-            files.append(os.path.join(root, n))
+    if os.path.isfile(args.corpus_dir):
+        files.append(args.corpus_dir)
+    else:
+        for root, _dirs, names in os.walk(args.corpus_dir):
+            for n in names:
+                files.append(os.path.join(root, n))
     files.sort()
 
     failures = 0
