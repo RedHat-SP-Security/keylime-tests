@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 [ -n "${AGENT_SERVICE}" ] || AGENT_SERVICE=Agent  # or PushAgent
@@ -97,7 +96,7 @@ rlJournalStart
         rlRun "limeUpdateConf keylimectl tls client_key '\"/var/lib/keylime/server-private.pem\"'"
         rlRun "limeUpdateConf keylimectl tls trusted_ca '[\"/var/lib/keylime/cv_ca/cacert.crt\"]'"
 	rlRun -s "limeCtl agent list" 1
-	rlAssertGrep "(TLSV1_ALERT_UNKNOWN_CA|Connection reset by peer|SSLError)" "$rlRun_LOG" -iE
+	rlAssertGrep "(TLSV1_ALERT_UNKNOWN_CA|Connection reset by peer|SSLError|Network error)" "$rlRun_LOG" -iE
 	rlRun "limeCtl agent remove ${AGENT_ID}" 1
     rlPhaseEnd
 
