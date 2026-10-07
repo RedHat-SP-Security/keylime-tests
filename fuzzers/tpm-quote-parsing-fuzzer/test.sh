@@ -36,13 +36,10 @@ rlJournalStart
 
         # The parsers under test ship in the keylime python package.
         rlAssertRpm keylime
-        rlRun "python3 -c 'import keylime.tpm.tpm2_objects'" 0 \
-            "keylime python package must be importable" \
-            || rlDie "keylime python package not importable, cannot fuzz its parsers"
+        rlRun "python3 -c 'import keylime.tpm.tpm2_objects'" 0 "keylime python package must be importable" || rlDie "keylime python package not importable, cannot fuzz its parsers"
 
         # Generate the seed corpus (valid + known-adversarial blobs).
-        rlRun "python3 '${TEST_DIR}/generate_seeds.py' '${SEED_DIR}'" 0 \
-            "Generate seed corpus"
+        rlRun "python3 '${TEST_DIR}/generate_seeds.py' '${SEED_DIR}'" 0 "Generate seed corpus"
 
         # The quote_params target drives tpm_main.Tpm, whose import chain needs
         # keylime's own deps (python3-gpg, python3-lark, ...). Warn loudly if it
@@ -60,8 +57,8 @@ rlJournalStart
             ATHERIS=1
         else
             rlLogInfo "atheris not installed, attempting best-effort pip install"
-            if rlRun "pip3 install --quiet atheris" 0,1 "Try to install atheris" \
-               && python3 -c 'import atheris' 2>/dev/null; then
+            rlRun "pip3 install --quiet atheris" 0,1 "Try to install atheris"
+            if python3 -c 'import atheris' 2>/dev/null; then
                 ATHERIS=1
             fi
         fi
@@ -76,22 +73,17 @@ rlJournalStart
 
         rlPhaseStartTest "Deterministic regression replay: ${TARGET}"
             # Every seed must be handled gracefully and within the hang timeout.
-            rlRun "python3 '${TEST_DIR}/replay.py' '${TARGET}' '${SEED_DIR}/${TARGET}' --timeout ${FUZZ_TIMEOUT}" 0 \
-                "No crash/hang replaying the ${TARGET} seed corpus"
+            rlRun "python3 '${TEST_DIR}/replay.py' '${TARGET}' '${SEED_DIR}/${TARGET}' --timeout ${FUZZ_TIMEOUT}" 0 "No crash/hang replaying the ${TARGET} seed corpus"
         rlPhaseEnd
 
         if [ "${ATHERIS}" -eq 1 ]; then
             rlPhaseStartTest "Coverage-guided fuzzing: ${TARGET}"
                 PREFIX="${ART_DIR}/${TARGET}-"
                 # atheris exits non-zero and drops a crash-/timeout-/oom- file
-                # under PREFIX if it finds a problem.
-                rlRun "FUZZ_TARGET='${TARGET}' python3 '${TEST_DIR}/fuzz_harness.py' \
-                        -max_total_time=${FUZZ_MAX_TOTAL_TIME} \
-                        -timeout=${FUZZ_TIMEOUT} \
-                        -rss_limit_mb=${FUZZ_RSS_MB} \
-                        -artifact_prefix='${PREFIX}' \
-                        '${SEED_DIR}/${TARGET}'" 0 \
-                    "Fuzz ${TARGET} for ${FUZZ_MAX_TOTAL_TIME}s without crashes"
+                # under PREFIX if it finds a problem. Build the command on one
+                # line to avoid fragile backslash line-continuations.
+                FUZZ_CMD="FUZZ_TARGET='${TARGET}' python3 '${TEST_DIR}/fuzz_harness.py' -max_total_time=${FUZZ_MAX_TOTAL_TIME} -timeout=${FUZZ_TIMEOUT} -rss_limit_mb=${FUZZ_RSS_MB} -artifact_prefix='${PREFIX}' '${SEED_DIR}/${TARGET}'"
+                rlRun "${FUZZ_CMD}" 0 "Fuzz ${TARGET} for ${FUZZ_MAX_TOTAL_TIME}s without crashes"
 
                 # Collect and re-verify any reproducer atheris saved.
                 REPROS=$(find "${ART_DIR}" -maxdepth 1 -type f -name "${TARGET}-*" 2>/dev/null)
@@ -99,8 +91,7 @@ rlJournalStart
                     rlFail "atheris found crashing input(s) for ${TARGET}"
                     for R in ${REPROS}; do
                         rlFileSubmit "${R}"
-                        rlRun "python3 '${TEST_DIR}/replay.py' '${TARGET}' '${R}' --timeout ${FUZZ_TIMEOUT}" 1 \
-                            "Reproducer confirmed: ${R}"
+                        rlRun "python3 '${TEST_DIR}/replay.py' '${TARGET}' '${R}' --timeout ${FUZZ_TIMEOUT}" 1 "Reproducer confirmed: ${R}"
                     done
                 fi
             rlPhaseEnd
