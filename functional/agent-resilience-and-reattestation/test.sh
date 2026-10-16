@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00001"
@@ -57,6 +56,14 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         rlRun "limeCreateTestPolicy"
     rlPhaseEnd
+
+    if [ "${AGENT_SERVICE}" == "Agent" ]; then
+        rlPhaseStartTest "Check the number of running actix workers (issue#1276)"
+            rlRun "pid=\$(systemctl show -p MainPID --value keylime_agent)"
+            rlRun -s "ps -T -p '$pid' -o comm="
+            rlAssertEquals "There should be 4 workers running" 4 "$( grep -c 'actix-rt|system' $rlRun_LOG )"
+        rlPhaseEnd
+    fi
 
     rlPhaseStartTest "Add keylime agent"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
