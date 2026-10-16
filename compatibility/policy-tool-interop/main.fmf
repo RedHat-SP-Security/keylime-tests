@@ -1,0 +1,21 @@
+summary: Test interoperability between keylime-policy and keylimectl policy commands
+description: |
+    Verifies that runtime policies created and signed by keylime-policy are usable
+    with keylimectl and vice versa. Tests policy creation equivalence, cross-tool agent
+    enrollment with policies from the other tool, cross-tool signature verification,
+    and pushing keylime-policy-created policies to the verifier via keylimectl.
+contact: ansasaki
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - CI-Tier-2
+  - compatibility
+require:
+  - keylime
+  - expect
+  - jq
+  - openssl
+duration: 15m
+enabled: true

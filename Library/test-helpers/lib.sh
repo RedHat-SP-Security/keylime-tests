@@ -205,7 +205,14 @@ function limeUpdateConf() {
   local FILES
   local MODIFIED
 
-  FILES="$( find ${CONF_DIR} -name '*.conf' )"
+  # If a file named exactly {section}.conf exists, target only that file.
+  # This prevents unintended side-effects on other files that happen to share
+  # the same section name (e.g. keylimectl.conf which uses TOML format).
+  if [ -f "${CONF_DIR}/${SECTION}.conf" ]; then
+      FILES="${CONF_DIR}/${SECTION}.conf"
+  else
+      FILES="$( find ${CONF_DIR} -name '*.conf' )"
+  fi
   for FILE in ${FILES}; do
       MODIFIED=false
       if [ -f ${FILE} ]; then
