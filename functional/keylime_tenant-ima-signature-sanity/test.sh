@@ -74,7 +74,7 @@ EOF"
     rlPhaseStartTest "Verify IMA key using a locally stored GPG signature"
         rlRun "gpg --verify signature-gpg-genuine.sig ${limeIMAPublicKey}"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json --sign_verification_key ${limeIMAPublicKey} --signature-verification-key-sig signature-gpg-genuine.sig --signature-verification-key-sig-key gpg-key.pub -c add"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd
@@ -86,7 +86,7 @@ EOF"
 
     rlPhaseStartTest "Verify IMA key using a downloaded GPG signature and key"
         rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json --signature-verification-key-url 'http://localhost:8000/x509_evm.pem' --signature-verification-key-sig-url 'http://localhost:8000/signature-gpg-genuine.sig' --signature-verification-key-sig-url-key gpg-key.pub -c update"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
     rlPhaseEnd

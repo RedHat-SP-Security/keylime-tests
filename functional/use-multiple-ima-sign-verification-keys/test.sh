@@ -40,6 +40,8 @@ rlJournalStart
         limeCreateTestPolicy
         rlRun "limeInstallIMAKeys first_key $PWD"
         rlRun "limeInstallIMAKeys second_key $PWD"
+        rlRun "limePolicy generate runtime --base-policy policy.json --add-ima-signature-verification-key x509_first_key.pem --add-ima-signature-verification-key x509_second_key.pem --output policy-with-keys.json"
+        rlRun "mv policy-with-keys.json policy.json"
         rlRun "cat > script_first.sh <<_EOF
 #!/bin/bash
 echo \"Hello one!\"
@@ -58,10 +60,10 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent with keys"
-        rlRun "keylime_tenant -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key  x509_first_key.pem --sign_verification_key x509_second_key.pem  -c add"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+        rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartTest "Run script and check if scripts are in ascii_runtime_measurements"
@@ -73,15 +75,15 @@ _EOF"
 
     rlPhaseStartTest "Confirm the system is still compliant"
         rlRun "sleep 10" 0 "Wait 10 seconds to give verifier some time to do a new attestation"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartTest "Confirm that system fail due to changing measured file"
         rlRun "echo 'echo \"boom\"' >> script_first.sh"
         rlRun "./script_first.sh"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Invalid Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'FAIL'"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

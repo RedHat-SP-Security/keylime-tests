@@ -70,7 +70,7 @@ send \"keylime\n\"
 expect eof
 _EOF"
         rlRun "expect script.expect"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "keylime_tenant -c cvlist"
         rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" "$rlRun_LOG" -E
     rlPhaseEnd
@@ -83,7 +83,7 @@ _EOF"
         # agent restart with HW TPM can be slow
         sleep 10
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlAssertGrep "Starting server with API versions: ${LATEST_VERSION}$" "$(limeAgentLogfile)" -E
         rlRun "rlWaitForCmd 'grep -q \"Agent $AGENT_ID API version updated\" \$(limeVerifierLogfile)' -m 10 -d 1 -t 10"
         rlRun -s "keylime_tenant -c cvlist"
@@ -95,7 +95,7 @@ _EOF"
         rlRun "limeUpdateConf agent api_versions \"\\\"${OLD_VERSION}\\\"\""
         rlRun "limeStartAgent"
         sleep 10
-        rlRun "limeWaitForAgentStatus $AGENT_ID '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'FAIL'"
         rlAssertGrep "Starting server with API versions: ${OLD_VERSION}$" "$(limeAgentLogfile)" -E
         rlAssertGrep "WARNING - Agent $AGENT_ID API version $OLD_VERSION is lower or equal to previous version" "$(limeVerifierLogfile)"
         rlAssertGrep "WARNING - Agent $AGENT_ID failed, stopping polling" "$(limeVerifierLogfile)"
