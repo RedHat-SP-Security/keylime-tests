@@ -45,6 +45,6 @@ recommend:
   # degrading to a no-op if keylime's dependency chain ever changes.
   - python3-gpg
   - python3-lark
-duration: 15m
+duration: 12h
 enabled: true
 id: 6c9d2bd3-4914-411e-932b-6c87997df526

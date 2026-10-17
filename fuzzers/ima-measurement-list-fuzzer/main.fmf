@@ -1,0 +1,49 @@
+summary: Fuzz keylime's IMA measurement-list line parser (keylime#1139)
+description: |
+    Fuzzer test for keylime/ima/ast.py, the parser that consumes individual
+    IMA measurement-list lines originating from a potentially compromised
+    agent, a Tier-1 fuzzing target identified in keylime/keylime#1139:
+
+      * ast.Entry(line)                  - full measurement-list line parser
+      * ast.Digest(field, legacy)        - "<hex>" / "<alg>:<hash>" parser
+      * ast.Name(field, legacy)          - path/name, incl. legacy fixed-length
+      * ast.Signature(hexdata)           - binary "ima-sig" signature header
+
+    The verifier drives Entry() in keylime/ima/ima.py _process_measurement_list
+    inside a loop that only catches ast.ParserError. The parser's contract is
+    therefore to reject any malformed line with a ParserError and nothing else;
+    any OTHER exception type escaping it (ValueError, struct.error,
+    UnicodeEncodeError, ...) is not caught by the verifier loop and crashes the
+    whole quote-verification pipeline - a remote DoS. The test hunts for
+    exactly that class of non-ParserError escape (e.g. the legacy "n" name path
+    computing TCG_EVENT_NAME_LEN_MAX - len(name_bytes) and raising on an
+    over-long name), plus hangs and resource exhaustion.
+
+    The test runs in two layers. A deterministic replayer feeds a generated
+    corpus of valid and known-adversarial lines/fields through each parser
+    under a wall-clock timeout and requires every input to be either parsed or
+    rejected with ParserError; this needs only the installed keylime package
+    and runs on every platform. When atheris (coverage-guided, libFuzzer-
+    backed) can be imported or pip-installed, a bounded coverage-guided
+    campaign is run on top, seeded from the same corpus; any reproducer atheris
+    saves fails the test and is attached to the results.
+
+    Campaign budgets can be raised for longer local runs via the
+    FUZZ_MAX_TOTAL_TIME, FUZZ_TIMEOUT and FUZZ_RSS_MB environment variables.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - fuzzing
+require:
+  - python3
+  - python3-pip
+recommend:
+  - keylime
+  - clang
+  - python3-devel
+duration: 12h
+enabled: true
+id: f207aa41-215b-44b1-aa4a-6af34c3eca0b

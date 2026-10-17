@@ -1,0 +1,61 @@
+summary: Fuzz keylime runtime-policy and DSSE envelope parsing (keylime#1139)
+description: |
+    Fuzzer test for the REST-facing, network-reachable runtime-policy / DSSE
+    envelope parsers in keylime, a Tier-1 fuzzing target identified in
+    keylime/keylime#1139:
+
+      * ima.verify_runtime_policy()      - REST entry point (verify_sig off):
+                                           json.loads, the .get("payload") dict
+                                           assumption, DSSE payload b64dec and
+                                           attacker-controlled exclude-list regex
+      * ima.deserialize_runtime_policy() - unguarded json.loads() + payload shape
+      * signing.verify_dsse_envelope()   - unguarded json.loads(), ["signatures"]
+                                           indexing, base64 + X.509 cert loading
+
+    These handlers assume a dict-typed top-level JSON object and index/.get()
+    into it without guarding the shape, so a hostile scalar/list request body
+    ("5", "[]", "null", ...) escapes as an unhandled AttributeError / KeyError /
+    TypeError - a verifier-side 500 / DoS - instead of a controlled validation
+    error. The test hunts for that shape-confusion class, plus hangs (ReDoS from
+    the attacker-controlled exclude list -> CPU DoS) and resource exhaustion.
+
+    Crash policy is STRICT: only each function's documented controlled exception
+    (ImaValidationError) or a normal return counts as graceful; any other
+    escaping exception is a finding. Against a keylime that still carries the
+    open #1139 bugs the test is therefore EXPECTED to report findings and go red
+    - it documents them as reproducers - and turns green once keylime guards
+    these parsers.
+
+    The test runs in two layers. A deterministic replayer feeds a generated
+    corpus of valid and known-adversarial inputs through each parser under a
+    wall-clock timeout; this needs only the installed keylime package and runs on
+    every platform. When atheris (coverage-guided, libFuzzer-backed) can be
+    imported or pip-installed, a bounded coverage-guided campaign is run on top,
+    seeded from the same corpus; any reproducer atheris saves fails the test and
+    is attached to the results.
+
+    Campaign budgets can be raised for longer local runs via the
+    FUZZ_MAX_TOTAL_TIME, FUZZ_TIMEOUT and FUZZ_RSS_MB environment variables.
+contact: Karel Srot <ksrot@redhat.com>
+component:
+  - keylime
+test: ./test.sh
+framework: beakerlib
+tag:
+  - fuzzing
+require:
+  - python3
+  - python3-pip
+  - python3-cryptography
+recommend:
+  - keylime
+  - clang
+  - python3-devel
+  # Importing the parsers under test pulls in keylime's own deps (signing.py
+  # imports gpg unconditionally, ima.py's import chain pulls lark); listing them
+  # keeps the test from failing to import if keylime's dependency chain changes.
+  - python3-gpg
+  - python3-lark
+duration: 12h
+enabled: true
+id: ca094891-a39a-4282-a51a-6511e322b39a
