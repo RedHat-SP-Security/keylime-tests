@@ -56,6 +56,9 @@ _EOF"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert true"
         rlRun "limeUpdateConf tenant tpm_cert_store ${KEYLIME_CERT_DIR}"
+        # keylimectl, verify EK cert against the same trust store
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert true"
+        rlRun "limeUpdateConf keylimectl tpm cert_store '\"${KEYLIME_CERT_DIR}\"'"
         # start ima emulator
         rlRun "limeInstallIMAConfig"
         rlRun "limeStartIMAEmulator"

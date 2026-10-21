@@ -43,6 +43,9 @@ rlJournalStart
         rlRun "tpm2_createek -P $PASSWORD_TPM -w $PASSWORD_TPM -c 0x81010001 -G rsa"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert true"
+        # keylimectl, verify EK cert against the same trust store
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert true"
+        rlRun "limeUpdateConf keylimectl tpm cert_store '\"$CERTDIR\"'"
         # set address to which ek use
         if limeIsPythonAgent; then
             rlRun "limeUpdateConf agent ek_handle 0x81010001"
@@ -78,7 +81,10 @@ rlJournalStart
         rlRun "cp $CACERTDIR/issuercert.pem $CERTDIR"
         rlRun "cat $CACERTDIR/issuercert.pem $CACERTDIR/swtpm-localca-rootca-cert.pem > bundle.pem"
         rlRun "cp bundle.pem $CERTDIR"
-        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json"
+        # use add instead of update: the previous add was rejected before the agent
+        # was registered on the verifier and keylimectl agent update requires the
+        # agent to already exist there
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         rlRun -s "limeCtl agent list"
         rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"

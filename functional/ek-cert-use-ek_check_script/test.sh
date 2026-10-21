@@ -58,6 +58,8 @@ _EOF"
         limeCreateTestPolicy
     rlPhaseEnd
 
+    # keylimectl does not support the ek_check_script option
+    if [ "$limeCtlCommand" != 'keylimectl' ]; then
     rlPhaseStartTest "Add keylime agent and check genuine of TPM via ek_check_script option"
         rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
         rlAssertGrep "AGENT_UUID=$AGENT_ID" $rlRun_LOG -E
@@ -85,6 +87,9 @@ _EOF"
         rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json" 1
         rlAssertGrep "ERROR - External check script failed to validate EK" $rlRun_LOG
     rlPhaseEnd
+    else
+        rlLog "keylimectl does not support ek_check_script, skipping the test phases"
+    fi
 
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"
