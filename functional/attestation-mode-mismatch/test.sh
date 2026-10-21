@@ -47,6 +47,7 @@ rlJournalStart
         rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
         rlRun "limeUpdateConf agent attestation_interval_seconds ${ATTESTATION_INTERVAL}"
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
 
         # Configure TPM if needed
         if limeTPMEmulated; then

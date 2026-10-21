@@ -34,6 +34,7 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # configure db for verifier using database_url
         rlRun "limeUpdateConf verifier database_url postgresql://verifier:fire@127.0.0.1/verifierdb"
         # configure db for registrar using other database_* options

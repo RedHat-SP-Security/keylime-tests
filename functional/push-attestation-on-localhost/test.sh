@@ -23,6 +23,7 @@ rlJournalStart
 
         # Disable EK certificate verification on the tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
 
         # Configure TPM emulator if needed
         if limeTPMEmulated; then

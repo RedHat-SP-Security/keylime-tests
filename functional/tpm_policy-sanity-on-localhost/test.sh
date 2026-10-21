@@ -22,6 +22,7 @@ rlJournalStart
         sleep 5
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # start keylime_verifier
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"

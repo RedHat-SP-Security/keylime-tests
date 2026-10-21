@@ -67,6 +67,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent enable_revocation_notifications false"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
         rlRun "limeUpdateConf tenant trusted_server_ca '[\"cacerts.pem\"]'"
         rlRun "limeUpdateConf tenant client_cert tenant-cert.pem"

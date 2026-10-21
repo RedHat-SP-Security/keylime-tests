@@ -25,6 +25,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent uuid \\\"${AGENT_ID}\\\""
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # disable exponential_backoff to speed up verifier response
         rlRun "limeUpdateConf verifier exponential_backoff False"
         # configure push attestation

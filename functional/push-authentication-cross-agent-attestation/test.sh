@@ -45,6 +45,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent enable_authentication true"
         rlRun "limeUpdateConf verifier extend_token_on_attestation true"
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf verifier quote_interval 60"
         rlRun "limeUpdateConf agent attestation_interval_seconds 60"
 

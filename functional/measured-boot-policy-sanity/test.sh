@@ -12,6 +12,7 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf verifier measured_boot_policy_name accept-all"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         rlRun "limeUpdateConf agent enable_revocation_notifications false"

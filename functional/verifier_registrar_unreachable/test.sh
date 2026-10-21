@@ -30,6 +30,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent uuid \\\"${AGENT_ID}\\\""
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf verifier exponential_backoff False"
         rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
         rlRun "limeUpdateConf verifier max_retries 5"

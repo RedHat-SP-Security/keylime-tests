@@ -12,6 +12,7 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert false"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
