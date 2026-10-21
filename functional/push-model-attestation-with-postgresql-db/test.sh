@@ -26,6 +26,7 @@ rlJournalStart
         limeBackupConfig
         # disable EK certificate verification on the tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # configure db for verifier and registrar
         rlRun "limeUpdateConf verifier database_url postgresql://verifier:fire@127.0.0.1/verifierdb"
         rlRun "limeUpdateConf registrar database_url postgresql://registrar:regi@127.0.0.1/registrardb"

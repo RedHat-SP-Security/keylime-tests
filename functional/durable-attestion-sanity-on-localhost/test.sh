@@ -31,6 +31,7 @@ rlJournalStart
 
         # disable the need for ek cert for tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
 
         # update registrar.conf to load the "flat file" backend for durable attestation
         rlRun "limeUpdateConf registrar durable_attestation_import keylime.da.examples.file"

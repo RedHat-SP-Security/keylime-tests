@@ -45,6 +45,7 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # configure db for verifier using database_* options
         rlRun "limeUpdateConf verifier database_url mysql+pymysql://verifier:fire@127.0.0.1/verifierdb"
         # configure db for registrar using database_url

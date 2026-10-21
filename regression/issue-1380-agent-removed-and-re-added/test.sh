@@ -16,6 +16,7 @@ rlJournalStart
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # agent
         rlRun "limeUpdateConf agent enable_revocation_notifications false"
         # if TPM emulator is present

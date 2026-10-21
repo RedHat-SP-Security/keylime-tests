@@ -22,6 +22,7 @@ rlJournalStart
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf tenant accept_tpm_encryption_algs [\\'${TPM_ENCRYPTION_ALG}\\']"
         rlRun "limeUpdateConf tenant accept_tpm_signing_algs [\\'${TPM_SIGNING_ALG}\\']"
         # agent

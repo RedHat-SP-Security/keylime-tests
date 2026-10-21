@@ -36,6 +36,7 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf verifier measured_boot_policy_name accept-all"
         # Reducing quote interval to speed up the test a bit.
         rlRun "limeUpdateConf verifier quote_interval 20"
@@ -189,7 +190,7 @@ rlJournalStart
         sleep 5
         rlRun -s "limeCtl measured-boot show $AGENT_ID" 1
 	rlAssertGrep "code.* (404|COMMAND_ERROR)" "$rlRun_LOG" -E
-        rlAssertGrep "Measured boot policy $AGENT_ID not found" "$rlRun_LOG"
+        rlAssertGrep "policy.*$AGENT_ID.*not found" "$rlRun_LOG" -Ei
     rlPhaseEnd
 
     rlPhaseStartTest "Add an agent with an existing named mbpolicy."
@@ -200,7 +201,7 @@ rlJournalStart
     rlPhaseStartTest "Try to delete the mbpolicy associated with a running agent."
         rlRun -s "limeCtl measured-boot delete mypolicy" 1
 	rlAssertGrep "code.* (409|COMMAND_ERROR)" "$rlRun_LOG" -E
-        rlAssertGrep "Can't delete mb_policy as it's currently in use by agent $AGENT_ID" "$rlRun_LOG"
+	rlAssertGrep "(Can't|Cannot) delete.*policy.*(it's|it is) currently in use" "$rlRun_LOG" -E
     rlPhaseEnd
 
     rlPhaseStartTest "Add an agent with a new named mbpolicy." 
