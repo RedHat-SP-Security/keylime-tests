@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -44,6 +43,9 @@ rlJournalStart
         rlRun "tpm2_createek -P $PASSWORD_TPM -w $PASSWORD_TPM -c 0x81010001 -G rsa"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert true"
+        # keylimectl, verify EK cert against the same trust store
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert true"
+        rlRun "limeUpdateConf keylimectl tpm cert_store '\"$CERTDIR\"'"
         # set address to which ek use
         if limeIsPythonAgent; then
             rlRun "limeUpdateConf agent ek_handle 0x81010001"
@@ -68,7 +70,7 @@ rlJournalStart
         # create empty CA, which fail the checking of EK cert
         rlRun "touch $CERTDIR/swtpm-localca-rootca-cert.pem $CERTDIR/issuercert.pem $CERTDIR/bundle.pem"
         # expected to fail
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c update" 1
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json" 1
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent and verify genuine of TPM via EK cert"
@@ -79,10 +81,13 @@ rlJournalStart
         rlRun "cp $CACERTDIR/issuercert.pem $CERTDIR"
         rlRun "cat $CACERTDIR/issuercert.pem $CACERTDIR/swtpm-localca-rootca-cert.pem > bundle.pem"
         rlRun "cp bundle.pem $CERTDIR"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c update"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        # use add instead of update: the previous add was rejected before the agent
+        # was registered on the verifier and keylimectl agent update requires the
+        # agent to already exist there
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

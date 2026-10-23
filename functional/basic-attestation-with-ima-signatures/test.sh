@@ -17,6 +17,7 @@ rlJournalStart
         limeBackupConfig
         # update /etc/keylime.conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -37,6 +38,8 @@ rlJournalStart
         rlRun "limeWaitForAgentRegistration ${AGENT_ID}"
         # create allowlist and excludelist
         limeCreateTestPolicy
+        rlRun "limePolicy generate runtime --base-policy policy.json --add-ima-signature-verification-key ${limeIMAPublicKey} --output policy-with-keys.json"
+        rlRun "mv policy-with-keys.json policy.json"
     rlPhaseEnd
 
     rlPhaseStartTest "Add IMA signature to a test file"
@@ -56,16 +59,16 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key ${limeIMAPublicKey} -c add"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add ${AGENT_ID} --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartTest "Fail keylime agent"
         rlRun "echo >> ${SCRIPT}"
         rlRun "${SCRIPT}"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} '(Failed|Invalid Quote)'"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'FAIL'"
         # the change in the Warning message has been introduced in https://github.com/keylime/keylime/pull/1322
         rlAssertGrep "WARNING - (File not found in allowlist: ${SCRIPT}|signature for file ${SCRIPT} is not valid)" $(limeVerifierLogfile) -E
         rlAssertGrep "ERROR - IMA ERRORS: Some entries couldn't be validated" $(limeVerifierLogfile)

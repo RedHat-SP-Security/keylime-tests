@@ -67,10 +67,15 @@ rlJournalStart
         rlRun "limeUpdateConf agent enable_revocation_notifications false"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf tenant tls_dir $CERTDIR"
         rlRun "limeUpdateConf tenant trusted_server_ca '[\"cacerts.pem\"]'"
         rlRun "limeUpdateConf tenant client_cert tenant-cert.pem"
         rlRun "limeUpdateConf tenant client_key tenant-key.pem"
+        # keylimectl
+        rlRun "limeUpdateConf keylimectl tls client_cert '\"$CERTDIR/tenant-cert.pem\"'"
+        rlRun "limeUpdateConf keylimectl tls client_key '\"$CERTDIR/tenant-key.pem\"'"
+        rlRun "limeUpdateConf keylimectl tls trusted_ca '[\"$CERTDIR/cacerts.pem\"]'"
         # registrar
         rlRun "limeUpdateConf registrar check_client_cert True"
         rlRun "limeUpdateConf registrar tls_dir $CERTDIR"
@@ -106,10 +111,10 @@ rlJournalStart
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --verify --runtime-policy policy.json --file /etc/hostname -c add"
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

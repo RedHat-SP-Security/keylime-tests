@@ -26,6 +26,7 @@ rlJournalStart
         limeBackupConfig
         # disable EK certificate verification on the tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # configure db for verifier and registrar
         rlRun "limeUpdateConf verifier database_url postgresql://verifier:fire@127.0.0.1/verifierdb"
         rlRun "limeUpdateConf registrar database_url postgresql://registrar:regi@127.0.0.1/registrardb"
@@ -68,13 +69,13 @@ rlJournalStart
         rlRun "limeCreateTestPolicy"
         
         # Wait for successful attestation
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json --push-model"
         rlRun "limeTIMEOUT=$((ATTESTATION_INTERVAL*6)) limeWaitForAgentStatus --field attestation_status '$AGENT_ID' 'PASS'" 0 "Agent should pass attestation"
         
         # No column size error in PostgreSQL log (regression check for RHEL-189524)
         rlAssertNotGrep "StringDataRightTruncation" "$(limeVerifierLogfile)"
 
-        rlRun -s "keylime_tenant -c cvlist"
+        rlRun -s "limeCtl agent list"
         rlAssertGrep "$AGENT_ID" "$rlRun_LOG"
     rlPhaseEnd
 

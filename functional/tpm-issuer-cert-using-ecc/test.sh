@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
@@ -57,6 +56,9 @@ _EOF"
         # tenant, set to true to verify ek on TPM
         rlRun "limeUpdateConf tenant require_ek_cert true"
         rlRun "limeUpdateConf tenant tpm_cert_store ${KEYLIME_CERT_DIR}"
+        # keylimectl, verify EK cert against the same trust store
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert true"
+        rlRun "limeUpdateConf keylimectl tpm cert_store '\"${KEYLIME_CERT_DIR}\"'"
         # start ima emulator
         rlRun "limeInstallIMAConfig"
         rlRun "limeStartIMAEmulator"
@@ -73,10 +75,10 @@ _EOF"
 
     rlPhaseStartTest "Add keylime agent and verify genuine of TPM via EK cert"
         # cp CA cert to dir, where keylime verify genuine of TPM
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname -c update"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" ${rlRun_LOG} -E
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add ${AGENT_ID} --ip 127.0.0.1 --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField ${rlRun_LOG} uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"

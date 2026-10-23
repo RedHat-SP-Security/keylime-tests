@@ -22,6 +22,7 @@ rlJournalStart
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf tenant accept_tpm_encryption_algs [\\'${TPM_ENCRYPTION_ALG}\\']"
         rlRun "limeUpdateConf tenant accept_tpm_signing_algs [\\'${TPM_SIGNING_ALG}\\']"
         # agent
@@ -57,8 +58,8 @@ rlJournalStart
             rlLogInfo "Skipping attestation for combination of alg/sig (${TPM_ENCRYPTION_ALG} / ${TPM_SIGNING_ALG})"
         else
             rlRun "limeCreateTestPolicy"
-            rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add"
-            rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
+            rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
+            rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         fi
     rlPhaseEnd
 

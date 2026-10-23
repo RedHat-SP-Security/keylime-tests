@@ -21,6 +21,7 @@ rlJournalStart
 
         # update keylime conf
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf revocations enabled_revocation_notifications '[]'"
         rlRun "limeUpdateConf verifier quote_interval 2"
         rlRun "limeUpdateConf agent enable_revocation_notifications false"
@@ -51,6 +52,8 @@ rlJournalStart
 
         # create allowlist and excludelist
         limeCreateTestPolicy
+        rlRun "limePolicy generate runtime --base-policy policy.json --add-ima-signature-verification-key ${limeIMAPublicKey} --output policy-with-keys.json"
+        rlRun "mv policy-with-keys.json policy.json"
 
         # start rngd to provide more random data
         pidof rngd && ENTROPY=false || ENTROPY=true
@@ -102,10 +105,10 @@ _EOF"
     rlPhaseEnd
 
     rlPhaseStartTest "Add keylime agent"
-        rlRun "keylime_tenant -u ${AGENT_ID} --runtime-policy policy.json -f /etc/hostname --sign_verification_key ${limeIMAPublicKey} -c add"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+        rlRun "limeCtl agent add ${AGENT_ID} --runtime-policy policy.json"
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartTest "Install RPM file"
@@ -121,9 +124,9 @@ _EOF"
     rlPhaseStartTest "Confirm the system is still compliant"
         # verifier request new quote every 2 seconds so 10 seconds should be enough
         rlRun "sleep 10" 0 "Wait 10 seconds to give verifier some time to do a new attestation"
-        rlRun "limeWaitForAgentStatus ${AGENT_ID} 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'${AGENT_ID}'" $rlRun_LOG -E
+        rlRun "limeWaitForAgentStatus --field attestation_status ${AGENT_ID} 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=${AGENT_ID}"
     rlPhaseEnd
 
     rlPhaseStartCleanup "Do the keylime cleanup"
