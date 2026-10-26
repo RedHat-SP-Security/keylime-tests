@@ -1,5 +1,4 @@
 #!/bin/bash
-# vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 . /usr/share/beakerlib/beakerlib.sh || exit 1
 
 HTTP_SERVER_PORT=8080
@@ -13,6 +12,7 @@ rlJournalStart
         # update /etc/keylime.conf
         limeBackupConfig
         rlRun "limeUpdateConf tenant require_ek_cert false"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         # if TPM emulator is present
         if limeTPMEmulated; then
             # start tpm emulator
@@ -58,8 +58,10 @@ _EOF"
         limeCreateTestPolicy
     rlPhaseEnd
 
+    # keylimectl does not support the ek_check_script option
+    if [ "$limeCtlCommand" != 'keylimectl' ]; then
     rlPhaseStartTest "Add keylime agent and check genuine of TPM via ek_check_script option"
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c update"
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json"
         rlAssertGrep "AGENT_UUID=$AGENT_ID" $rlRun_LOG -E
         rlAssertGrep "EK=-----BEGIN PUBLIC KEY-----" $rlRun_LOG -E
         rlAssertGrep "EK_CERT=[^ ]+" $rlRun_LOG -E
@@ -73,18 +75,21 @@ _EOF"
             rlRun "cat /var/lib/swtpm-localca/issuercert.pem /var/lib/swtpm-localca/swtpm-localca-rootca-cert.pem > $TMPDIR/ca_bundle.pem"
             rlRun "openssl verify  -CAfile $TMPDIR/ca_bundle.pem $TMPDIR/ek_cert.pem"
         fi
-        rlRun "limeWaitForAgentStatus $AGENT_ID 'Get Quote'"
-        rlRun -s "keylime_tenant -c cvlist"
-        rlAssertGrep "{'code': 200, 'status': 'Success', 'results': {'uuids':.*'$AGENT_ID'" $rlRun_LOG -E
+        rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
+        rlRun -s "limeCtl agent list"
+        rlRun "limeAssertJsonField $rlRun_LOG uuids=$AGENT_ID"
     rlPhaseEnd
 
     rlPhaseStartTest "Expected fail of adding keylime agent due verifying of script via ek_ceck_script option, which doesn't have a zero exit code."
         #veryfing of ek cert via own custom script, verifying fail
         rlRun "limeUpdateConf tenant ek_check_script /var/lib/keylime/check_ek_script_fail.sh"
         #expected to fail
-        rlRun -s "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -f /etc/hostname -c update" 1
+        rlRun -s "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json" 1
         rlAssertGrep "ERROR - External check script failed to validate EK" $rlRun_LOG
     rlPhaseEnd
+    else
+        rlLog "keylimectl does not support ek_check_script, skipping the test phases"
+    fi
 
     rlPhaseStartCleanup "Do the keylime cleanup"
         rlRun "limeStopAgent"

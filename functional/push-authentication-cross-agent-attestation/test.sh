@@ -45,6 +45,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent enable_authentication true"
         rlRun "limeUpdateConf verifier extend_token_on_attestation true"
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf verifier quote_interval 60"
         rlRun "limeUpdateConf agent attestation_interval_seconds 60"
 
@@ -85,7 +86,7 @@ rlJournalStart
 
         # Create policy and enroll Agent A
         rlRun "limeCreateTestPolicy"
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_A_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_A_ID --runtime-policy policy.json --push-model"
 
         # Wait for Agent A to authenticate
         rlRun "rlWaitForCmd 'grep -q \"authorization: \\\"Bearer\" \$(limePushAgentLogfile)' -m 60 -d 1" \

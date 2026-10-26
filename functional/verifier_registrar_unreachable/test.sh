@@ -30,6 +30,7 @@ rlJournalStart
         rlRun "limeUpdateConf agent uuid \\\"${AGENT_ID}\\\""
         # tenant
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
         rlRun "limeUpdateConf verifier exponential_backoff False"
         rlRun "limeUpdateConf verifier quote_interval ${ATTESTATION_INTERVAL}"
         rlRun "limeUpdateConf verifier max_retries 5"
@@ -86,7 +87,7 @@ rlJournalStart
         rlRun "limeStartVerifier"
         rlRun "limeWaitForVerifier"     
         # Add the agent to the verifier database
-        rlRun "keylime_tenant -v 127.0.0.1 -t 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add ${TENANT_ARGS}"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --ip 127.0.0.1 --runtime-policy policy.json ${TENANT_ARGS}"
         rlRun "limeWaitForAgentStatus --field attestation_status $AGENT_ID 'PASS'"
         for i in {1..2}; do
             rlLogInfo "Iteration $i: Stopping and Restarting Verifier"

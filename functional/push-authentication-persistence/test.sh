@@ -31,6 +31,7 @@ rlJournalStart
 
         # Disable EK certificate verification
         rlRun "limeUpdateConf tenant require_ek_cert False"
+        rlRun "limeUpdateConf keylimectl tpm require_ek_cert false"
 
         # Configure TPM emulator if needed
         if limeTPMEmulated; then
@@ -56,7 +57,7 @@ rlJournalStart
 
         # Enroll agent with verifier after it's registered
         rlRun "limeCreateTestPolicy"
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c add --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent add $AGENT_ID --runtime-policy policy.json --push-model"
     rlPhaseEnd
 
     rlPhaseStartTest "Test token persistence across verifier restarts"
@@ -194,7 +195,7 @@ rlJournalStart
         TESTDIR2=$(limeCreateTestDir)
         rlRun "touch ${TESTDIR2}/dummy.txt"
         rlRun "limeCreateTestPolicy ${TESTDIR2}/*"
-        rlRun "keylime_tenant -v 127.0.0.1 -u $AGENT_ID --runtime-policy policy.json -c update --push-model"
+        rlRun "limeCtl --verifier-ip 127.0.0.1 agent update $AGENT_ID --runtime-policy policy.json --push-model"
 
         # Restart agent to clear exponential backoff state from repeated attestation failures
         # Without restart, agent may wait up to 60+ seconds before retrying
